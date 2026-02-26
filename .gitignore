@@ -5,3 +5,7 @@ logs/
 .env
 .claude/
 *.output
+eng.traineddata
+test_out.json
+3000
+Google_Ads_API_Basic_Access_Application.rtf

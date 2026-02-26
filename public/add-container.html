@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New Container - Product Analyzer</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1><span>Product</span> Analyzer</h1>
+      <nav>
+        <a href="/">Dashboard</a>
+        <a href="/guide.html">Guide</a>
+        <a href="/chat.html">Chat</a>
+        <a href="/add-container.html">New Container</a>
+      </nav>
+    </div>
+  </header>
+  <main>
+    <div class="container">
+      <div class="card form-card" style="max-width:800px;">
+        <h2 id="form-title" style="margin-bottom:24px;">New Competition Project</h2>
+        <form id="container-form">
+          <div class="form-group">
+            <label for="name">Project Name *</label>
+            <input type="text" id="name" name="name" required placeholder="e.g. Q1 2026 Competitor Analysis">
+          </div>
+
+          <div class="form-section" style="padding-bottom:8px;" id="no-product-section">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;">
+              <input type="checkbox" id="no_my_product" onchange="toggleMyProduct()">
+              <span>No existing product</span>
+              <span class="text-dim" style="font-size:12px;">(AI will propose a new product based on competitor analysis)</span>
+            </label>
+          </div>
+
+          <div class="form-section" id="my-product-section">
+            <h3 style="margin-bottom:16px;font-size:16px;">My Product</h3>
+            <div class="form-group">
+              <label for="my_name">Product Name *</label>
+              <input type="text" id="my_name" required placeholder="e.g. My SaaS Product">
+            </div>
+            <div class="form-group">
+              <label for="my_website">Website</label>
+              <input type="url" id="my_website" placeholder="https://example.com">
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="my_fb">Facebook Ads Library URL</label>
+                <input type="url" id="my_fb" placeholder="https://www.facebook.com/ads/library/?...">
+              </div>
+              <div class="form-group">
+                <label for="my_google">Google Ads Transparency URL</label>
+                <input type="url" id="my_google" placeholder="https://adstransparency.google.com/advertiser/...">
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="my_site_type">Site Type <span class="text-dim" style="font-weight:400;">(optional)</span></label>
+              <input type="text" id="my_site_type" placeholder="e.g. Gamified IQ testing platform">
+            </div>
+            <div class="form-group">
+              <label for="my_unique_angle">Unique Angle <span class="text-dim" style="font-weight:400;">(optional)</span></label>
+              <input type="text" id="my_unique_angle" placeholder="e.g. Only platform with daily personalized brain training">
+            </div>
+            <div class="form-group">
+              <label for="my_target_audience">Target Audience <span class="text-dim" style="font-weight:400;">(optional)</span></label>
+              <input type="text" id="my_target_audience" placeholder="e.g. 25-45 professionals interested in self-improvement">
+            </div>
+          </div>
+
+          <div class="form-section">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+              <h3 style="font-size:16px;">Competitors</h3>
+              <button type="button" class="btn btn-ghost btn-sm" id="add-competitor-btn">+ Add Competitor</button>
+            </div>
+            <div id="competitors-list"></div>
+          </div>
+
+          <div style="display:flex;gap:8px;margin-top:24px;">
+            <button type="submit" class="btn btn-primary" id="submit-btn">Create Container</button>
+            <a href="/" class="btn btn-ghost">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+  <script src="/js/add-container.js"></script>
+</body>
+</html>

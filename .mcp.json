@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "@playwright/mcp@latest",
+        "--headless"
+      ]
+    },
+    "serpapi": {
+      "type": "sse",
+      "url": "https://mcp.serpapi.com/1ca707e4e04e9caf35e904b59b4c2a56f4370db09899c65bbbd4abfa0fe1615d/mcp"
+    }
+  }
+}

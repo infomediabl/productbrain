@@ -1,0 +1,23 @@
+
+1. Application core changes 
+a) Let's name all subagents on dashboard, in files, explanation and guide consistently so its easier. 
+For example 
+
+Ad Scraper - Lets call give it 
+code: ag0001
+name: adScraper
+
+then also do for all other subagents 
+
+
+2. Dashboard changes
+a) Agent 1 Ad Scraper
+There is scraping log, but it write date, and click on date, but it should be Name of project and/or competitor, is it for fb or google or both, and than date. 
+b) ContainerChat - Put in top menu as LINK, so its always on separate page. 
+Then when its opened - user select container, and than can talk about that container 
+
+
+
+
+
+

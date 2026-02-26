@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Product Analyzer</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1><span>Product</span> Analyzer</h1>
+      <nav>
+        <a href="/">Dashboard</a>
+        <a href="/guide.html">Guide</a>
+        <a href="/chat.html">Chat</a>
+        <a href="/add-container.html">New Container</a>
+      </nav>
+    </div>
+  </header>
+  <main>
+    <div class="container">
+      <div class="toolbar">
+        <input type="text" class="search-input" id="search" placeholder="Search containers...">
+        <a href="/add-container.html" class="btn btn-primary">+ New Container</a>
+      </div>
+      <div id="containers-grid" class="products-grid"></div>
+      <div id="empty-state" class="empty-state" style="display:none;">
+        <h2>No containers yet</h2>
+        <p>Create your first competition analysis container to get started.</p>
+        <a href="/add-container.html" class="btn btn-primary">+ New Container</a>
+      </div>
+    </div>
+  </main>
+  <script src="/js/dashboard.js"></script>
+</body>
+</html>

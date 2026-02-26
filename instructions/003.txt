@@ -1,0 +1,22 @@
+I want to develop several subagents which i will add to this app. 
+App still stay Competition analyzer, but i want to add more features
+
+step 1. Include https://agents.md/ system for make subagents
+
+step 2. Add SEO skill from here to my app
+
+step 3. Make option to select competitor and do seo analysis, in seo analyis request add instructions wheere i can define
+what i want to be focused in seo analysis
+
+step 4. Add playwright MCP
+
+step 5. Add SerpAPI MCP server so you can use it together with ads library, seo analysis 
+Private API Key for serp api is
+1ca707e4e04e9caf35e904b59b4c2a56f4370db09899c65bbbd4abfa0fe1615d
+
+Do not perform any searchs on serp api, just validate if api works
+
+Step 6. Can you make connector to google ads, and tell me what credentials you need 
+so i can use google ads integration for keyword planning and campaign managment
+
+Do step by step 

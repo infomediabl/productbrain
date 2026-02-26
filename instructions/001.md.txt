@@ -1,0 +1,43 @@
+Lets do following steps.
+
+Prepare step by step and execlute step by step. 
+Re-check when each step is made, there is no errors. 
+
+step a) Check which model is used in app. 
+For AI proposals use new Opus 4.6, for scraping and all rest use some cheaper
+
+step b) 
+AI proposals is not good, and you are constantly giving me "proposals" which are too generic. 
+I am looking to last proposal
+http://localhost:3100/proposal.html?cid=189e40a2-9d1b-457c-8517-7b79df20a9b6&pid=99536917-1818-4c3b-a84b-7aa512485581
+
+b.1 Improve logic of these proposals and include age groups (why some ad would work for age groups), gender and localisation elements. 
+For example if my product is advertised in european countries, propose based on that. 
+Define exact for which format is ad proposed facebook post, story etc. 
+
+step b.2) 
+Creative brief. 
+b.2.1 If you have found source ad "Source Ad: My IQ Facebook Ad #4 - Running 98+ days " to be cloned. 
+Display image here on report, so image is visible. 
+b.2.2 Reduce font of Adaptation of Brajti. 
+b.2.3 AI Image prompt should be more detailed to achieve better results
+b.2.4 Make two buttons for AI image prompt: Nano banana and Chat GPT. When button clicked complete prompt is copied 
+b.2.5 Below button should be small letters - show prompt, and than prompt is displayed in some prompt or on right side
+b.2.6 Add numbering and ids for proposals 001, 002 etc 
+
+step b.3)
+Patterns & Opportunities
+b.3.1 Make this displayed as cards, not as just new line. So its easier to check. 
+b.3.2 Differentiate exact proposals based on provided scraped ads and analyses from generic ones like 
+"No user testimonials visible: Social proof creative opportunity"
+b.3.3 In this opportunities, make after exact, customized patterns - new section: fress ideas like 
+you had here "No competitor emphasizes audiobooks/audio learning: This is Brajti's unique differentiator—make it hero feature"
+but make that also as an card: what to do, why it could work. These ideas should be fresh - so complete new brain. 
+
+
+step b.4)
+Data gaps
+b.4.1) Make questions which can be answered, for example we can't know "What % of ad clicks complete the quiz on competitors' sites?"
+or find out this, but maybe there are some other things we can. 
+
+

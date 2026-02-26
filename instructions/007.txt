@@ -1,0 +1,200 @@
+# Product Analyzer — Refactoring Instructions
+
+> Execute each phase in order. Commit after each phase.
+
+---
+
+## App Context
+
+This is a **Marketing Intelligence Tool** renamed to **Product Analyzer**.
+
+The real-world workflow is sequential:
+1. **Input** → Marketing person enters product, competitors, metadata, case studies
+2. **Analyze** → Run scrapers, competitor analysis, SEO analysis
+3. **Ideate** → Based on steps 1+2, generate strategies and proposals
+4. **Generate** → Based on all previous steps, create landing pages, ads, quizzes
+
+---
+
+## Phase 1: Renames
+
+| Old Name | New Name |
+|----------|----------|
+| App name | **Product Analyzer** |
+| Notes and Metadata | **Notes** |
+| Competitor Analyzer | **Scraped Ads Analyzer** |
+| AI Proposal | **Magic AI** |
+
+Update all references everywhere (titles, headers, navigation, meta tags).
+
+---
+
+## Phase 2: Right Sidebar Changes
+
+### Product Links
+- Replace full product URLs with a **small clickable icon** (external link icon)
+- Click opens the link in new tab
+- Show URL as tooltip on hover
+
+### Scrape Status
+- Below the "Scrape" button, if a scrape was previously run:
+  - Show **last scrape date** in small muted text (e.g., `Last scraped: Jan 15, 2026`)
+  - Show a small **icon link** to the scrape details page (Phase 3)
+- If no scrape exists, show nothing extra
+
+---
+
+## Phase 3: Scrape Details Page
+
+When a scrape finishes, there should be a dedicated page for that scrape.
+
+Create a new page/route for scrape results displaying:
+- Scrape timestamp and source URL
+- All **images downloaded and saved locally** (not just external URLs) — show as thumbnails with links to full size
+- All scraped links (clickable)
+- Organized scraped data sections
+- Status/errors
+
+Update the scrape agent to:
+- Download and save images to local storage
+- Store scrape metadata (date, source, status)
+- Return a scrapeId for navigation
+
+The icon link from Phase 2 links to this page.
+
+---
+
+## Phase 4: Subagent Architecture
+
+Every tool should be a **subagent** — an independent module with its own context that other parts of the app can call.
+
+Each subagent must define:
+- What **inputs** it needs (and from which other agents)
+- What **outputs** it produces (for other agents to consume)
+- A **run** function
+
+### Critical Rule: Concise Communication
+
+Subagent outputs must be **structured data**, NOT verbose text explanations.
+
+```
+❌ BAD:
+"Based on our comprehensive analysis of the competitor landscape, we recommend
+focusing on the following key areas..."
+
+✅ GOOD:
+{
+  "top_ads": [{ "id": "ad_123", "platform": "meta", "engagement": "high" }],
+  "recommended_angles": ["emotional_trigger", "price_comparison"],
+  "keyword_gaps": ["branded_terms", "long_tail_questions"]
+}
+```
+
+Other subagents need to **understand and use** the data — not read essays. Human-readable formatting is only for the final UI display.
+
+### Convert to subagents:
+- Case Study Analyzer
+- Scraped Ads Analyzer
+- Ad Scraper
+- SEO Analyzer
+- Keyword Strategy Ideator
+- RPS Test Ideator
+- Magic AI
+- Landing Page Generator
+- Quiz Generator
+- Image Ad Creator
+- **Prompt Generator** — subagent used internally by other agents, but **NOT visible on the page at all**
+
+---
+
+## Phase 5: Page Layout — Reorganize into Segments
+
+Group all tools into 5 category sections on the page:
+
+### 📋 Metadata
+- **Notes** (renamed from Notes and Metadata)
+- **Case Study Analyzer**
+
+### 🔍 Analyzer
+- **Scraped Ads Analyzer** (renamed from Competitor Analyzer)
+- **Ad Scraper** — REMOVE the "Scrape ALL ads" button. Scraping should be targeted per competitor, not blanket "scrape everything"
+- **SEO Analyzer**
+
+### 📊 Product Data
+- **Google Ads Connector**
+- **User Data Feed** — NEW placeholder only. Show card with title, a `[?]` tooltip saying "Connect to your user data — coming soon", disabled/grayed-out state. No functionality yet.
+
+### 💡 Ideator
+- **Keyword Strategy Ideator**
+- **RPS Test Ideator**
+- **Magic AI** (renamed from AI Proposal)
+
+### ⚡ Generator
+- **Landing Page Generator**
+- **Quiz Generator**
+- **Image Ad Creator**
+
+### Removed from page:
+- **Prompt Generator** — hidden, only used internally by other subagents
+
+---
+
+## Phase 6: Data Flow Between Segments
+
+Wire up so data flows through the workflow:
+
+```
+METADATA outputs (product_info, competitor_list, case_study_insights)
+    ↓
+ANALYZER consumes metadata, outputs (ad_analysis, top_ads, keyword_data, scraped_images)
+    ↓
+PRODUCT DATA supplements with (campaign_data, keyword_performance)
+    ↓
+IDEATOR consumes all above, outputs (keyword_strategy, test_variants, full_proposal)
+    ↓
+GENERATOR consumes all above, produces (landing_pages, quizzes, ad_images)
+```
+
+- Use a shared context/store so each subagent can read outputs from previous agents
+- Show visual indicators: which agents completed ✅ and which are pending ⏳
+- Later-stage agents should indicate what upstream data they're waiting for
+
+---
+
+## Phase 7: Magic AI — Final Proposal
+
+Magic AI is the key output. When it runs (consuming all previous agent data), it must produce:
+
+**Ad Clone Recommendations:**
+- Reference the actual competition image (locally saved from scrape)
+- Exact prompt to recreate/clone the ad
+- Text/copy proposals (headline, body, CTA variants)
+
+**Search Campaign Recommendations:**
+- Priority keywords with match types
+- Ad group structure
+- Budget allocation suggestions
+
+**Angle Analysis:**
+- Which competitor angles to clone vs differentiate on
+- Ranked by predicted effectiveness
+
+**Concrete Deliverables:**
+- Landing pages to create (with briefs)
+- Ad images to create (with prompts)
+- Tests to run (with hypotheses)
+
+Everything must be **specific and actionable** — referencing real scraped data, real competitor ads, and real keywords. Not generic marketing advice.
+
+---
+
+## Phase 8: Final Checks
+
+- All renames applied consistently
+- Right sidebar shows icon links and scrape dates
+- Scrape details page works with locally saved images
+- "Scrape ALL ads" removed from Ad Scraper
+- Prompt Generator not visible on page but callable by other agents
+- User Data Feed shows as placeholder with tooltip
+- Full workflow runs: Metadata → Analyzer → Ideator → Generator
+- Subagent communication is concise structured data, not verbose text

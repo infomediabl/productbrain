@@ -1,0 +1,9 @@
+1. Task list for Scrape Subagent
+------------------------------
+I want you to work only on scrape subagent. 
+
+a) Please re-check if you save image / video ads localy 
+b) So beside manual scrape request, i want that each 6h you check if there is new ads, 
+and scrape and save only new ads - which were not scraped before. 
+c) if new ads are found, it should be displayed on dashbaord in ad scraper
+d)Google ad scraper changes there is preview of ad, so after saving images locally run in background task to read from image and populate title / headline and description 

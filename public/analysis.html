@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analysis Results - Product Analyzer</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1><span>Product</span> Analyzer</h1>
+      <nav>
+        <a href="/">Dashboard</a>
+        <a href="/guide.html">Guide</a>
+        <a href="/chat.html">Chat</a>
+        <a href="/add-container.html">New Container</a>
+      </nav>
+    </div>
+  </header>
+  <main>
+    <div class="container">
+      <div style="margin-bottom:16px;">
+        <a id="back-link" href="/" class="btn btn-ghost btn-sm">&larr; Back</a>
+      </div>
+      <div id="status-bar" class="status-bar pending">
+        <div class="spinner"></div>
+        <span id="status-text">Loading analysis...</span>
+      </div>
+      <div id="results"></div>
+    </div>
+  </main>
+  <div class="lightbox" id="lightbox">
+    <img src="" alt="Ad screenshot" id="lightbox-img">
+  </div>
+  <script src="/js/analysis.js"></script>
+</body>
+</html>
