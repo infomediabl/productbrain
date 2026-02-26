@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Container - Product Analyzer</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1><span>Product</span> Analyzer</h1>
+      <nav>
+        <a href="/">Dashboard</a>
+        <a href="/guide.html">Guide</a>
+        <a href="/chat.html">Chat</a>
+        <a href="/add-container.html">New Container</a>
+      </nav>
+    </div>
+  </header>
+  <main>
+    <div class="container">
+      <div style="margin-bottom:16px;">
+        <a href="/" class="btn btn-ghost btn-sm">&larr; Back to Dashboard</a>
+      </div>
+
+      <div id="container-header" class="card" style="margin-bottom:24px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+          <h2 id="container-name">Loading...</h2>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-ghost btn-sm" onclick="openSettingsModal()" title="Project Settings">Settings</button>
+            <a id="edit-link" href="#" class="btn btn-ghost btn-sm">Edit</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Container Context (Collector) -->
+      <div class="card" style="margin-bottom:24px;" id="context-section">
+        <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;" onclick="toggleContextPanel()">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <h3>Container Context</h3>
+            <span id="context-count" class="badge" style="font-size:11px;background:var(--surface2);">0 items</span>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); pushAllContext(event)">Push All</button>
+            <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); clearAllContext()">Clear</button>
+            <span id="context-toggle-icon" style="font-size:14px;color:var(--text-dim);transition:transform 0.2s;">&#9660;</span>
+          </div>
+        </div>
+        <div id="context-panel" style="display:none;margin-top:16px;">
+          <div id="context-list"></div>
+          <div id="context-empty" class="text-dim" style="text-align:center;padding:16px;font-size:13px;">
+            No context items yet. Use "Push All" or push individual sections from analysis pages.
+          </div>
+        </div>
+      </div>
+
+      <!-- Two-column layout: main content + entries sidebar -->
+      <div class="container-layout">
+
+      <!-- Main content column -->
+      <div class="container-main">
+
+      <!-- ===== SEGMENT 1: METADATA ===== -->
+      <div class="segment-header">
+        <span class="segment-icon">&#128221;</span>
+        <span class="segment-label">METADATA</span>
+      </div>
+
+      <!-- Notes -->
+      <div class="card" style="margin-bottom:24px;" id="metadata-section">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+          <h3>Notes</h3>
+          <button class="btn btn-primary btn-sm" onclick="showMetadataForm()">+ Add Note</button>
+        </div>
+        <div id="metadata-form-container" style="display:none;" class="card" style="margin-bottom:16px;padding:16px;">
+          <div class="form-group">
+            <label>Type</label>
+            <select id="meta-type" class="form-select">
+              <option value="user_feedback">User Feedback</option>
+              <option value="customer_notes">Customer Notes</option>
+              <option value="product_specs">Product Specs</option>
+              <option value="ab_tests">A/B Tests</option>
+              <option value="form_data">Form Data</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Title *</label>
+            <input type="text" id="meta-title" placeholder="Note title">
+          </div>
+          <div class="form-group">
+            <label>Content</label>
+            <textarea id="meta-content" rows="4" placeholder="Write your notes here..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Or import from HTML file</label>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <input type="file" id="meta-html-file" accept=".html,.htm" onchange="importHtmlFile(this)" style="font-size:13px;">
+              <span id="import-status" class="text-dim" style="font-size:12px;"></span>
+            </div>
+            <div class="hint">Extracts text content from an HTML file and populates the content field above.</div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-primary btn-sm" onclick="saveMetadata()">Save</button>
+            <button class="btn btn-ghost btn-sm" onclick="hideMetadataForm()">Cancel</button>
+          </div>
+        </div>
+        <div id="metadata-list"></div>
+      </div>
+
+      <!-- Case Study Analyzer -->
+      <div class="card agent-card" style="margin-bottom:24px;" id="casestudy-section">
+        <div class="agent-header">
+          <span class="agent-badge" style="background:#6366f120;color:#6366f1;">AG-014</span>
+          <h3>Case Study Analyzer</h3>
+          <span class="agent-help">?<span class="agent-help-bubble">Upload competitor case studies (PDF, TXT, image, or URL) and AI will extract key insights: strategies used, metrics, target audience, strengths, weaknesses, and actionable takeaways for your product.</span></span>
+          <span class="text-dim" style="font-size:12px;">Extract insights from competitor case studies</span>
+          <button class="btn btn-primary btn-sm" id="casestudy-btn" onclick="openCaseStudyModal()" style="margin-left:auto;">Upload Case Study</button>
+        </div>
+        <div id="casestudy-status" style="display:none;"></div>
+        <div id="casestudy-list"></div>
+      </div>
+
+      <!-- ===== SEGMENT 2: ANALYZER ===== -->
+      <div class="segment-header">
+        <span class="segment-icon">&#128269;</span>
+        <span class="segment-label">ANALYZER</span>
+      </div>
+
+      <!-- Scraped Ads Analyzer -->
+      <div class="card agent-card" style="margin-bottom:24px;" id="agent2-section">
+        <div class="agent-header">
+          <span class="agent-badge agent-badge-2">AG-003</span>
+          <h3>Scraped Ads Analyzer</h3>
+          <span class="agent-help">?<span class="agent-help-bubble">Takes the scraped ad data for a competitor and sends it to Claude AI for deep analysis. Identifies messaging patterns, value propositions, target audiences, emotional triggers, and ad strategies. Produces a structured report you can use to inform your own marketing.</span></span>
+          <span class="text-dim" style="font-size:12px;">Click a competitor to run AI analysis</span>
+        </div>
+        <div id="competitor-analysis-list"></div>
+      </div>
+
+      <!-- Ad Scraper (Scrape All Ads button removed) -->
+      <div class="card agent-card" style="margin-bottom:24px;" id="agent1-section">
+        <div class="agent-header">
+          <span class="agent-badge agent-badge-1">AG-001</span>
+          <h3>Ad Scraper</h3>
+          <span class="agent-help">?<span class="agent-help-bubble">Visits the Facebook Ad Library and Google Ads Transparency Center for each competitor (and your product). Scrapes ad creatives, headlines, and landing page URLs. Runs OCR on ad images to extract text content for deeper analysis.</span></span>
+          <span class="text-dim" style="font-size:12px;">Scrapes ads with OCR text extraction</span>
+        </div>
+        <div id="scrapes-list"></div>
+      </div>
+
+      <!-- SEO Analysis -->
+      <div class="card agent-card" style="margin-bottom:24px;" id="seo-section">
+        <div class="agent-header">
+          <span class="agent-badge agent-badge-seo">AG-004</span>
+          <h3>SEO Analyzer</h3>
+          <span class="agent-help">?<span class="agent-help-bubble"><strong>Two modes:</strong><br><strong>SEO Audit (My Product)</strong> — Analyzes your own website for SEO issues and gives scores + improvement recommendations for on-page, technical, and keyword strategy.<br><strong>Competitor Intelligence</strong> — Studies what competitors do well for SEO so you can learn from and replicate their strategies. Shows quick wins and long-term plays.</span></span>
+          <span class="text-dim" style="font-size:12px;">Audit your product's SEO or study competitor strategies</span>
+        </div>
+        <div id="seo-own-product"></div>
+        <div id="seo-analysis-list"></div>
+      </div>
+
+      <!-- ===== SEGMENT 3: PRODUCT DATA ===== -->
+      <div class="segment-header">
+        <span class="segment-icon">&#128202;</span>
+        <span class="segment-label">PRODUCT DATA</span>
+      </div>
+
+      <!-- Google Ads Connector -->
+      <div class="card agent-card" style="margin-bottom:24px;" id="gads-section">
+        <div class="agent-header">
+          <span class="agent-badge agent-badge-gads">AG-009</span>
+          <h3>Google Ads Connector</h3>
+          <span class="agent-help">?<span class="agent-help-bubble">Connects to the Google Ads API using your credentials. Fetches keyword ideas based on seed keywords or a page URL, and loads your campaign data. Requires GOOGLE_ADS_REFRESH_TOKEN and related credentials in your .env file.</span></span>
+          <span class="text-dim" style="font-size:12px;" id="gads-status-text">Checking connection...</span>
+        </div>
+        <div id="gads-content">
+          <!-- Account Selector -->
+          <div style="margin-bottom:16px;" id="gads-account-section" style="display:none;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+              <h4 style="font-size:14px;">Account</h4>
+              <select id="gads-account-select" style="flex:1;max-width:320px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px;" disabled>
+                <option value="">Loading accounts...</option>
+              </select>
+            </div>
+          </div>
+          <!-- Keyword Ideas -->
+          <div style="margin-bottom:16px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+              <h4 style="font-size:14px;">Keyword Ideas</h4>
+              <button class="btn btn-primary btn-sm" id="gads-keyword-btn" onclick="openGadsKeywordModal()" disabled>Get Keyword Ideas</button>
+            </div>
+            <div id="gads-keyword-results"></div>
+          </div>
+          <!-- Campaigns -->
+          <div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+              <h4 style="font-size:14px;">Campaigns</h4>
+              <button class="btn btn-ghost btn-sm" id="gads-campaigns-btn" onclick="loadGadsCampaigns()" disabled>Load Campaigns</button>
+            </div>
+            <div id="gads-campaigns-list"></div>
+          </div>
+          <!-- Analysis History (always visible) -->
+          <div id="gads-analysis-history"></div>
+        </div>
+      </div>
+
+      <!-- User Data Feed (placeholder) -->
+      <div class="card agent-card user-data-feed-placeholder" style="margin-bottom:24px;" id="userfeed-section">
+        <div class="agent-header">
+          <span class="agent-badge" style="background:#6b708515;color:#6b7085;">Data Feed</span>
+          <h3 style="color:var(--text-dim);">User Data Feed</h3>
+          <span class="agent-help">?<span class="agent-help-bubble">Coming soon. Connect your own data feeds (CSV, API, Google Sheets) to enrich analysis with first-party data like sales, CRM, or analytics metrics.</span></span>
+          <span class="text-dim" style="font-size:12px;">Connect your own data sources</span>
+        </div>
+        <div style="padding:16px 0;text-align:center;color:var(--text-dim);font-size:13px;">
+          Coming soon &mdash; connect CSV, API, or Google Sheets data feeds.
+        </div>
+      </div>
+
+      <!-- ===== SEGMENT 4: IDEATOR ===== -->
+      <div class="segment-header">
+        <span class="segment-icon">&#128161;</span>
+        <span class="segment-label">IDEATOR</span>
+      </div>
+
+      <!-- Keyword Strategy Ideator -->
+      <div class="card agent-card" style="margin-bottom:24px;" id="keyword-section">
+        <div class="agent-header">
+          <span class="agent-badge agent-badge-keyword">AG-008</span>
+          <h3>Keyword Strategist</h3>
+          <span class="agent-help">?<span class="agent-help-bubble">Uses Claude AI to build a comprehensive keyword strategy. Analyzes your product, competitors, and any scraped data to generate keyword clusters, identify quick-win keywords, and create a content calendar. You can specify your niche, goals, and budget level.</span></span>
+          <span class="text-dim" style="font-size:12px;">AI-powered keyword clusters, quick wins & content calendar</span>
+          <button class="btn btn-primary btn-sm" id="keyword-btn" onclick="openKeywordModal()" style="margin-left:auto;">Generate Strategy</button>
+        </div>
+        <div id="keyword-status" style="display:none;"></div>
+        <div id="keyword-list"></div>
+      </div>
+
+      <!-- RPS Test Ideator -->
+      <div class="card agent-card" style="margin-bottom:24px;" id="testplan-section">
+        <div class="agent-header">
+          <span class="agent-badge agent-badge-testplan">AG-013</span>
+          <h3>RPS Test Ideator</h3>
+          <span class="agent-help">?<span class="agent-help-bubble"><strong>KNOWNS/UNKNOWNS Framework</strong><br>Classifies all your data (Google Ads metrics, competitor analysis, SEO, keywords) as KNOWN or UNKNOWN, then designs structured advertising tests where each test has max 1-2 unknowns. Ensures every test produces interpretable results with minimum budget.<br><br><strong>Case (a) HAVE product:</strong> Uses your CPC/CPA as benchmarks, tests expansion (new geos, angles).<br><strong>Case (b) NO product:</strong> MVP validation, each test validates ONE critical assumption.</span></span>
+          <span class="text-dim" style="font-size:12px;">Structured test design with max 1-2 unknowns per test</span>
+          <button class="btn btn-primary btn-sm" id="testplan-btn" onclick="openTestPlanModal()" style="margin-left:auto;">Create RPS Test</button>
+        </div>
+        <div id="testplan-status" style="display:none;"></div>
+        <div id="testplan-list"></div>
+      </div>
+
+      <!-- Container Chat (link to standalone page) -->
+      <div class="card agent-card" style="margin-bottom:24px;" id="chat-section">
+        <div class="agent-header">
+          <span class="agent-badge" style="background:#06b6d420;color:#0891b2;">AG-015</span>
+          <h3>Container Chat</h3>
+          <span class="agent-help">?<span class="agent-help-bubble">Ask questions about your container data. Uses all available data — product info, competitor analyses, scrape results, keyword strategies, and pushed Container Context items — to provide intelligent answers.</span></span>
+          <span class="text-dim" style="font-size:12px;">Ask questions about your container data</span>
+          <a id="chat-page-link" href="/chat.html" class="btn btn-primary btn-sm" style="margin-left:auto;">Open Chat</a>
+        </div>
+      </div>
+
+      <!-- Magic AI -->
+      <div class="card agent-card" style="margin-bottom:24px;" id="agent3-section">
+        <div class="agent-header">
+          <span class="agent-badge agent-badge-3">AG-005</span>
+          <h3>Magic AI Proposal</h3>
+          <span class="agent-help">?<span class="agent-help-bubble">Combines all available data — scraped ads, competitor analyses, SEO reports, metadata, and your product info — and sends it to Claude AI to generate a comprehensive marketing proposal. Includes positioning strategy, messaging recommendations, channel strategy, and an action plan.</span></span>
+          <span class="text-dim" style="font-size:12px;">Uses scrape + analysis data</span>
+          <button class="btn btn-primary btn-sm" id="propose-btn" onclick="startProposal()" style="margin-left:auto;">Generate Proposal</button>
+        </div>
+        <div id="proposal-status" style="display:none;"></div>
+        <div id="proposals-list"></div>
+      </div>
+
+      <!-- New Product Ideator (conditionally hidden) -->
+      <div class="card agent-card" style="margin-bottom:24px;display:none;" id="ideator-section">
+        <div class="agent-header">
+          <span class="agent-badge agent-badge-ideator">AG-007</span>
+          <h3>Product Ideator</h3>
+          <span class="agent-help">?<span class="agent-help-bubble">Analyzes your competitors' products, ads, and positioning to generate new product ideas you could build. Uses AI to identify market gaps and underserved niches based on the competitor data in this container.</span></span>
+          <span class="text-dim" style="font-size:12px;">AI proposes product concepts based on competitor analysis</span>
+          <button class="btn btn-primary btn-sm" id="ideate-btn" onclick="startIdeation()" style="margin-left:auto;">Ideate Product</button>
+        </div>
+        <div id="ideator-status" style="display:none;"></div>
+        <div id="ideator-results"></div>
+      </div>
+
+      <!-- ===== SEGMENT 5: GENERATOR ===== -->
+      <div class="segment-header">
+        <span class="segment-icon">&#9889;</span>
+        <span class="segment-label">GENERATOR</span>
+      </div>
+
+      <!-- Landing Page Generator -->
+      <div class="card agent-card" style="margin-bottom:24px;" id="landing-section">
+        <div class="agent-header">
+          <span class="agent-badge agent-badge-landing">AG-012</span>
+          <h3>Landing Page Generator</h3>
+          <span class="agent-help">?<span class="agent-help-bubble">Generates full HTML landing pages using Claude AI. Incorporates your product info, competitor insights, and keyword strategy to create conversion-optimized pages. You can choose the page type (product, lead gen, sales, squeeze), target keyword, goal, and tone.</span></span>
+          <span class="text-dim" style="font-size:12px;">AI generates conversion-optimized landing pages</span>
+          <button class="btn btn-primary btn-sm" id="landing-btn" onclick="openLandingModal()" style="margin-left:auto;">Generate Page</button>
+        </div>
+        <div id="landing-status" style="display:none;"></div>
+        <div id="landing-list"></div>
+      </div>
+
+      <!-- Quiz Generator -->
+      <div class="card agent-card" style="margin-bottom:24px;" id="quiz-section">
+        <div class="agent-header">
+          <span class="agent-badge agent-badge-quiz">AG-011</span>
+          <h3>Quiz Generator</h3>
+          <span class="agent-help">?<span class="agent-help-bubble">Generates interactive quizzes using Claude AI. Choose between text-only, text+image, or text+image+video question types. Configure difficulty, number of questions, and add a redirect URL for the end page. Quizzes are self-contained HTML pages with inline CSS and JS.</span></span>
+          <span class="text-dim" style="font-size:12px;">AI generates interactive quizzes</span>
+          <button class="btn btn-primary btn-sm" id="quiz-btn" onclick="openQuizModal()" style="margin-left:auto;">Generate Quiz</button>
+        </div>
+        <div id="quiz-status" style="display:none;"></div>
+        <div id="quiz-list"></div>
+      </div>
+
+      <!-- Image Ad Creator -->
+      <div class="card agent-card" style="margin-bottom:24px;" id="imgad-section">
+        <div class="agent-header">
+          <span class="agent-badge agent-badge-imgad">AG-010</span>
+          <h3>Image Ad Creator</h3>
+          <span class="agent-help">?<span class="agent-help-bubble">Creates complete image ad concepts using Claude AI. For each ad, generates headline, body copy, CTA, visual description, color palette, and ready-to-use prompts for AI image generators (DALL-E, Midjourney, Stable Diffusion, etc). Choose platform, objective, audience, and tone.</span></span>
+          <span class="text-dim" style="font-size:12px;">AI generates ad concepts with copy, visuals & prompts</span>
+          <button class="btn btn-primary btn-sm" id="imgad-btn" onclick="openImageAdModal()" style="margin-left:auto;">Create Ads</button>
+        </div>
+        <div id="imgad-status" style="display:none;"></div>
+        <div id="imgad-list"></div>
+      </div>
+
+      <!-- Hidden: Prompt Generator -->
+      <div class="card agent-card" style="margin-bottom:24px;display:none;" id="agent4-section">
+        <div class="agent-header">
+          <span class="agent-badge agent-badge-4">AG-006</span>
+          <h3>Prompt Generator</h3>
+          <span class="agent-help">?<span class="agent-help-bubble">Takes a completed AI proposal and generates detailed, ready-to-use prompts for creating marketing assets — ad copy, social media posts, email campaigns, blog articles, and more. Each prompt is tailored to the strategy outlined in the proposal.</span></span>
+          <span class="text-dim" style="font-size:12px;">Creates detailed prompts from proposals</span>
+        </div>
+        <div id="prompts-list"></div>
+      </div>
+
+      </div><!-- /.container-main -->
+
+      <!-- Right sidebar: Products & Competitors -->
+      <aside class="container-sidebar" id="entries-section">
+        <div class="card sidebar-sticky">
+          <h3 style="margin-bottom:16px;">Products & Competitors</h3>
+          <div id="entries-list"></div>
+        </div>
+      </aside>
+
+      </div><!-- /.container-layout -->
+
+    </div>
+  </main>
+
+  <!-- Scrape Options Modal -->
+  <div id="scrape-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-content card" style="max-width:420px;">
+      <h3 style="margin-bottom:16px;">Scrape Options</h3>
+      <div id="scrape-modal-entry" style="display:none;margin-bottom:12px;">
+        <span class="text-dim" style="font-size:13px;">Scraping: </span><strong id="scrape-modal-entry-name"></strong>
+      </div>
+      <div style="margin-bottom:16px;">
+        <label style="font-size:13px;font-weight:600;display:block;margin-bottom:8px;">Platforms</label>
+        <div style="display:flex;gap:12px;">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;">
+            <input type="checkbox" id="scrape-opt-fb" checked> Facebook Ads
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;">
+            <input type="checkbox" id="scrape-opt-google" checked> Google Ads
+          </label>
+        </div>
+      </div>
+      <div style="display:flex;gap:16px;margin-bottom:16px;">
+        <div style="flex:1;">
+          <label for="scrape-opt-fb-limit" style="font-size:13px;font-weight:600;display:block;margin-bottom:4px;">Facebook Limit</label>
+          <input type="number" id="scrape-opt-fb-limit" min="0" max="500" value="0" placeholder="0 = all" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px;">
+          <div class="hint" style="font-size:11px;margin-top:2px;">0 = scrape all</div>
+        </div>
+        <div style="flex:1;">
+          <label for="scrape-opt-google-limit" style="font-size:13px;font-weight:600;display:block;margin-bottom:4px;">Google Limit</label>
+          <input type="number" id="scrape-opt-google-limit" min="0" max="500" value="0" placeholder="0 = all" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px;">
+          <div class="hint" style="font-size:11px;margin-top:2px;">0 = scrape all</div>
+        </div>
+      </div>
+      <div style="margin-bottom:16px;">
+        <label for="scrape-opt-sort" style="font-size:13px;font-weight:600;display:block;margin-bottom:4px;">Sort By (for limiting)</label>
+        <select id="scrape-opt-sort" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px;">
+          <option value="impressions">Impressions (highest first)</option>
+          <option value="date">Date (newest first)</option>
+          <option value="default">Default order</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button class="btn btn-ghost btn-sm" onclick="closeScrapeModal()">Cancel</button>
+        <button class="btn btn-primary btn-sm" id="scrape-modal-start-btn" onclick="submitScrapeModal()">Start Scrape</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Proposal Modal -->
+  <div id="proposal-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-content card">
+      <h3 style="margin-bottom:16px;">Magic AI</h3>
+      <div id="proposal-modal-body"></div>
+      <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end;">
+        <button class="btn btn-ghost btn-sm" onclick="closeProposalModal()">Cancel</button>
+        <button class="btn btn-primary btn-sm" id="modal-generate-btn" onclick="submitProposalModal()">Generate Proposal</button>
+      </div>
+    </div>
+  </div>
+  <!-- SEO Analysis Modal -->
+  <div id="seo-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-content card" style="max-width:520px;">
+      <h3 style="margin-bottom:16px;">SEO Analysis</h3>
+      <div style="margin-bottom:12px;">
+        <span class="text-dim" style="font-size:13px;">Analyzing: </span><strong id="seo-modal-comp-name"></strong>
+        <div class="text-dim" style="font-size:12px;margin-top:2px;" id="seo-modal-comp-website"></div>
+      </div>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label style="font-size:13px;font-weight:600;">Focus Instructions <span class="text-dim" style="font-weight:400;">(optional)</span></label>
+        <textarea id="seo-focus-instructions" rows="5" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;font-family:inherit;resize:vertical;"
+          placeholder="e.g. Focus on keyword gaps in the health supplements niche, analyze their landing page conversion optimization, check their blog content strategy..."></textarea>
+        <div class="hint">Define what you want the SEO analysis to focus on. Leave empty for a general SEO audit.</div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button class="btn btn-ghost btn-sm" onclick="closeSeoModal()">Cancel</button>
+        <button class="btn btn-primary btn-sm" id="seo-modal-start-btn" onclick="submitSeoModal()">Run SEO Analysis</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Own-Product SEO Audit Modal -->
+  <div id="seo-own-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-content card" style="max-width:520px;">
+      <h3 style="margin-bottom:16px;">SEO Audit — My Product</h3>
+      <div style="margin-bottom:12px;">
+        <span class="text-dim" style="font-size:13px;">Auditing: </span><strong id="seo-own-modal-name"></strong>
+        <div class="text-dim" style="font-size:12px;margin-top:2px;" id="seo-own-modal-website"></div>
+      </div>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label style="font-size:13px;font-weight:600;">Focus Instructions <span class="text-dim" style="font-weight:400;">(optional)</span></label>
+        <textarea id="seo-own-focus-instructions" rows="5" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;font-family:inherit;resize:vertical;"
+          placeholder="e.g. Focus on our blog content strategy, check technical SEO issues, analyze our landing page optimization..."></textarea>
+        <div class="hint">Define what you want the SEO audit to focus on. Leave empty for a full audit.</div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button class="btn btn-ghost btn-sm" onclick="closeSeoOwnModal()">Cancel</button>
+        <button class="btn btn-primary btn-sm" id="seo-own-modal-start-btn" onclick="submitSeoOwnModal()">Run SEO Audit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Google Ads Keyword Ideas Modal -->
+  <div id="gads-keyword-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-content card" style="max-width:460px;">
+      <h3 style="margin-bottom:16px;">Get Keyword Ideas</h3>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label style="font-size:13px;font-weight:600;">Seed Keywords</label>
+        <input type="text" id="gads-seed-keywords" placeholder="e.g. running shoes, fitness gear" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;">
+        <div class="hint">Comma-separated keywords to generate ideas from</div>
+      </div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label style="font-size:13px;font-weight:600;">Page URL <span class="text-dim" style="font-weight:400;">(optional)</span></label>
+        <input type="text" id="gads-page-url" placeholder="https://example.com/product" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;">
+      </div>
+      <div style="display:flex;gap:12px;margin-bottom:12px;">
+        <div class="form-group" style="flex:1;margin-bottom:0;">
+          <label style="font-size:13px;font-weight:600;">Country</label>
+          <select id="gads-geo-target" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;">
+            <option value="2840">United States</option>
+            <option value="2826">United Kingdom</option>
+            <option value="2792">Turkey</option>
+            <option value="2276">Germany</option>
+            <option value="2250">France</option>
+            <option value="2380">Italy</option>
+            <option value="2724">Spain</option>
+            <option value="2528">Netherlands</option>
+            <option value="2056">Belgium</option>
+            <option value="2040">Austria</option>
+            <option value="2756">Switzerland</option>
+            <option value="2616">Poland</option>
+            <option value="2752">Sweden</option>
+            <option value="2578">Norway</option>
+            <option value="2208">Denmark</option>
+            <option value="2246">Finland</option>
+            <option value="2620">Portugal</option>
+            <option value="2300">Greece</option>
+            <option value="2203">Czech Republic</option>
+            <option value="2642">Romania</option>
+            <option value="2348">Hungary</option>
+            <option value="2100">Bulgaria</option>
+            <option value="2191">Croatia</option>
+            <option value="2688">Serbia</option>
+            <option value="2807">North Macedonia</option>
+            <option value="2070">Bosnia and Herzegovina</option>
+            <option value="2499">Montenegro</option>
+            <option value="2008">Albania</option>
+            <option value="2196">Cyprus</option>
+            <option value="2428">Latvia</option>
+            <option value="2440">Lithuania</option>
+            <option value="2233">Estonia</option>
+            <option value="2703">Slovakia</option>
+            <option value="2705">Slovenia</option>
+            <option value="2372">Ireland</option>
+            <option value="2124">Canada</option>
+            <option value="2036">Australia</option>
+            <option value="2554">New Zealand</option>
+            <option value="2356">India</option>
+            <option value="2076">Brazil</option>
+            <option value="2484">Mexico</option>
+            <option value="2392">Japan</option>
+            <option value="2410">South Korea</option>
+            <option value="2156">China</option>
+            <option value="2682">Saudi Arabia</option>
+            <option value="2784">United Arab Emirates</option>
+            <option value="2818">Egypt</option>
+            <option value="2710">South Africa</option>
+            <option value="2032">Argentina</option>
+            <option value="2170">Colombia</option>
+            <option value="2152">Chile</option>
+          </select>
+        </div>
+        <div class="form-group" style="flex:1;margin-bottom:0;">
+          <label style="font-size:13px;font-weight:600;">Language</label>
+          <select id="gads-language" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;">
+            <option value="1000">English</option>
+            <option value="1012">Turkish</option>
+            <option value="1001">German</option>
+            <option value="1002">French</option>
+            <option value="1004">Spanish</option>
+            <option value="1003">Italian</option>
+            <option value="1010">Portuguese</option>
+            <option value="1011">Dutch</option>
+            <option value="1030">Polish</option>
+            <option value="1015">Swedish</option>
+            <option value="1013">Norwegian</option>
+            <option value="1009">Danish</option>
+            <option value="1005">Japanese</option>
+            <option value="1012">Korean</option>
+            <option value="1017">Chinese (Simplified)</option>
+            <option value="1019">Arabic</option>
+            <option value="1023">Hindi</option>
+            <option value="1024">Russian</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button class="btn btn-ghost btn-sm" onclick="closeGadsKeywordModal()">Cancel</button>
+        <button class="btn btn-primary btn-sm" onclick="submitGadsKeywordModal()">Get Ideas</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Keyword Ideator Modal -->
+  <div id="keyword-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-content card" style="max-width:480px;">
+      <h3 style="margin-bottom:16px;">Keyword Strategy Options</h3>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label style="font-size:13px;font-weight:600;">Niche / Market <span class="text-dim" style="font-weight:400;">(optional)</span></label>
+        <input type="text" id="keyword-niche" placeholder="e.g. organic skincare, B2B SaaS" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;">
+      </div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label style="font-size:13px;font-weight:600;">Goals <span class="text-dim" style="font-weight:400;">(optional)</span></label>
+        <textarea id="keyword-goals" rows="3" placeholder="e.g. Drive organic traffic, improve ad ROI, rank for commercial keywords..." style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;font-family:inherit;resize:vertical;"></textarea>
+      </div>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label style="font-size:13px;font-weight:600;">Budget Level <span class="text-dim" style="font-weight:400;">(optional)</span></label>
+        <select id="keyword-budget" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;">
+          <option value="">Not specified</option>
+          <option value="low">Low — Focus on organic / free tactics</option>
+          <option value="medium">Medium — Mix of organic and paid</option>
+          <option value="high">High — Aggressive paid + organic</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button class="btn btn-ghost btn-sm" onclick="closeKeywordModal()">Cancel</button>
+        <button class="btn btn-primary btn-sm" onclick="submitKeywordModal()">Generate Strategy</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RPS Test Ideator Modal -->
+  <div id="testplan-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-content card" style="max-width:520px;">
+      <h3 style="margin-bottom:16px;">RPS Test Options</h3>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label style="font-size:13px;font-weight:600;">Focus Area <span class="text-dim" style="font-weight:400;">(optional)</span></label>
+        <select id="testplan-focus" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;">
+          <option value="">Auto-detect from data</option>
+          <option value="expansion">Expansion — New geos, audiences, angles</option>
+          <option value="optimization">Optimization — Improve existing campaigns</option>
+          <option value="mvp">MVP Validation — Test product-market fit</option>
+          <option value="creative">Creative Testing — New ad formats, messaging</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label style="font-size:13px;font-weight:600;">Target Channels <span class="text-dim" style="font-weight:400;">(optional)</span></label>
+        <div style="display:flex;flex-wrap:wrap;gap:12px;padding:4px 0;">
+          <label style="display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer;">
+            <input type="checkbox" class="testplan-channel-cb" value="google_search" style="accent-color:var(--primary);"> Google Search
+          </label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer;">
+            <input type="checkbox" class="testplan-channel-cb" value="google_display" style="accent-color:var(--primary);"> Google Display
+          </label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer;">
+            <input type="checkbox" class="testplan-channel-cb" value="facebook" style="accent-color:var(--primary);"> Facebook
+          </label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer;">
+            <input type="checkbox" class="testplan-channel-cb" value="instagram" style="accent-color:var(--primary);"> Instagram
+          </label>
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label style="font-size:13px;font-weight:600;">Budget Constraint <span class="text-dim" style="font-weight:400;">(optional)</span></label>
+        <input type="text" id="testplan-budget" placeholder="e.g. $500 total, $50/day max" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;">
+      </div>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label style="font-size:13px;font-weight:600;">Additional Instructions <span class="text-dim" style="font-weight:400;">(optional)</span></label>
+        <textarea id="testplan-instructions" rows="3" placeholder="e.g. Focus on German market, test video vs image ads..." style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;font-family:inherit;resize:vertical;"></textarea>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button class="btn btn-ghost btn-sm" onclick="closeTestPlanModal()">Cancel</button>
+        <button class="btn btn-primary btn-sm" onclick="submitTestPlanModal()">Generate RPS Test</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Landing Page Modal -->
+  <div id="landing-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-content card" style="max-width:500px;">
+      <h3 style="margin-bottom:16px;">Landing Page Options</h3>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label style="font-size:13px;font-weight:600;">Page Type</label>
+        <select id="landing-page-type" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;">
+          <option value="landing_page">Landing Page</option>
+          <option value="product_page">Product Page</option>
+          <option value="lead_gen">Lead Generation</option>
+          <option value="sales_page">Long-form Sales Page</option>
+          <option value="squeeze_page">Squeeze Page (Email Capture)</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label style="font-size:13px;font-weight:600;">Target Keyword <span class="text-dim" style="font-weight:400;">(optional)</span></label>
+        <input type="text" id="landing-keyword" placeholder="e.g. best running shoes 2026" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;">
+      </div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label style="font-size:13px;font-weight:600;">Page Goal <span class="text-dim" style="font-weight:400;">(optional)</span></label>
+        <input type="text" id="landing-goal" placeholder="e.g. Get free trial signups, sell product, capture emails" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;">
+      </div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label style="font-size:13px;font-weight:600;">Tone <span class="text-dim" style="font-weight:400;">(optional)</span></label>
+        <select id="landing-tone" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;">
+          <option value="">Auto-detect from brand</option>
+          <option value="professional">Professional</option>
+          <option value="casual">Casual & Friendly</option>
+          <option value="urgent">Urgent / Scarcity</option>
+          <option value="luxury">Premium / Luxury</option>
+          <option value="playful">Playful / Fun</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label style="font-size:13px;font-weight:600;">Custom Instructions <span class="text-dim" style="font-weight:400;">(optional)</span></label>
+        <textarea id="landing-instructions" rows="3" placeholder="e.g. Include a comparison table, use social proof from reviews..." style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;font-family:inherit;resize:vertical;"></textarea>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button class="btn btn-ghost btn-sm" onclick="closeLandingModal()">Cancel</button>
+        <button class="btn btn-primary btn-sm" onclick="submitLandingModal()">Generate Page</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Image Ad Creator Modal -->
+  <div id="imgad-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-content card" style="max-width:520px;">
+      <h3 style="margin-bottom:16px;">Image Ad Options</h3>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label style="font-size:13px;font-weight:600;">Platform</label>
+        <select id="imgad-platform" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;">
+          <option value="">All Platforms</option>
+          <option value="facebook">Facebook / Instagram</option>
+          <option value="google">Google Display Network</option>
+          <option value="linkedin">LinkedIn</option>
+          <option value="tiktok">TikTok</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label style="font-size:13px;font-weight:600;">Objective</label>
+        <select id="imgad-objective" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;">
+          <option value="">General Awareness</option>
+          <option value="conversions">Conversions / Sales</option>
+          <option value="traffic">Website Traffic</option>
+          <option value="leads">Lead Generation</option>
+          <option value="engagement">Engagement</option>
+          <option value="app_installs">App Installs</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label style="font-size:13px;font-weight:600;">Target Audience <span class="text-dim" style="font-weight:400;">(optional)</span></label>
+        <input type="text" id="imgad-audience" placeholder="e.g. Women 25-45 interested in fitness" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;">
+      </div>
+      <div style="display:flex;gap:12px;margin-bottom:12px;">
+        <div class="form-group" style="flex:1;margin-bottom:0;">
+          <label style="font-size:13px;font-weight:600;">Tone</label>
+          <select id="imgad-tone" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;">
+            <option value="">Auto</option>
+            <option value="bold">Bold & Attention-grabbing</option>
+            <option value="minimal">Minimal & Clean</option>
+            <option value="playful">Playful & Colorful</option>
+            <option value="luxury">Premium / Luxury</option>
+          </select>
+        </div>
+        <div class="form-group" style="flex:1;margin-bottom:0;">
+          <label style="font-size:13px;font-weight:600;">Ad Count</label>
+          <input type="number" id="imgad-count" min="1" max="10" value="3" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;">
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label style="font-size:13px;font-weight:600;">AI Image Models</label>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;">
+          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);">
+            <input type="checkbox" class="imgad-model-chk" value="nano_banana" checked> Nano Banana
+          </label>
+          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);">
+            <input type="checkbox" class="imgad-model-chk" value="dalle" checked> ChatGPT / DALL-E
+          </label>
+          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);">
+            <input type="checkbox" class="imgad-model-chk" value="midjourney" checked> Midjourney
+          </label>
+          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);">
+            <input type="checkbox" class="imgad-model-chk" value="nanogpt"> NanoGPT
+          </label>
+          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);">
+            <input type="checkbox" class="imgad-model-chk" value="stable_diffusion"> Stable Diffusion
+          </label>
+          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);">
+            <input type="checkbox" class="imgad-model-chk" value="ideogram"> Ideogram
+          </label>
+          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);">
+            <input type="checkbox" class="imgad-model-chk" value="flux"> Flux
+          </label>
+        </div>
+        <div class="hint">Select which AI image tools to generate prompts for</div>
+      </div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label style="font-size:13px;font-weight:600;">Color Scheme <span class="text-dim" style="font-weight:400;">(optional)</span></label>
+        <input type="text" id="imgad-colors" placeholder="e.g. blue and white, brand colors #4f46e5" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;">
+      </div>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label style="font-size:13px;font-weight:600;">Custom Instructions <span class="text-dim" style="font-weight:400;">(optional)</span></label>
+        <textarea id="imgad-instructions" rows="3" placeholder="e.g. Include product screenshots, use lifestyle photography style..." style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;font-family:inherit;resize:vertical;"></textarea>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button class="btn btn-ghost btn-sm" onclick="closeImageAdModal()">Cancel</button>
+        <button class="btn btn-primary btn-sm" onclick="submitImageAdModal()">Create Ads</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Case Study Upload Modal -->
+  <div id="casestudy-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-content card" style="max-width:480px;">
+      <h3 style="margin-bottom:16px;">Upload Case Study</h3>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label style="font-size:13px;font-weight:600;">Source Type</label>
+        <select id="cs-source-type" onchange="toggleCsSourceInput()" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;">
+          <option value="txt">Text File (.txt, .md)</option>
+          <option value="pdf">PDF Document</option>
+          <option value="image">Image (screenshot)</option>
+          <option value="url">URL (web page)</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:12px;" id="cs-file-group">
+        <label style="font-size:13px;font-weight:600;">File</label>
+        <input type="file" id="cs-file-input" accept=".txt,.text,.md,.csv" style="width:100%;font-size:13px;">
+      </div>
+      <div class="form-group" style="margin-bottom:12px;display:none;" id="cs-url-group">
+        <label style="font-size:13px;font-weight:600;">URL</label>
+        <input type="text" id="cs-url-input" placeholder="https://example.com/case-study" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;">
+      </div>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label style="font-size:13px;font-weight:600;">Associate with Competitor <span class="text-dim" style="font-weight:400;">(optional)</span></label>
+        <select id="cs-competitor-select" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;">
+          <option value="">None (general)</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button class="btn btn-ghost btn-sm" onclick="closeCaseStudyModal()">Cancel</button>
+        <button class="btn btn-primary btn-sm" onclick="submitCaseStudy()">Analyze</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settings-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-content card" style="max-width:520px;">
+      <h3 style="margin-bottom:16px;">Project Settings</h3>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label style="font-size:13px;font-weight:600;">Facebook Pixel ID</label>
+        <input type="text" id="settings-fb-pixel" placeholder="e.g. 123456789012345" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;">
+        <div class="hint">Automatically injected into generated landing pages and quizzes</div>
+      </div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label style="font-size:13px;font-weight:600;">Google Analytics ID</label>
+        <input type="text" id="settings-ga-id" placeholder="e.g. G-XXXXXXXXXX" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;">
+        <div class="hint">GA4 measurement ID — auto-injected into generated HTML</div>
+      </div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
+          <input type="checkbox" id="settings-auto-scrape">
+          Enable auto-scrape every 6 hours (new ads only)
+        </label>
+        <div class="hint">Automatically checks for new ads and saves only unseen ones</div>
+      </div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label style="font-size:13px;font-weight:600;">Custom &lt;head&gt; Code <span class="text-dim" style="font-weight:400;">(optional)</span></label>
+        <textarea id="settings-custom-head" rows="4" placeholder="Any custom scripts/tags to inject in <head>..." style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;font-family:Consolas,Monaco,monospace;resize:vertical;"></textarea>
+      </div>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label style="font-size:13px;font-weight:600;">Custom &lt;body&gt; Code <span class="text-dim" style="font-weight:400;">(optional)</span></label>
+        <textarea id="settings-custom-body" rows="4" placeholder="Any custom scripts to inject before </body>..." style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;font-family:Consolas,Monaco,monospace;resize:vertical;"></textarea>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button class="btn btn-ghost btn-sm" onclick="closeSettingsModal()">Cancel</button>
+        <button class="btn btn-primary btn-sm" onclick="saveSettings()">Save Settings</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quiz Modal -->
+  <div id="quiz-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-content card" style="max-width:520px;">
+      <h3 style="margin-bottom:16px;">Quiz Options</h3>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label style="font-size:13px;font-weight:600;">Topic</label>
+        <input type="text" id="quiz-topic" placeholder="e.g. Digital Marketing Basics, Product Knowledge" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;">
+      </div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label style="font-size:13px;font-weight:600;">Quiz Type</label>
+        <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px;">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;padding:8px 12px;border:1px solid var(--border);border-radius:6px;background:var(--surface);">
+            <input type="radio" name="quiz-type" value="text_only" checked style="accent-color:var(--primary);"> Text Only
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;padding:8px 12px;border:1px solid var(--border);border-radius:6px;background:var(--surface);">
+            <input type="radio" name="quiz-type" value="text_and_image" style="accent-color:var(--primary);"> Text + Image
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;padding:8px 12px;border:1px solid var(--border);border-radius:6px;background:var(--surface);">
+            <input type="radio" name="quiz-type" value="text_image_video" style="accent-color:var(--primary);"> Text + Image + Video
+          </label>
+        </div>
+      </div>
+      <div style="display:flex;gap:12px;margin-bottom:12px;">
+        <div class="form-group" style="flex:1;margin-bottom:0;">
+          <label style="font-size:13px;font-weight:600;">Questions</label>
+          <input type="number" id="quiz-num-questions" min="1" max="20" value="5" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;">
+        </div>
+        <div class="form-group" style="flex:1;margin-bottom:0;">
+          <label style="font-size:13px;font-weight:600;">Difficulty</label>
+          <select id="quiz-difficulty" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;">
+            <option value="easy">Easy</option>
+            <option value="medium" selected>Medium</option>
+            <option value="hard">Hard</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label style="font-size:13px;font-weight:600;">Custom Instructions <span class="text-dim" style="font-weight:400;">(optional)</span></label>
+        <textarea id="quiz-instructions" rows="3" placeholder="e.g. Focus on beginner concepts, make it fun and educational..." style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;font-family:inherit;resize:vertical;"></textarea>
+      </div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label style="font-size:13px;font-weight:600;">Redirect URL <span class="text-dim" style="font-weight:400;">(optional)</span></label>
+        <input type="text" id="quiz-redirect-url" placeholder="https://example.com/offer" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;">
+        <div class="hint">URL to redirect to after quiz completion</div>
+      </div>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label style="font-size:13px;font-weight:600;">Redirect Button Text <span class="text-dim" style="font-weight:400;">(optional)</span></label>
+        <input type="text" id="quiz-redirect-text" placeholder="Continue" value="Continue" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;">
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button class="btn btn-ghost btn-sm" onclick="closeQuizModal()">Cancel</button>
+        <button class="btn btn-primary btn-sm" onclick="submitQuizModal()">Generate Quiz</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/container.js"></script>
+  <script src="/js/entries.js"></script>
+  <script src="/js/container-context.js"></script>
+  <script src="/js/metadata.js"></script>
+  <script src="/js/scraper.js"></script>
+  <script src="/js/scrape-validator.js"></script>
+  <script src="/js/product-ideator.js"></script>
+  <script src="/js/competitor-analyzer.js"></script>
+  <script src="/js/seo-analysis.js"></script>
+  <script src="/js/google-ads.js"></script>
+  <script src="/js/keyword-strategy.js"></script>
+  <script src="/js/test-planner.js"></script>
+  <script src="/js/landing-page.js"></script>
+  <script src="/js/quiz.js"></script>
+  <script src="/js/case-study.js"></script>
+  <script src="/js/image-ads.js"></script>
+  <script src="/js/proposal.js"></script>
+  <script src="/js/prompts.js"></script>
+  <script src="/js/settings.js"></script>
+  <script src="/js/gads-analysis.js"></script>
+  <script>
+    // Initialize after all feature scripts are loaded
+    if (!containerId) {
+      document.getElementById('container-name').textContent = 'No container ID';
+    } else {
+      loadContainer();
+    }
+  </script>
+</body>
+</html>
