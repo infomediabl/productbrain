@@ -46,7 +46,9 @@ router.post('/', async (req, res) => {
   const formatMap = { '1:1': '1080x1080 square feed', '9:16': '1080x1920 vertical story', '16:9': '1200x628 horizontal banner' };
   const formatDesc = formatMap[format] || format || '1:1 square';
 
-  const prompt = `You are an expert ad creative director. Clone and adapt this competitor ad for a different product.
+  const prompt = `${config.APP_CONTEXT}
+
+You are an expert ad creative director. Clone and adapt this competitor ad for a different product.
 
 ORIGINAL AD (from ${source_competitor || 'competitor'}):
 - Headline: ${headline || 'N/A'}

@@ -78,7 +78,9 @@ async function executePromptGeneration(containerId, promptRecordId, proposal, js
     const message = await client.messages.create({
       model: config.AI_MODEL,
       max_tokens: 12288,
-      system: `You are an expert AI image prompt engineer. You take creative briefs for ads and generate highly detailed, production-ready prompts for AI image generation tools.
+      system: `${config.APP_CONTEXT}
+
+You are an expert AI image prompt engineer. You take creative briefs for ads and generate highly detailed, production-ready prompts for AI image generation tools.
 
 Each prompt you generate must be IMMEDIATELY usable in tools like:
 - Nano Banana (direct descriptive prompts)

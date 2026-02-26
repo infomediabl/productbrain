@@ -68,7 +68,9 @@ async function executeQuiz(containerId, quizId, container, options) {
     const message = await client.messages.create({
       model: config.AI_MODEL,
       max_tokens: 32000,
-      system: `You are an expert quiz designer and web developer. You create engaging, interactive quizzes with clean modern HTML, CSS, and JavaScript.
+      system: `${config.APP_CONTEXT}
+
+You are an expert quiz designer and web developer. You create engaging, interactive quizzes with clean modern HTML, CSS, and JavaScript.
 
 CRITICAL RULES:
 1. Output ONLY valid JSON with the structure specified.

@@ -10,6 +10,7 @@
 
 const log = require('../logger');
 const storage = require('../storage');
+const config = require('../config');
 const { injectTrackingCodes } = require('../utils/inject-tracking');
 const { gatherContainerContext } = require('../utils/gather-data');
 
@@ -68,7 +69,9 @@ async function executeLandingPage(containerId, pageId, container, options) {
     const message = await client.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 16000,
-      system: `You are an expert web designer and conversion optimization specialist. You create high-converting landing pages with clean, modern HTML and CSS.
+      system: `${config.APP_CONTEXT}
+
+You are an expert web designer and conversion optimization specialist. You create high-converting landing pages with clean, modern HTML and CSS.
 
 CRITICAL RULES:
 1. Output ONLY valid JSON with the structure specified.

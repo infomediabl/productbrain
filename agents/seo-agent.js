@@ -95,7 +95,9 @@ async function executeSeoAnalysis(containerId, competitorId, analysisId, contain
     const message = await client.messages.create({
       model: config.AI_MODEL,
       max_tokens: config.DEFAULT_MAX_TOKENS,
-      system: `You are a senior competitive intelligence analyst specializing in SEO. Your job is to analyze competitor websites and extract strategies, patterns, and tactics that WE can learn from and replicate for our own product.
+      system: `${config.APP_CONTEXT}
+
+You are a senior competitive intelligence analyst specializing in SEO. Your job is to analyze competitor websites and extract strategies, patterns, and tactics that WE can learn from and replicate for our own product.
 
 You are NOT auditing the competitor or telling them what to fix. Instead, you are studying what they do WELL so we can adopt similar (or better) strategies.
 
@@ -302,7 +304,9 @@ async function executeOwnSeoAnalysis(containerId, analysisId, container, ownAds,
     const message = await client.messages.create({
       model: config.AI_MODEL,
       max_tokens: config.DEFAULT_MAX_TOKENS,
-      system: `You are a senior SEO analyst and digital marketing strategist. You audit websites and provide comprehensive SEO recommendations to help them improve their search rankings and organic traffic.
+      system: `${config.APP_CONTEXT}
+
+You are a senior SEO analyst and digital marketing strategist. You audit websites and provide comprehensive SEO recommendations to help them improve their search rankings and organic traffic.
 
 You receive our own product's website URL and any available ad/context data, and produce a structured SEO audit with actionable improvement recommendations.
 

@@ -335,7 +335,9 @@ Return a JSON object with this structure:
   const message = await client.messages.create({
     model: config.AI_MODEL,
     max_tokens: config.DEFAULT_MAX_TOKENS,
-    system: `You are an expert Google Ads strategist and PPC analyst. Analyze campaign data and provide actionable, data-driven recommendations. Focus on spend efficiency, keyword performance, and growth opportunities. Be specific and practical in your recommendations.
+    system: `${config.APP_CONTEXT}
+
+You are an expert Google Ads strategist and PPC analyst. Analyze campaign data and provide actionable, data-driven recommendations. Focus on spend efficiency, keyword performance, and growth opportunities. Be specific and practical in your recommendations.
 
 CRITICAL: Output ONLY valid JSON matching the structure specified.
 ${config.CONCISENESS_INSTRUCTION}`,

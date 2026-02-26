@@ -71,7 +71,9 @@ async function executeImageAds(containerId, adId, container, options) {
     const message = await client.messages.create({
       model: config.AI_MODEL,
       max_tokens: 12000,
-      system: `You are a senior ad strategist specializing in competitive intelligence and creative curation. Your job is to analyze a pool of competitor ads, identify the highest-performing ones worth cloning, and provide detailed adaptation strategies for the user's product.
+      system: `${config.APP_CONTEXT}
+
+You are a senior ad strategist specializing in competitive intelligence and creative curation. Your job is to analyze a pool of competitor ads, identify the highest-performing ones worth cloning, and provide detailed adaptation strategies for the user's product.
 
 CRITICAL RULES:
 1. Output ONLY valid JSON. No markdown, no code fences, no extra text.

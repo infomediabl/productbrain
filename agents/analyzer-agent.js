@@ -84,7 +84,9 @@ async function executeAnalysis(containerId, competitorId, analysisId, container,
     const message = await client.messages.create({
       model: config.AI_MODEL,
       max_tokens: config.DEFAULT_MAX_TOKENS,
-      system: `You are a senior competitive intelligence analyst specializing in digital advertising. You analyze a single competitor's ad library data and produce a structured analysis.
+      system: `${config.APP_CONTEXT}
+
+You are a senior competitive intelligence analyst specializing in digital advertising. You analyze a single competitor's ad library data and produce a structured analysis.
 
 You receive scraped ad data from Facebook Ads Library and Google Ads Transparency Center for one competitor.
 

@@ -107,7 +107,9 @@ async function executeAnalysis(containerId, studyId, container, options) {
     const message = await client.messages.create({
       model: config.AI_MODEL,
       max_tokens: 8192,
-      system: `You are an expert competitive intelligence analyst. You analyze case studies and extract structured, actionable insights.
+      system: `${config.APP_CONTEXT}
+
+You are an expert competitive intelligence analyst. You analyze case studies and extract structured, actionable insights.
 
 CRITICAL RULES:
 1. Output ONLY valid JSON with the exact structure specified.

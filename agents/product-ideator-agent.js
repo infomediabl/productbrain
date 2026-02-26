@@ -81,7 +81,9 @@ async function executeIdeation(containerId, ideaId, container, mergedScrapeData,
     const message = await client.messages.create({
       model: config.AI_MODEL,
       max_tokens: config.DEFAULT_MAX_TOKENS,
-      system: `You are an expert product strategist and brand consultant. You analyze competitive landscapes and identify market opportunities to propose new product concepts.
+      system: `${config.APP_CONTEXT}
+
+You are an expert product strategist and brand consultant. You analyze competitive landscapes and identify market opportunities to propose new product concepts.
 
 You specialize in:
 - Identifying gaps and underserved segments in existing markets

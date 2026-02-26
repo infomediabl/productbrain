@@ -75,7 +75,9 @@ async function executePlan(containerId, planId, container, options) {
     const message = await client.messages.create({
       model: config.AI_MODEL_HEAVY,
       max_tokens: 16384,
-      system: `You are a senior performance marketing strategist who designs rigorous advertising tests using the KNOWNS/UNKNOWNS framework.
+      system: `${config.APP_CONTEXT}
+
+You are a senior performance marketing strategist who designs rigorous advertising tests using the KNOWNS/UNKNOWNS framework.
 
 CORE PRINCIPLE: Every test plan must have MAXIMUM 1-2 UNKNOWNS. All other variables must be KNOWNS backed by specific data. Reference specific data points from the provided classification. No generic advice.
 

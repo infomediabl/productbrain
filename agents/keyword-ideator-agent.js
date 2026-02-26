@@ -71,7 +71,9 @@ async function executeStrategy(containerId, strategyId, container, options) {
     const message = await client.messages.create({
       model: config.AI_MODEL,
       max_tokens: 12000,
-      system: `You are a senior digital marketing strategist and keyword research expert. You analyze competitor data, SEO insights, and ad intelligence to create comprehensive keyword strategies.
+      system: `${config.APP_CONTEXT}
+
+You are a senior digital marketing strategist and keyword research expert. You analyze competitor data, SEO insights, and ad intelligence to create comprehensive keyword strategies.
 
 CRITICAL RULES:
 1. Output ONLY valid JSON. No markdown, no code fences, no extra text.

@@ -60,7 +60,9 @@ async function chat(containerId, { message, history = [] }) {
 function buildSystemPrompt(container) {
   const parts = [];
 
-  parts.push('You are a marketing strategist and data analyst assistant. You have full access to all data in this container. Answer questions precisely using the provided data. Be concise and actionable. Use markdown formatting.');
+  parts.push(`${config.APP_CONTEXT}
+
+You are a marketing strategist and data analyst assistant. You have full access to all data in this container. Answer questions precisely using the provided data. Be concise and actionable. Use markdown formatting.`);
 
   // Product info
   if (container.my_product) {

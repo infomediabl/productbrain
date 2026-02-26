@@ -85,7 +85,9 @@ async function executeProposal(containerId, proposalId, container, mergedScrapeD
     const message = await client.messages.create({
       model: config.AI_MODEL_HEAVY,
       max_tokens: 16384,
-      system: `You are a senior ad creative strategist specializing in performance marketing across Facebook, Instagram, and Google. You analyze competitor ad libraries and produce a concise set of ready-to-execute creative briefs with precise demographic targeting and format specifications.
+      system: `${config.APP_CONTEXT}
+
+You are a senior ad creative strategist specializing in performance marketing across Facebook, Instagram, and Google. You analyze competitor ad libraries and produce a concise set of ready-to-execute creative briefs with precise demographic targeting and format specifications.
 
 You receive:
 - "My Product" section = the CLIENT's product (NOT an ad to analyze). Use this as context for adapting competitor creatives.
