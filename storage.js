@@ -68,6 +68,7 @@ function ensureFields(container) {
   if (!container.test_plans) container.test_plans = [];
   if (!container.case_studies) container.case_studies = [];
   if (!container.container_context) container.container_context = [];
+  if (!container.keyword_ideas) container.keyword_ideas = [];
   // my_product can be null (no existing product) — don't default it
   return container;
 }
@@ -967,6 +968,53 @@ function getGadsAnalysis(containerId, analysisId) {
   return container.gads_analyses.find(a => a.id === analysisId) || null;
 }
 
+// ========== Keyword Ideas (Google Keyword Planner) CRUD ==========
+
+function addKeywordIdeas(containerId, meta = {}) {
+  return enqueueWrite(containerId, () => {
+    const container = readContainerFile(containerId);
+    if (!container) return null;
+    ensureFields(container);
+    const record = {
+      id: uuidv4(),
+      created_at: new Date().toISOString(),
+      status: 'fetching',
+      result: null,
+      meta: {
+        seed_keywords: meta.seed_keywords || [],
+        url: meta.url || '',
+        geo_targets: meta.geo_targets || [],
+        language: meta.language || '',
+      },
+    };
+    container.keyword_ideas.push(record);
+    container.updated_at = new Date().toISOString();
+    writeContainerFile(container);
+    return record;
+  });
+}
+
+function updateKeywordIdeas(containerId, recordId, status, result) {
+  return enqueueWrite(containerId, () => {
+    const container = readContainerFile(containerId);
+    if (!container) return null;
+    ensureFields(container);
+    const record = container.keyword_ideas.find(r => r.id === recordId);
+    if (!record) return null;
+    record.status = status;
+    if (result !== undefined) record.result = result;
+    writeContainerFile(container);
+    return record;
+  });
+}
+
+function getKeywordIdeas(containerId, recordId) {
+  const container = readContainerFile(containerId);
+  if (!container) return null;
+  ensureFields(container);
+  return container.keyword_ideas.find(r => r.id === recordId) || null;
+}
+
 // ========== Case Study Analyzer CRUD ==========
 
 function addCaseStudy(containerId, meta = {}) {
@@ -1190,6 +1238,8 @@ module.exports = {
   addQuiz, updateQuiz, getQuiz,
   // Google Ads Analysis
   addGadsAnalysis, updateGadsAnalysis, updateGadsAnalysisMeta, getGadsAnalysis,
+  // Keyword Ideas (Google Keyword Planner)
+  addKeywordIdeas, updateKeywordIdeas, getKeywordIdeas,
   // Case Study Analyzer
   addCaseStudy, updateCaseStudy, getCaseStudy,
   // Container Context (Collector)

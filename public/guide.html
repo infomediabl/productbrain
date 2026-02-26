@@ -179,6 +179,7 @@
         <a href="/">Dashboard</a>
         <a href="/guide.html">Guide</a>
         <a href="/chat.html">Chat</a>
+        <a href="/changelog.html">Changelog</a>
         <a href="/add-container.html">New Container</a>
       </nav>
     </div>
@@ -409,8 +410,14 @@
             </button>
             <div id="imagead-details">
               <p>Curates the best competitor ads worth cloning and recommends which AI model to use for each. The curation report shows: ranked ads with effectiveness signals, adaptation strategies with ready-to-use copy, model recommendations, and visual direction.</p>
-              <p>Workflow: <strong>Curate Ads</strong> (AI analyzes all scraped competitor ads) &rarr; <strong>Review Report</strong> (ranked recommendations with adaptation strategies) &rarr; <strong>Clone Ad</strong> (click "Clone This Ad" to jump to the clone section with ad/model/format pre-selected, then generate the image via OpenRouter).</p>
-              <p>Reads scraped ads, competitor analyses, container context, and the latest proposal for informed curation. Select platform, audience, tone, and preferred AI image models before curating.</p>
+              <p><strong>Step-based workflow</strong> (opens in a dedicated page):</p>
+              <ol style="padding-left:20px;margin:8px 0;line-height:1.8;">
+                <li><strong>Select Ads</strong> &mdash; Browse all scraped competitor ads with checkboxes. See container context items and metadata as read-only reference. Select/deselect by competitor or individually.</li>
+                <li><strong>Configure</strong> &mdash; Set platform, objective, audience, tone, AI image models, color scheme, and ad count. Custom instructions supported.</li>
+                <li><strong>Report</strong> &mdash; AI curates the selected ads and generates ranked recommendations with adaptation strategies, model recommendations, and creative guidelines. Each section has a <strong>Push</strong> button to send findings to Container Context.</li>
+              </ol>
+              <p>After viewing the report, use <strong>Clone This Ad</strong> to jump to the clone section with the ad, model, and format pre-selected, then generate the actual image via OpenRouter.</p>
+              <p>Reads scraped ads, competitor analyses, container context, and the latest proposal for informed curation. Old report links (<code>?cid=X&amp;adId=Y</code>) still work for viewing existing curations.</p>
             </div>
           </div>
 

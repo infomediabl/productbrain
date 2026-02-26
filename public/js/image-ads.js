@@ -2,15 +2,14 @@
  * Image Ad Curator UI
  * Page: container.html (loaded after container.js)
  * Globals used: container, containerId, esc() — from container.js
- * Globals defined: renderImageAds(), openImageAdModal(), closeImageAdModal(),
- *   submitImageAdModal(), pollImageAds()
- * API: POST /api/containers/:id/image-ads, GET /api/containers/:id/image-ads/:adId
- * Interacts with: Links to image-ads.html for full report view
+ * Globals defined: renderImageAds(), pollImageAds()
+ * API: GET /api/containers/:id/image-ads/:adId
+ * Interacts with: Links to image-ads.html for workflow and report views
  *
- * Curates best competitor ads for cloning with AI model recommendations.
- * Supports platform, objective, audience, tone, and AI model selection.
+ * Dashboard section showing curation history. "Curate Ads" button navigates
+ * to the standalone workflow page (image-ads.html?cid=X).
  */
-// ========== Image Ad Creator ==========
+// ========== Image Ad Curator ==========
 
 function renderImageAds() {
   const el = document.getElementById('imgad-list');
@@ -43,65 +42,6 @@ function renderImageAds() {
   }).join('');
 }
 
-function openImageAdModal() {
-  document.getElementById('imgad-platform').value = '';
-  document.getElementById('imgad-objective').value = '';
-  document.getElementById('imgad-audience').value = '';
-  document.getElementById('imgad-tone').value = '';
-  document.getElementById('imgad-count').value = '5';
-  document.getElementById('imgad-colors').value = '';
-  document.getElementById('imgad-instructions').value = '';
-  document.getElementById('imgad-modal').style.display = 'flex';
-}
-
-function closeImageAdModal() {
-  document.getElementById('imgad-modal').style.display = 'none';
-}
-
-async function submitImageAdModal() {
-  const platform = document.getElementById('imgad-platform').value;
-  const objective = document.getElementById('imgad-objective').value;
-  const target_audience = document.getElementById('imgad-audience').value.trim();
-  const tone = document.getElementById('imgad-tone').value;
-  const ad_count = parseInt(document.getElementById('imgad-count').value) || 3;
-  const color_scheme = document.getElementById('imgad-colors').value.trim();
-  const custom_instructions = document.getElementById('imgad-instructions').value.trim();
-  const image_models = [];
-  document.querySelectorAll('.imgad-model-chk:checked').forEach(chk => image_models.push(chk.value));
-  if (image_models.length === 0) { alert('Select at least one AI image model'); return; }
-  closeImageAdModal();
-
-  const btn = document.getElementById('imgad-btn');
-  btn.disabled = true;
-  btn.textContent = 'Curating...';
-  const statusEl = document.getElementById('imgad-status');
-  statusEl.style.display = 'block';
-  statusEl.className = 'status-bar running';
-  statusEl.innerHTML = '<div class="spinner"></div><span>AI is curating best ads to clone...</span>';
-
-  try {
-    const res = await fetch(`/api/containers/${containerId}/image-ads`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ platform, objective, target_audience, tone, ad_count, color_scheme, image_models, custom_instructions }),
-    });
-    const data = await res.json();
-    if (res.ok) {
-      pollImageAds(data.ad_id);
-    } else {
-      statusEl.style.display = 'none';
-      btn.disabled = false;
-      btn.textContent = 'Curate Ads';
-      alert(data.error || 'Failed to start');
-    }
-  } catch (e) {
-    statusEl.style.display = 'none';
-    btn.disabled = false;
-    btn.textContent = 'Curate Ads';
-    alert('Failed to start ad curation');
-  }
-}
-
 async function pollImageAds(adId) {
   try {
     const res = await fetch(`/api/containers/${containerId}/image-ads/${adId}`);
@@ -119,5 +59,3 @@ async function pollImageAds(adId) {
     setTimeout(() => pollImageAds(adId), 5000);
   }
 }
-
-

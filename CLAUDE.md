@@ -113,6 +113,7 @@ Additional dependencies per agent:
 | `context-formatter.js` | formatBrief(sourceType, content, sectionName) | container-context route, gather-data.js |
 | `summarize-ads.js` | summarizeAds(ads, options) | analyzer-agent, proposal-agent |
 | `inject-tracking.js` | injectTrackingCodes(html, settings) | quiz-agent, landing-page-agent |
+| `changelog.js` | updateChangelog(), getChangelog() | server.js (startup + API route) |
 
 ---
 
@@ -147,11 +148,12 @@ Additional dependencies per agent:
 | `seo-analysis.html` | `seo-analysis-page.js` | GET /api/containers/:id/seo-analysis/:key/:id, POST /api/containers/:id/context |
 | `proposal.html` | `proposal-report.js` | GET /api/containers/:id/proposals/:id |
 | `test-plan.html` | `test-plan-report.js` | GET /api/containers/:id/test-plans/:id |
-| `image-ads.html` | `image-ads-report.js` | GET /api/containers/:id/image-ads/:id |
+| `image-ads.html` | `image-ads-report.js` | Dual-mode: Workflow (?cid=X) — GET /api/containers/:id, POST /api/containers/:id/image-ads, POST /api/containers/:id/context; Report (?cid=X&adId=Y) — GET /api/containers/:id/image-ads/:id, POST /api/containers/:id/context |
 | `scrape-details.html` | `scrape-details.js` | GET /api/containers/:id/scrapes/:id |
 | `chat.html` | `chat-page.js` | GET /api/containers, POST /api/containers/:id/chat |
 | `keyword-strategy.html` | `keyword-strategy-page.js` | GET /api/containers, GET /api/containers/:id, POST /api/containers/:id/keyword-strategy, GET /api/containers/:id/keyword-strategies/:id |
 | `guide.html` | `guide.js` | None (static content) |
+| `changelog.html` | `changelog.js` | GET /api/changelog |
 
 ---
 
@@ -174,8 +176,11 @@ All data stored in `data/<container-id>.json`. Key fields:
 - `test_plans[]` — A/B test plans
 - `case_studies[]` — Case study analyses
 - `gads_analyses[]` — Google Ads campaign analyses
+- `keyword_ideas[]` — Persisted Google Keyword Planner results (search volume, CPC bids, competition)
 - `container_context[]` — Curated insights (content + text_brief)
 - `settings{}` — FB Pixel, GA4, custom code, user context, `auto_scrape_enabled` (bool)
+
+Also: `data/changelog.json` — Git commit history + app-start events (not per-container)
 
 ## Container Context System
 

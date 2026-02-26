@@ -1,20 +1,24 @@
 /**
- * Image Ads Report + Clone from Scraped Ads — STANDALONE PAGE
+ * Image Ads Report + Workflow — STANDALONE PAGE (dual-mode)
  * Page: image-ads.html (NOT loaded by container.html)
  * Globals used: (none — self-contained; defines own containerId, esc())
- * Globals defined: containerId, adId, containerData, scrapedAdsFlat, loadImageAds(),
+ * Globals defined: containerId, adId, containerData, scrapedAdsFlat, selectedAdIndices,
+ *   currentStep, loadImageAds(), loadWorkflow(), goToStep(),
+ *   renderStep1(), renderStep2(), renderStep3(),
  *   renderImageAds(), renderOptionsUsed(), renderCuratedAds(), renderModelSummary(),
  *   renderAdConcepts(), scrollToCloneWithAd(), buildScrapedAdsList(),
  *   renderCloneSection(), previewSelectedAd(), cloneAd(), renderCloneResult(),
+ *   pushItem(), registerPushItem(), pushRegisteredItem(),
  *   copyText(), esc(), escAttr()
  * API: GET /api/containers/:id/image-ads/:adId, GET /api/containers/:id,
- *   POST /api/containers/:id/clone-ad
+ *   POST /api/containers/:id/image-ads, POST /api/containers/:id/clone-ad,
+ *   POST /api/containers/:id/context
  *
- * Displays AI-curated competitor ads with clone recommendations, adaptation
- * strategies, and model suggestions. Also provides a "Clone from Scraped Ads"
- * feature that adapts competitor ads via OpenRouter image generation.
+ * Dual-mode page:
+ *   - Workflow mode (?cid=X): multi-step curation workflow (browse ads → configure → report)
+ *   - Report mode (?cid=X&adId=Y): view existing curation report (backward compat)
  */
-// Standalone image ads report page + Clone from Scraped Ads via OpenRouter
+
 const params = new URLSearchParams(window.location.search);
 const containerId = params.get('cid');
 const adId = params.get('adId');
@@ -26,20 +30,36 @@ const backLink = document.getElementById('back-link');
 const printBtn = document.getElementById('print-btn');
 const cloneSection = document.getElementById('clone-section');
 const cloneResult = document.getElementById('clone-result');
+const stepIndicator = document.getElementById('step-indicator');
+const stepSelectDiv = document.getElementById('step-select');
+const stepOptionsDiv = document.getElementById('step-options');
 
 let containerData = null;
 let scrapedAdsFlat = []; // flattened list of all scraped ads
+let selectedAdIndices = new Set(); // indices into scrapedAdsFlat
+let currentStep = 1;
+
+// Push-to-context state
+window._pushItems = [];
 
 if (containerId) {
   backLink.href = `/container.html?id=${containerId}`;
 }
 
-if (!containerId || !adId) {
-  statusText.textContent = 'Missing parameters (cid, adId).';
+if (!containerId) {
+  statusText.textContent = 'Missing container ID (cid).';
   statusBar.className = 'status-bar failed';
-} else {
+} else if (adId) {
+  // Report mode — load existing record
   loadImageAds();
+} else {
+  // Workflow mode — show step-based UI
+  loadWorkflow();
 }
+
+// ============================================================
+// REPORT MODE (existing flow — backward compatible)
+// ============================================================
 
 async function loadImageAds() {
   try {
@@ -90,15 +110,499 @@ async function loadImageAds() {
 }
 
 // ============================================================
-// REPORT RENDERING
+// WORKFLOW MODE
+// ============================================================
+
+async function loadWorkflow() {
+  statusBar.className = 'status-bar running';
+  statusText.textContent = 'Loading container data...';
+
+  try {
+    const cRes = await fetch(`/api/containers/${containerId}`);
+    if (!cRes.ok) {
+      statusText.textContent = 'Container not found.';
+      statusBar.className = 'status-bar failed';
+      statusBar.querySelector('.spinner').style.display = 'none';
+      return;
+    }
+    containerData = await cRes.json();
+
+    statusBar.style.display = 'none';
+    stepIndicator.style.display = '';
+
+    buildScrapedAdsList();
+    renderStep1();
+  } catch (e) {
+    statusText.textContent = 'Error loading container.';
+    statusBar.className = 'status-bar failed';
+    statusBar.querySelector('.spinner').style.display = 'none';
+  }
+}
+
+function goToStep(step) {
+  if (step === 3) return; // step 3 only via generation
+  if (step === 2 && selectedAdIndices.size === 0) return;
+  currentStep = step;
+  updateStepUI();
+}
+
+function updateStepUI() {
+  stepSelectDiv.style.display = currentStep === 1 ? '' : 'none';
+  stepOptionsDiv.style.display = currentStep === 2 ? '' : 'none';
+  contentDiv.style.display = currentStep === 3 ? '' : 'none';
+  cloneSection.style.display = currentStep === 3 && scrapedAdsFlat.length > 0 ? '' : 'none';
+
+  const dots = [
+    document.getElementById('step-dot-1'),
+    document.getElementById('step-dot-2'),
+    document.getElementById('step-dot-3'),
+  ];
+  dots.forEach((dot, i) => {
+    const stepNum = i + 1;
+    if (stepNum === currentStep) {
+      dot.style.background = 'var(--primary)';
+      dot.style.color = '#fff';
+      dot.style.border = 'none';
+    } else if (stepNum < currentStep) {
+      dot.style.background = 'var(--success)';
+      dot.style.color = '#fff';
+      dot.style.border = 'none';
+    } else {
+      dot.style.background = 'var(--surface)';
+      dot.style.color = 'var(--text-dim)';
+      dot.style.border = '1px solid var(--border)';
+    }
+  });
+}
+
+// ============================================================
+// STEP 1: BROWSE & SELECT ADS
+// ============================================================
+
+function renderStep1() {
+  currentStep = 1;
+  updateStepUI();
+
+  let html = '';
+
+  // Container info header
+  const name = containerData?.name || containerData?.my_product?.name || 'Container';
+  html += `<div class="card" style="margin-bottom:16px;border-left:3px solid var(--primary);">
+    <h2 style="margin-bottom:4px;">${esc(name)}</h2>
+    <div class="text-dim" style="font-size:13px;">Select competitor ads to curate, then configure options.</div>
+  </div>`;
+
+  // Scraped ads with checkboxes
+  if (scrapedAdsFlat.length === 0) {
+    html += `<div class="card" style="margin-bottom:16px;">
+      <div class="text-dim" style="padding:8px 0;">No scraped ads found. <a href="/container.html?id=${containerId}">Go back</a> and run the scraper first.</div>
+    </div>`;
+  } else {
+    html += `<div class="card" style="margin-bottom:16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <h3 style="margin:0;">Scraped Ads</h3>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span id="select-count" class="text-dim" style="font-size:12px;">${selectedAdIndices.size} selected</span>
+          <button class="btn btn-ghost btn-sm" onclick="toggleAllAds(true)">Select All</button>
+          <button class="btn btn-ghost btn-sm" onclick="toggleAllAds(false)">Deselect All</button>
+        </div>
+      </div>`;
+
+    // Group by competitor
+    const groups = {};
+    for (let i = 0; i < scrapedAdsFlat.length; i++) {
+      const ad = scrapedAdsFlat[i];
+      if (!groups[ad._compName]) groups[ad._compName] = [];
+      groups[ad._compName].push({ idx: i, ad });
+    }
+
+    for (const [compName, ads] of Object.entries(groups)) {
+      html += `<div style="margin-bottom:16px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <strong style="font-size:14px;">${esc(compName)}</strong>
+          <span class="badge" style="font-size:10px;">${ads.length} ads</span>
+          <button class="btn btn-ghost btn-sm" style="font-size:10px;padding:2px 8px;" onclick="toggleCompetitorAds('${esc(compName)}', true)">All</button>
+          <button class="btn btn-ghost btn-sm" style="font-size:10px;padding:2px 8px;" onclick="toggleCompetitorAds('${esc(compName)}', false)">None</button>
+        </div>`;
+
+      for (const { idx, ad } of ads) {
+        const checked = selectedAdIndices.has(idx) ? 'checked' : '';
+        const headline = ad.headline || ad.ad_text || ad.ocr_text || 'No text';
+        const platform = ad._source || '';
+
+        // Pick best image
+        let imgSrc = ad.local_media_path || ad.screenshot_path || ad.media_url || '';
+        if (imgSrc && !imgSrc.startsWith('http') && !imgSrc.startsWith('/')) imgSrc = '/' + imgSrc;
+
+        html += `<label style="display:flex;align-items:flex-start;gap:10px;padding:8px 10px;border:1px solid var(--border);border-radius:6px;margin-bottom:4px;cursor:pointer;background:${selectedAdIndices.has(idx) ? 'var(--surface2)' : 'transparent'};" data-comp="${esc(compName)}" data-idx="${idx}">
+          <input type="checkbox" ${checked} onchange="toggleAd(${idx}, this.checked)" style="margin-top:3px;flex-shrink:0;">
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
+              <span class="badge" style="font-size:10px;">${esc(platform)}</span>
+              ${ad.is_new ? '<span class="badge" style="font-size:9px;background:#dcfce7;color:#166534;">NEW</span>' : ''}
+              ${ad.is_sponsored ? '<span class="badge" style="font-size:9px;background:#fef3c7;color:#92400e;">Sponsored</span>' : ''}
+            </div>
+            <div style="font-size:13px;font-weight:500;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(headline.substring(0, 80))}</div>
+            ${ad.ad_text && ad.ad_text !== headline ? `<div class="text-dim" style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(ad.ad_text.substring(0, 100))}</div>` : ''}
+            ${ad.cta_text ? `<span class="badge" style="font-size:10px;margin-top:2px;">${esc(ad.cta_text)}</span>` : ''}
+          </div>
+          ${imgSrc ? `<img src="${esc(imgSrc)}" style="width:48px;height:48px;object-fit:cover;border-radius:4px;border:1px solid var(--border);flex-shrink:0;" onerror="this.style.display='none'">` : ''}
+        </label>`;
+      }
+
+      html += `</div>`;
+    }
+
+    html += `</div>`;
+  }
+
+  // Container Context (read-only reference)
+  const contextItems = containerData?.container_context || [];
+  if (contextItems.length > 0) {
+    html += `<div class="card" style="margin-bottom:16px;">
+      <h3 style="margin-bottom:8px;">Container Context <span class="text-dim" style="font-size:12px;font-weight:400;">(${contextItems.length} items — read-only reference)</span></h3>`;
+    for (const item of contextItems) {
+      html += `<div style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;margin-bottom:4px;background:var(--surface);">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="badge" style="font-size:9px;">${esc(item.source_type || '')}</span>
+          <span style="font-size:13px;font-weight:500;">${esc(item.section_name || '')}</span>
+        </div>
+        ${item.text_brief ? `<div class="text-dim" style="font-size:12px;margin-top:2px;max-height:40px;overflow:hidden;">${esc(item.text_brief.substring(0, 150))}</div>` : ''}
+      </div>`;
+    }
+    html += `</div>`;
+  }
+
+  // Metadata (read-only reference)
+  const metadata = containerData?.metadata || [];
+  if (metadata.length > 0) {
+    html += `<div class="card" style="margin-bottom:16px;">
+      <h3 style="margin-bottom:8px;">Metadata <span class="text-dim" style="font-size:12px;font-weight:400;">(${metadata.length} entries — read-only reference)</span></h3>`;
+    for (const m of metadata.slice(0, 10)) {
+      html += `<div style="padding:4px 10px;border:1px solid var(--border);border-radius:6px;margin-bottom:4px;font-size:13px;">
+        <strong>${esc(m.label || m.key || '')}</strong>
+        ${m.value ? `<span class="text-dim"> — ${esc(String(m.value).substring(0, 100))}</span>` : ''}
+      </div>`;
+    }
+    if (metadata.length > 10) {
+      html += `<div class="text-dim" style="font-size:12px;">...and ${metadata.length - 10} more</div>`;
+    }
+    html += `</div>`;
+  }
+
+  // Next button
+  html += `<div style="display:flex;justify-content:flex-end;margin-top:8px;">
+    <button id="step1-next" class="btn btn-primary" onclick="goToStep(2)" ${selectedAdIndices.size === 0 ? 'disabled' : ''}>
+      Next: Configure Options (${selectedAdIndices.size} ads selected) &rarr;
+    </button>
+  </div>`;
+
+  stepSelectDiv.innerHTML = html;
+  stepSelectDiv.style.display = '';
+}
+
+function toggleAd(idx, checked) {
+  if (checked) {
+    selectedAdIndices.add(idx);
+  } else {
+    selectedAdIndices.delete(idx);
+  }
+  updateSelectCount();
+}
+
+function toggleAllAds(selected) {
+  if (selected) {
+    for (let i = 0; i < scrapedAdsFlat.length; i++) selectedAdIndices.add(i);
+  } else {
+    selectedAdIndices.clear();
+  }
+  renderStep1();
+}
+
+function toggleCompetitorAds(compName, selected) {
+  for (let i = 0; i < scrapedAdsFlat.length; i++) {
+    if (scrapedAdsFlat[i]._compName === compName) {
+      if (selected) selectedAdIndices.add(i);
+      else selectedAdIndices.delete(i);
+    }
+  }
+  renderStep1();
+}
+
+function updateSelectCount() {
+  const countEl = document.getElementById('select-count');
+  if (countEl) countEl.textContent = `${selectedAdIndices.size} selected`;
+  const nextBtn = document.getElementById('step1-next');
+  if (nextBtn) {
+    nextBtn.disabled = selectedAdIndices.size === 0;
+    nextBtn.textContent = `Next: Configure Options (${selectedAdIndices.size} ads selected) \u2192`;
+  }
+  // Update checkbox visual backgrounds
+  const labels = stepSelectDiv.querySelectorAll('label[data-idx]');
+  labels.forEach(label => {
+    const idx = parseInt(label.dataset.idx);
+    label.style.background = selectedAdIndices.has(idx) ? 'var(--surface2)' : 'transparent';
+    const chk = label.querySelector('input[type="checkbox"]');
+    if (chk) chk.checked = selectedAdIndices.has(idx);
+  });
+}
+
+// ============================================================
+// STEP 2: CONFIGURE OPTIONS
+// ============================================================
+
+function renderStep2() {
+  currentStep = 2;
+  updateStepUI();
+
+  let html = `<div class="card" style="margin-bottom:16px;">
+    <h3 style="margin-bottom:4px;">Curation Options</h3>
+    <div class="text-dim" style="font-size:13px;margin-bottom:16px;">${selectedAdIndices.size} ads selected for curation. Configure targeting and model preferences.</div>
+
+    <div class="form-group" style="margin-bottom:12px;">
+      <label style="font-size:13px;font-weight:600;">Platform</label>
+      <select id="wf-platform" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;">
+        <option value="">All Platforms</option>
+        <option value="facebook">Facebook / Instagram</option>
+        <option value="google">Google Display Network</option>
+        <option value="linkedin">LinkedIn</option>
+        <option value="tiktok">TikTok</option>
+      </select>
+    </div>
+
+    <div class="form-group" style="margin-bottom:12px;">
+      <label style="font-size:13px;font-weight:600;">Objective</label>
+      <select id="wf-objective" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;">
+        <option value="">General Awareness</option>
+        <option value="conversions">Conversions / Sales</option>
+        <option value="traffic">Website Traffic</option>
+        <option value="leads">Lead Generation</option>
+        <option value="engagement">Engagement</option>
+        <option value="app_installs">App Installs</option>
+      </select>
+    </div>
+
+    <div class="form-group" style="margin-bottom:12px;">
+      <label style="font-size:13px;font-weight:600;">Target Audience <span class="text-dim" style="font-weight:400;">(optional)</span></label>
+      <input type="text" id="wf-audience" placeholder="e.g. Women 25-45 interested in fitness" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;">
+    </div>
+
+    <div style="display:flex;gap:12px;margin-bottom:12px;">
+      <div class="form-group" style="flex:1;margin-bottom:0;">
+        <label style="font-size:13px;font-weight:600;">Tone</label>
+        <select id="wf-tone" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;">
+          <option value="">Auto</option>
+          <option value="bold">Bold & Attention-grabbing</option>
+          <option value="minimal">Minimal & Clean</option>
+          <option value="playful">Playful & Colorful</option>
+          <option value="luxury">Premium / Luxury</option>
+        </select>
+      </div>
+      <div class="form-group" style="flex:1;margin-bottom:0;">
+        <label style="font-size:13px;font-weight:600;">Ad Count</label>
+        <input type="number" id="wf-count" min="1" max="10" value="5" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;">
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:12px;">
+      <label style="font-size:13px;font-weight:600;">AI Image Models</label>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;">
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);">
+          <input type="checkbox" class="wf-model-chk" value="nano_banana" checked> Nano Banana
+        </label>
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);">
+          <input type="checkbox" class="wf-model-chk" value="dalle" checked> ChatGPT / DALL-E
+        </label>
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);">
+          <input type="checkbox" class="wf-model-chk" value="midjourney" checked> Midjourney
+        </label>
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);">
+          <input type="checkbox" class="wf-model-chk" value="nanogpt"> NanoGPT
+        </label>
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);">
+          <input type="checkbox" class="wf-model-chk" value="stable_diffusion"> Stable Diffusion
+        </label>
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);">
+          <input type="checkbox" class="wf-model-chk" value="ideogram"> Ideogram
+        </label>
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);">
+          <input type="checkbox" class="wf-model-chk" value="flux"> Flux
+        </label>
+      </div>
+      <div class="hint">Select which AI image tools to generate prompts for</div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:12px;">
+      <label style="font-size:13px;font-weight:600;">Color Scheme <span class="text-dim" style="font-weight:400;">(optional)</span></label>
+      <input type="text" id="wf-colors" placeholder="e.g. blue and white, brand colors #4f46e5" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;">
+    </div>
+
+    <div class="form-group" style="margin-bottom:16px;">
+      <label style="font-size:13px;font-weight:600;">Custom Instructions <span class="text-dim" style="font-weight:400;">(optional)</span></label>
+      <textarea id="wf-instructions" rows="3" placeholder="e.g. Include product screenshots, use lifestyle photography style..." style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;font-family:inherit;resize:vertical;"></textarea>
+    </div>
+
+    <div style="display:flex;gap:8px;justify-content:space-between;">
+      <button class="btn btn-ghost" onclick="goToStep(1)">&larr; Back to Ad Selection</button>
+      <button class="btn btn-primary" id="wf-curate-btn" onclick="submitWorkflow()">Curate Selected Ads</button>
+    </div>
+  </div>`;
+
+  stepOptionsDiv.innerHTML = html;
+  stepOptionsDiv.style.display = '';
+}
+
+async function submitWorkflow() {
+  const image_models = [];
+  document.querySelectorAll('.wf-model-chk:checked').forEach(chk => image_models.push(chk.value));
+  if (image_models.length === 0) { alert('Select at least one AI image model'); return; }
+
+  // Build selected_ads array from checked indices
+  const selected_ads = [];
+  for (const idx of selectedAdIndices) {
+    const ad = scrapedAdsFlat[idx];
+    selected_ads.push({
+      competitor: ad._compName || '',
+      platform: ad._source || '',
+      headline: ad.headline || '',
+      ad_text: ad.ad_text || '',
+      cta: ad.cta_text || '',
+      media_type: ad.media_type || '',
+      ocr_text: ad.ocr_text || '',
+      destination_url: ad.destination_url || '',
+      extra_data: ad.extra_data || null,
+    });
+  }
+
+  const platform = document.getElementById('wf-platform').value;
+  const objective = document.getElementById('wf-objective').value;
+  const target_audience = document.getElementById('wf-audience').value.trim();
+  const tone = document.getElementById('wf-tone').value;
+  const ad_count = parseInt(document.getElementById('wf-count').value) || 5;
+  const color_scheme = document.getElementById('wf-colors').value.trim();
+  const custom_instructions = document.getElementById('wf-instructions').value.trim();
+
+  const btn = document.getElementById('wf-curate-btn');
+  btn.disabled = true;
+  btn.textContent = 'Curating...';
+
+  try {
+    const res = await fetch(`/api/containers/${containerId}/image-ads`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        platform, objective, target_audience, tone, ad_count,
+        color_scheme, image_models, custom_instructions, selected_ads,
+      }),
+    });
+    const data = await res.json();
+    if (res.ok) {
+      // Move to step 3 — poll for completion
+      currentStep = 3;
+      updateStepUI();
+      stepOptionsDiv.style.display = 'none';
+      statusBar.style.display = '';
+      statusBar.className = 'status-bar running';
+      statusText.textContent = 'AI is curating best ads to clone...';
+      pollWorkflowResult(data.ad_id);
+    } else {
+      btn.disabled = false;
+      btn.textContent = 'Curate Selected Ads';
+      alert(data.error || 'Failed to start');
+    }
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = 'Curate Selected Ads';
+    alert('Failed to start ad curation');
+  }
+}
+
+async function pollWorkflowResult(pollAdId) {
+  try {
+    const res = await fetch(`/api/containers/${containerId}/image-ads/${pollAdId}`);
+    const data = await res.json();
+
+    if (data.status === 'completed') {
+      statusBar.className = 'status-bar completed';
+      statusBar.querySelector('.spinner').style.display = 'none';
+      const containerName = containerData?.name || '';
+      statusText.textContent = `Ad Curation — ${containerName} — ${new Date(data.created_at).toLocaleString()}`;
+      printBtn.style.display = '';
+      renderImageAds(data);
+      renderCloneSection();
+      return;
+    }
+
+    if (data.status === 'failed') {
+      statusBar.className = 'status-bar failed';
+      statusBar.querySelector('.spinner').style.display = 'none';
+      statusText.textContent = `Ad curation failed: ${data.result?.error || 'Unknown error'}`;
+      return;
+    }
+
+    setTimeout(() => pollWorkflowResult(pollAdId), 3000);
+  } catch (e) {
+    setTimeout(() => pollWorkflowResult(pollAdId), 5000);
+  }
+}
+
+// ============================================================
+// PUSH TO CONTEXT
+// ============================================================
+
+async function pushItem(sectionKey, label, content, btn) {
+  btn.disabled = true;
+  btn.textContent = 'Pushed!';
+  btn.style.color = 'var(--success)';
+
+  try {
+    await fetch(`/api/containers/${containerId}/context`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        source_type: 'image_ad_curation',
+        source_id: adId || 'workflow',
+        section_name: `Ad Curation - ${label}`,
+        content,
+      }),
+    });
+    setTimeout(() => { btn.disabled = false; btn.textContent = 'Push'; btn.style.color = ''; }, 2000);
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = 'Push';
+    btn.style.color = '';
+  }
+}
+
+function registerPushItem(sectionKey, label, content) {
+  const idx = window._pushItems.length;
+  window._pushItems.push({ sectionKey, label, content });
+  return idx;
+}
+
+function pushRegisteredItem(idx, btn) {
+  const item = window._pushItems[idx];
+  if (item) pushItem(item.sectionKey, item.label, item.content, btn);
+}
+
+// ============================================================
+// REPORT RENDERING (shared by both modes)
 // ============================================================
 
 function renderImageAds(ad) {
   const r = ad.result;
   if (!r) { contentDiv.innerHTML = '<div class="card">No data</div>'; return; }
 
+  window._pushItems = [];
+
   const json = r.json_data;
   let html = '';
+
+  // Push button helper
+  const itemPushBtn = (sectionKey, label, content) => {
+    const idx = registerPushItem(sectionKey, label, content);
+    return `<button class="btn btn-ghost btn-sm" onclick="pushRegisteredItem(${idx}, this)" style="font-size:10px;padding:2px 6px;flex-shrink:0;" title="Push to Container Context">Push</button>`;
+  };
 
   // Report Header
   html += `<div class="report-header">
@@ -120,22 +624,25 @@ function renderImageAds(ad) {
   // Curation Summary
   if (json.curation_summary) {
     html += `<div class="card" style="margin-bottom:16px;border-left:3px solid #0ea5e9;">
-      <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:#0ea5e9;margin-bottom:6px;">Curation Summary</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:#0ea5e9;">Curation Summary</div>
+        ${itemPushBtn('curation_summary', 'curation summary', { curation_summary: json.curation_summary })}
+      </div>
       <div style="font-size:14px;line-height:1.6;">${esc(json.curation_summary)}</div>
     </div>`;
   }
 
-  // Curated Ads (primary new section)
+  // Curated Ads (primary section)
   if (json.curated_ads && json.curated_ads.length > 0) {
-    html += renderCuratedAds(json.curated_ads);
+    html += renderCuratedAds(json.curated_ads, itemPushBtn);
   }
 
   // Model Recommendation Summary
   if (json.model_recommendation_summary) {
-    html += renderModelSummary(json.model_recommendation_summary);
+    html += renderModelSummary(json.model_recommendation_summary, itemPushBtn);
   }
 
-  // Ad Concepts (backward compat + new linked concepts)
+  // Ad Concepts
   const concepts = json.ad_concepts || [];
   if (concepts.length > 0) {
     html += renderAdConcepts(concepts);
@@ -144,7 +651,11 @@ function renderImageAds(ad) {
   // Creative Guidelines
   if (json.creative_guidelines) {
     html += `<div class="report-section actions" style="border-left-color:var(--success);">
-      <div class="report-section-header"><span class="report-section-badge" style="background:var(--success);">Guidelines</span><h3>Creative Guidelines</h3></div>`;
+      <div class="report-section-header">
+        <span class="report-section-badge" style="background:var(--success);">Guidelines</span>
+        <h3>Creative Guidelines</h3>
+        ${itemPushBtn('creative_guidelines', 'creative guidelines', json.creative_guidelines)}
+      </div>`;
     const cg = json.creative_guidelines;
     if (cg.brand_consistency) {
       html += `<div style="margin-bottom:10px;font-size:13px;line-height:1.6;"><strong>Brand Consistency:</strong> ${esc(cg.brand_consistency)}</div>`;
@@ -198,6 +709,9 @@ function renderOptionsUsed(opts) {
   if (opts.image_models && opts.image_models.length > 0) {
     badges.push({ label: 'Models', value: opts.image_models.map(m => m.replace(/_/g, ' ')).join(', ') });
   }
+  if (opts.selected_ads) {
+    badges.push({ label: 'Selected Ads', value: `${opts.selected_ads.length} ads` });
+  }
 
   if (badges.length === 0) return '';
 
@@ -215,7 +729,7 @@ function renderOptionsUsed(opts) {
 // CURATED ADS RENDERING
 // ============================================================
 
-function renderCuratedAds(curatedAds) {
+function renderCuratedAds(curatedAds, itemPushBtn) {
   let html = `<div style="margin-bottom:24px;">
     <h3 style="font-size:18px;margin-bottom:12px;">Curated Ads to Clone</h3>`;
 
@@ -224,12 +738,22 @@ function renderCuratedAds(curatedAds) {
 
     html += `<div class="report-section clone" style="border-left-color:${rankColor};margin-bottom:16px;">`;
 
-    // Header: rank + competitor + platform
+    // Header: rank + competitor + platform + push button
     html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
       <span class="badge" style="background:${rankColor};color:#fff;font-weight:700;font-size:13px;">#${ca.rank}</span>
       <strong style="font-size:15px;">${esc(ca.source_competitor || '')}</strong>
       <span class="badge" style="font-size:10px;">${esc(ca.source_platform || '')}</span>
       ${ca.source_ad_ref ? `<span class="text-dim" style="font-size:12px;">${esc(ca.source_ad_ref)}</span>` : ''}
+      <span style="margin-left:auto;">
+        ${itemPushBtn('curated_ad', `#${ca.rank} ${(ca.source_competitor || '').substring(0, 20)}`, {
+          rank: ca.rank,
+          source_competitor: ca.source_competitor,
+          why_clone: ca.why_clone,
+          effectiveness_signals: ca.effectiveness_signals,
+          adaptation_strategy: ca.adaptation_strategy,
+          recommended_model: ca.recommended_model,
+        })}
+      </span>
     </div>`;
 
     // Original ad info
@@ -365,7 +889,7 @@ function renderCuratedAds(curatedAds) {
 // MODEL RECOMMENDATION SUMMARY
 // ============================================================
 
-function renderModelSummary(summary) {
+function renderModelSummary(summary, itemPushBtn) {
   if (!summary) return '';
 
   const modelColors = {
@@ -374,7 +898,11 @@ function renderModelSummary(summary) {
   };
 
   let html = `<div class="report-section" style="border-left-color:#8b5cf6;margin-bottom:16px;">
-    <div class="report-section-header"><span class="report-section-badge" style="background:#8b5cf6;">Models</span><h3>Model Recommendations</h3></div>`;
+    <div class="report-section-header">
+      <span class="report-section-badge" style="background:#8b5cf6;">Models</span>
+      <h3>Model Recommendations</h3>
+      ${itemPushBtn('model_summary', 'model recommendations', summary)}
+    </div>`;
 
   if (summary.best_for_this_campaign) {
     const bestColor = modelColors[summary.best_for_this_campaign] || '#6b7085';
@@ -567,9 +1095,7 @@ function scrollToCloneWithAd(sourceCompetitor, originalHeadline, recommendedMode
     for (let i = 0; i < scrapedAdsFlat.length; i++) {
       const ad = scrapedAdsFlat[i];
       let score = 0;
-      // Match by competitor name
       if (sourceCompetitor && ad._compName && ad._compName.toLowerCase() === sourceCompetitor.toLowerCase()) score += 10;
-      // Match by headline
       if (originalHeadline && ad.headline) {
         const normOrig = originalHeadline.toLowerCase().trim();
         const normAd = ad.headline.toLowerCase().trim();
@@ -646,7 +1172,6 @@ function buildScrapedAdsList() {
       const compName = comp?.name || compId;
       for (const source of ['facebook', 'google']) {
         for (const ad of (sources[source] || [])) {
-          // Only include ads that have some text content
           const text = ad.headline || ad.ad_text || ad.ocr_text || '';
           if (!text) continue;
           const key = `${compId}-${source}-${(ad.headline || '').substring(0, 40)}-${(ad.ad_text || '').substring(0, 40)}`;
@@ -771,23 +1296,19 @@ function previewSelectedAd() {
   preview.style.display = '';
   const ad = scrapedAdsFlat[idx];
 
-  // Pick best image: screenshot_path (local) or media_url (CDN)
   let imgSrc = ad.local_media_path || ad.screenshot_path || ad.media_url || '';
-  // Ensure local paths have leading slash
   if (imgSrc && !imgSrc.startsWith('http') && !imgSrc.startsWith('/')) {
     imgSrc = '/' + imgSrc;
   }
 
   let html = `<div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;">`;
 
-  // Large image on the left
   if (imgSrc) {
     html += `<div style="flex-shrink:0;">
       <img src="${esc(imgSrc)}" style="max-width:320px;max-height:320px;border-radius:8px;border:1px solid var(--border);cursor:pointer;display:block;" onclick="window.open('${escAttr(imgSrc)}','_blank')" onerror="this.style.display='none'">
     </div>`;
   }
 
-  // Ad details on the right
   html += `<div style="flex:1;min-width:200px;">`;
   html += `<div style="margin-bottom:8px;"><strong style="font-size:15px;">${esc(ad._compName)}</strong> <span class="badge" style="font-size:10px;">${esc(ad._source)}</span></div>`;
   if (ad.headline) html += `<div style="margin-bottom:6px;font-size:14px;"><strong>Headline:</strong> ${esc(ad.headline)}</div>`;

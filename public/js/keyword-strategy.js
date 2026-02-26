@@ -163,6 +163,22 @@ function viewKeywordStrategy(strategyId) {
       }
     }
 
+    // Auction-Ready Keywords
+    const auctionKw = json.auction_keywords || [];
+    if (auctionKw.length > 0) {
+      html += `<h4 style="font-size:14px;margin:16px 0 10px;">Auction-Ready Keywords (${auctionKw.length})</h4>`;
+      for (const ak of auctionKw) {
+        const prColor = ak.priority === 'high' ? '#dc2626' : ak.priority === 'medium' ? '#d97706' : '#6b7085';
+        html += `<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#0891b208;border:1px solid #0891b220;border-radius:6px;margin-bottom:6px;font-size:13px;flex-wrap:wrap;">
+          <span style="font-weight:600;">${esc(ak.keyword || '')}</span>
+          <span class="badge" style="background:var(--surface);font-size:11px;">${esc((ak.match_type || '').toUpperCase())}</span>
+          ${ak.estimated_cpc ? `<span class="text-dim" style="font-size:12px;">${esc(ak.estimated_cpc)}</span>` : ''}
+          <span class="badge" style="background:${prColor}15;color:${prColor};font-size:11px;">${esc(ak.priority || '')}</span>
+          ${ak.source ? `<span class="text-dim" style="font-size:11px;margin-left:auto;">${esc(ak.source)}</span>` : ''}
+        </div>`;
+      }
+    }
+
   }
 
   const modal = document.getElementById('proposal-modal');

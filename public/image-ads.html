@@ -9,11 +9,12 @@
 <body>
   <header>
     <div class="container">
-      <h1><span>Product</span> Analyzer</h1>
+      <h1><a href="/" style="color:inherit;text-decoration:none;"><span>Product</span> Analyzer</a></h1>
       <nav>
         <a href="/">Dashboard</a>
         <a href="/guide.html">Guide</a>
         <a href="/chat.html">Chat</a>
+        <a href="/changelog.html">Changelog</a>
         <a href="/add-container.html">New Container</a>
       </nav>
     </div>
@@ -26,11 +27,33 @@
           <button id="print-btn" class="btn btn-ghost btn-sm" onclick="window.print()" style="display:none;">Print / Export PDF</button>
         </div>
       </div>
+
+      <!-- Step indicator (workflow mode only) -->
+      <div id="step-indicator" style="display:none;margin-bottom:20px;">
+        <div style="display:flex;gap:4px;align-items:center;">
+          <span id="step-dot-1" class="step-dot active" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:600;background:var(--primary);color:#fff;cursor:pointer;" onclick="goToStep(1)">1. Select Ads</span>
+          <span style="color:var(--text-dim);">&#8594;</span>
+          <span id="step-dot-2" class="step-dot" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:600;background:var(--surface);color:var(--text-dim);border:1px solid var(--border);cursor:pointer;" onclick="goToStep(2)">2. Configure</span>
+          <span style="color:var(--text-dim);">&#8594;</span>
+          <span id="step-dot-3" class="step-dot" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:600;background:var(--surface);color:var(--text-dim);border:1px solid var(--border);">3. Report</span>
+        </div>
+      </div>
+
+      <!-- Status bar (used by both modes) -->
       <div id="status-bar" class="status-bar pending">
         <div class="spinner"></div>
         <span id="status-text">Loading image ads...</span>
       </div>
+
+      <!-- WORKFLOW MODE: Step 1 — Browse & Select Ads -->
+      <div id="step-select" style="display:none;"></div>
+
+      <!-- WORKFLOW MODE: Step 2 — Configure Options -->
+      <div id="step-options" style="display:none;"></div>
+
+      <!-- WORKFLOW MODE / REPORT MODE: Step 3 / Report -->
       <div id="imgad-content"></div>
+
       <!-- Clone from Scraped Ads section -->
       <div id="clone-section" style="display:none;margin-top:24px;"></div>
       <div id="clone-result" style="display:none;margin-top:16px;"></div>

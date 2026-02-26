@@ -40,17 +40,55 @@ router.post('/keyword-ideas', async (req, res) => {
     return res.status(400).json({ error: 'Google Ads credentials not configured. Add them to your .env file.' });
   }
 
+  const { keywords, url, language, geo_targets, container_id } = req.body;
+
   try {
+    // If container_id provided, persist the results
+    let record = null;
+    if (container_id) {
+      record = await storage.addKeywordIdeas(container_id, {
+        seed_keywords: keywords || [],
+        url: url || '',
+        geo_targets: geo_targets || [],
+        language: language || '',
+      });
+      if (!record) {
+        return res.status(404).json({ error: 'Container not found' });
+      }
+    }
+
     const ideas = await googleAds.generateKeywordIdeas({
-      keywords: req.body.keywords,
-      url: req.body.url,
-      language: req.body.language,
-      geo_targets: req.body.geo_targets,
+      keywords,
+      url,
+      language,
+      geo_targets,
     });
-    res.json({ ideas, count: ideas.length });
+
+    // Persist completed result if container_id was provided
+    if (container_id && record) {
+      await storage.updateKeywordIdeas(container_id, record.id, 'completed', {
+        ideas,
+        count: ideas.length,
+        fetched_at: new Date().toISOString(),
+      });
+    }
+
+    res.json({ ideas, count: ideas.length, record_id: record ? record.id : undefined });
   } catch (err) {
     const errMsg = extractGadsError(err);
     log.error(SRC, 'Keyword ideas failed', { error: errMsg, raw: err.message, errors: err.errors, details: err.details });
+
+    // Persist failure if container_id was provided
+    if (container_id) {
+      try {
+        const records = storage.readContainer(container_id)?.keyword_ideas || [];
+        const latest = records[records.length - 1];
+        if (latest && latest.status === 'fetching') {
+          await storage.updateKeywordIdeas(container_id, latest.id, 'failed', { error: errMsg });
+        }
+      } catch (e) { /* ignore storage error during error handling */ }
+    }
+
     res.status(500).json({ error: errMsg });
   }
 });
@@ -158,6 +196,7 @@ router.post('/analyze-campaigns', async (req, res) => {
           });
 
           const result = await googleAds.analyzeCampaigns(campaignData);
+          result.campaigns = campaignData;  // persist campaign + keyword data for downstream agents
           await storage.updateGadsAnalysis(container_id, analysis.id, 'completed', result);
         } catch (err) {
           log.error(SRC, 'Campaign analysis failed', { err: err.message });
@@ -186,6 +225,7 @@ router.post('/analyze-campaigns', async (req, res) => {
       }
     }
     const result = await googleAds.analyzeCampaigns(campaignData);
+    result.campaigns = campaignData;  // include campaign + keyword data in response
     res.json(result);
   } catch (err) {
     const errMsg = extractGadsError(err);

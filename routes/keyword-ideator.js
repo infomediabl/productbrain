@@ -25,6 +25,7 @@ router.post('/', async (req, res) => {
     niche: req.body.niche || '',
     goals: req.body.goals || '',
     budget_level: req.body.budget_level || '',
+    use_context: req.body.use_context !== false,
   };
 
   try {

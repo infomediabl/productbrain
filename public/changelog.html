@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Changelog - Product Analyzer</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .changelog-layout {
+      display: flex;
+      gap: 24px;
+      align-items: flex-start;
+    }
+    .changelog-sidebar {
+      position: sticky;
+      top: 80px;
+      width: 200px;
+      min-width: 200px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+    }
+    .changelog-sidebar h3 {
+      font-size: 13px;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 12px;
+    }
+    .changelog-sidebar label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      margin-bottom: 8px;
+      cursor: pointer;
+    }
+    .changelog-entries {
+      flex: 1;
+      min-width: 0;
+    }
+    .changelog-session {
+      margin-bottom: 24px;
+    }
+    .session-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 8px;
+      font-size: 13px;
+      color: var(--text-dim);
+    }
+    .session-header .session-badge {
+      background: var(--primary);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+    .commit-entry {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      padding: 8px 16px 8px 32px;
+      border-left: 2px solid var(--border);
+      margin-left: 20px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .commit-entry:last-child {
+      border-left-color: transparent;
+    }
+    .commit-hash {
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      color: var(--primary);
+      white-space: nowrap;
+    }
+    .commit-message {
+      flex: 1;
+      color: var(--text);
+    }
+    .commit-meta {
+      font-size: 12px;
+      color: var(--text-dim);
+      white-space: nowrap;
+    }
+    .changelog-empty {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-dim);
+    }
+    .changelog-stats {
+      font-size: 13px;
+      color: var(--text-dim);
+      margin-bottom: 16px;
+    }
+    @media (max-width: 768px) {
+      .changelog-layout { flex-direction: column; }
+      .changelog-sidebar { position: static; width: 100%; }
+      .commit-entry { padding-left: 16px; margin-left: 10px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1><a href="/" style="color:inherit;text-decoration:none;"><span>Product</span> Analyzer</a></h1>
+      <nav>
+        <a href="/">Dashboard</a>
+        <a href="/guide.html">Guide</a>
+        <a href="/chat.html">Chat</a>
+        <a href="/changelog.html">Changelog</a>
+        <a href="/add-container.html">New Container</a>
+      </nav>
+    </div>
+  </header>
+  <main>
+    <div class="container">
+      <h2 style="margin-bottom:4px;">Changelog</h2>
+      <p class="changelog-stats" id="stats"></p>
+
+      <div class="changelog-layout">
+        <aside class="changelog-sidebar">
+          <h3>Filters</h3>
+          <label>
+            <input type="checkbox" id="filter-commits" checked onchange="applyFilters()">
+            Commits
+          </label>
+          <label>
+            <input type="checkbox" id="filter-starts" checked onchange="applyFilters()">
+            App Starts
+          </label>
+        </aside>
+
+        <div class="changelog-entries" id="entries">
+          <div class="changelog-empty">Loading...</div>
+        </div>
+      </div>
+    </div>
+  </main>
+  <script src="/js/changelog.js"></script>
+</body>
+</html>

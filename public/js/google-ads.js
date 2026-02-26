@@ -97,9 +97,10 @@ async function submitGadsKeywordModal() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         keywords: keywords ? keywords.split(',').map(k => k.trim()).filter(Boolean) : [],
-        page_url: pageUrl || undefined,
+        url: pageUrl || undefined,
         geo_targets: [`geoTargetConstants/${geoTarget}`],
         language: `languageConstants/${language}`,
+        container_id: containerId,
       }),
     });
     const data = await res.json();
@@ -115,7 +116,7 @@ async function submitGadsKeywordModal() {
 
 function renderGadsKeywordResults(data) {
   const el = document.getElementById('gads-keyword-results');
-  const ideas = data.results || [];
+  const ideas = data.ideas || data.results || [];
   if (ideas.length === 0) {
     el.innerHTML = '<div class="text-dim" style="padding:8px 0;">No keyword ideas returned.</div>';
     return;
@@ -123,12 +124,14 @@ function renderGadsKeywordResults(data) {
   let html = `<div class="table-wrapper"><table class="ads-table" style="font-size:12px;">
     <thead><tr><th>Keyword</th><th>Avg. Monthly Searches</th><th>Competition</th><th>Low CPC</th><th>High CPC</th></tr></thead><tbody>`;
   for (const idea of ideas) {
+    const lowCpc = idea.low_top_of_page_bid_micros != null ? '$' + (parseInt(idea.low_top_of_page_bid_micros) / 1e6).toFixed(2) : '-';
+    const highCpc = idea.high_top_of_page_bid_micros != null ? '$' + (parseInt(idea.high_top_of_page_bid_micros) / 1e6).toFixed(2) : '-';
     html += `<tr>
       <td><strong>${esc(idea.keyword || idea.text)}</strong></td>
       <td>${idea.avg_monthly_searches ?? '-'}</td>
       <td>${esc(idea.competition || '-')}</td>
-      <td>${idea.low_top_of_page_bid != null ? '$' + idea.low_top_of_page_bid : '-'}</td>
-      <td>${idea.high_top_of_page_bid != null ? '$' + idea.high_top_of_page_bid : '-'}</td>
+      <td>${lowCpc}</td>
+      <td>${highCpc}</td>
     </tr>`;
   }
   html += '</tbody></table></div>';

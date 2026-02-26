@@ -15,6 +15,8 @@ const path = require('path');
 const fs = require('fs');
 const log = require('./logger');
 
+const { updateChangelog, getChangelog } = require('./utils/changelog');
+
 const app = express();
 const PORT = process.env.PORT || 3100;
 
@@ -132,6 +134,11 @@ app.delete('/api/logs', (req, res) => {
   res.json({ cleared: true });
 });
 
+// Changelog
+app.get('/api/changelog', (req, res) => {
+  res.json(getChangelog());
+});
+
 // ========== Auto-Scrape Scheduler (6h interval) ==========
 const { runAutoScrape, isScraping } = require('./agents/scraper-agent');
 const { listAutoScrapeContainers, getScrapeResult } = require('./storage');
@@ -175,6 +182,14 @@ async function runAutoScrapeAll() {
 }
 
 setInterval(runAutoScrapeAll, 6 * 60 * 60 * 1000);
+
+// Update changelog on startup
+try {
+  const newCount = updateChangelog();
+  console.log(`Changelog updated: ${newCount} new commit(s) recorded`);
+} catch (err) {
+  console.warn('Changelog update failed:', err.message);
+}
 
 app.listen(PORT, () => {
   console.log(`Product Analyzer running at http://localhost:${PORT}`);

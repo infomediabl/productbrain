@@ -140,19 +140,34 @@ function buildPrompt(container, options) {
     }
   }
 
-  // Gather competitor ads using shared utilities
+  // Gather competitor ads — use selected_ads if provided, otherwise gather all
   const competitorIds = (container.competitors || []).map(c => c.id);
   const allAdsForPrompt = [];
 
-  for (const comp of (container.competitors || [])) {
-    const ads = gatherCompetitorAds(container, comp.id, { limit: 15 });
-    const fbAds = (ads.facebook || []).map(a => ({ ...a, platform: 'facebook' }));
-    const gAds = (ads.google || []).map(a => ({ ...a, platform: 'google' }));
-    const combined = [...fbAds, ...gAds];
-    if (combined.length > 0) {
-      parts.push(`\n### ${comp.name} — Scraped Ads (${combined.length} ads)`);
-      parts.push(summarizeAds(combined, { maxAds: 15, textLimit: 400, ocrLimit: 200, includeLastShown: true }));
-      allAdsForPrompt.push({ competitor: comp.name, count: combined.length });
+  if (options.selected_ads && options.selected_ads.length > 0) {
+    // Group selected ads by competitor for cleaner prompt formatting
+    const byCompetitor = {};
+    for (const ad of options.selected_ads) {
+      const compName = ad.competitor || 'Unknown';
+      if (!byCompetitor[compName]) byCompetitor[compName] = [];
+      byCompetitor[compName].push(ad);
+    }
+    for (const [compName, ads] of Object.entries(byCompetitor)) {
+      parts.push(`\n### ${compName} — Selected Ads (${ads.length} ads)`);
+      parts.push(summarizeAds(ads, { maxAds: 15, textLimit: 400, ocrLimit: 200, includeLastShown: true }));
+      allAdsForPrompt.push({ competitor: compName, count: ads.length });
+    }
+  } else {
+    for (const comp of (container.competitors || [])) {
+      const ads = gatherCompetitorAds(container, comp.id, { limit: 15 });
+      const fbAds = (ads.facebook || []).map(a => ({ ...a, platform: 'facebook' }));
+      const gAds = (ads.google || []).map(a => ({ ...a, platform: 'google' }));
+      const combined = [...fbAds, ...gAds];
+      if (combined.length > 0) {
+        parts.push(`\n### ${comp.name} — Scraped Ads (${combined.length} ads)`);
+        parts.push(summarizeAds(combined, { maxAds: 15, textLimit: 400, ocrLimit: 200, includeLastShown: true }));
+        allAdsForPrompt.push({ competitor: comp.name, count: combined.length });
+      }
     }
   }
 

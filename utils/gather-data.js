@@ -121,10 +121,43 @@ function gatherGadsData(container) {
     budget_micros: c.budget_micros || c.daily_budget_micros || 0,
   }));
 
+  // Extract keyword-level data from persisted campaign data
+  const keywords = [];
+  for (const c of (result.campaigns || [])) {
+    for (const k of (c.keywords || [])) {
+      keywords.push({
+        campaign: c.name || '',
+        keyword: k.keyword || '',
+        match_type: k.match_type || '',
+        impressions: parseInt(k.impressions) || 0,
+        clicks: parseInt(k.clicks) || 0,
+        cost_micros: parseInt(k.cost_micros) || 0,
+        conversions: parseFloat(k.conversions) || 0,
+        avg_cpc: parseInt(k.avg_cpc) || 0,
+      });
+    }
+  }
+  keywords.sort((a, b) => b.impressions - a.impressions);
+
   const analysis = result.json_data || result.analysis || {};
+
+  // Extract keyword ideas from persisted Keyword Planner data
+  const kiRecords = container.keyword_ideas || [];
+  const latestKi = [...kiRecords].reverse().find(r => r.status === 'completed');
+  const keywordIdeas = (latestKi?.result?.ideas || []).map(i => ({
+    keyword: i.keyword || '',
+    avg_monthly_searches: parseInt(i.avg_monthly_searches) || 0,
+    competition: i.competition || '',
+    competition_index: i.competition_index || 0,
+    low_cpc: parseInt(i.low_top_of_page_bid_micros) || 0,
+    high_cpc: parseInt(i.high_top_of_page_bid_micros) || 0,
+  }));
+  keywordIdeas.sort((a, b) => b.avg_monthly_searches - a.avg_monthly_searches);
 
   return {
     campaigns,
+    keywords,
+    keywordIdeas,
     analysis: {
       summary: analysis.summary || analysis.executive_summary || '',
       findings: analysis.key_findings || analysis.findings || [],
