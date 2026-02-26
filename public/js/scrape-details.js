@@ -196,7 +196,10 @@ function renderAd(ad, index) {
       </details>` : ''}
 
       ${ad.ocr_structured ? `<div class="scrape-ocr-structured" style="margin-top:8px;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;font-size:12px;">
-        <div style="font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-dim);margin-bottom:6px;">Parsed Ad Fields</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+          <span style="font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-dim);">Parsed Ad Fields</span>
+          ${ad.ocr_structured.sponsored ? '<span class="badge" style="background:#f59e0b15;color:#d97706;font-size:10px;">Sponsored</span>' : ''}
+        </div>
         ${ad.ocr_structured.headline ? `<div style="margin-bottom:4px;"><strong>Headline:</strong> ${esc(ad.ocr_structured.headline)}</div>` : ''}
         ${ad.ocr_structured.description ? `<div style="margin-bottom:4px;"><strong>Description:</strong> ${esc(ad.ocr_structured.description)}</div>` : ''}
         ${ad.ocr_structured.cta ? `<div style="margin-bottom:4px;"><strong>CTA:</strong> ${esc(ad.ocr_structured.cta)}</div>` : ''}

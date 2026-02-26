@@ -572,9 +572,12 @@ const KNOWN_CTAS = [
   'get quote', 'request demo', 'watch now', 'explore', 'join now', 'view more',
 ];
 
+/** Labels that indicate a sponsored/paid ad — skip as headline, tag instead */
+const SPONSORED_LABELS = ['sponsored', 'sponsored ad', 'ad', 'ads', 'promoted', 'paid'];
+
 /**
  * Heuristic parse of Google ad OCR text into structured fields.
- * Returns { headline, description, cta, url } or null if heuristics fail.
+ * Returns { headline, description, cta, url, sponsored } or null if heuristics fail.
  */
 function heuristicParseGoogleAd(ocrText) {
   const lines = ocrText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
@@ -583,13 +586,20 @@ function heuristicParseGoogleAd(ocrText) {
   let url = null;
   let cta = null;
   let headline = null;
+  let sponsored = false;
   const descLines = [];
 
   for (const line of lines) {
     const lower = line.toLowerCase();
-    // Detect URL (domain pattern)
-    if (!url && /^(https?:\/\/)?[a-z0-9][-a-z0-9]*(\.[a-z]{2,})+/i.test(line)) {
-      url = line;
+    // Detect and skip sponsored labels — just tag it
+    if (!sponsored && SPONSORED_LABELS.includes(lower)) {
+      sponsored = true;
+      continue;
+    }
+    // Detect URL (domain pattern — also match lines with OCR noise before the domain)
+    const urlMatch = line.match(/(https?:\/\/)?([a-z0-9][-a-z0-9]*\.)+[a-z]{2,}(\/\S*)?/i);
+    if (!url && urlMatch) {
+      url = urlMatch[0];
       continue;
     }
     // Detect CTA
@@ -615,6 +625,7 @@ function heuristicParseGoogleAd(ocrText) {
     description: descLines.join(' ').substring(0, 500) || null,
     cta: cta || null,
     url: url || null,
+    sponsored,
   };
 }
 
@@ -630,7 +641,7 @@ async function aiParseGoogleAd(ocrText) {
       max_tokens: 256,
       messages: [{
         role: 'user',
-        content: `Parse this Google ad image OCR text into structured fields. Return ONLY valid JSON with these keys: headline, description, cta, url. Use null for any field you can't identify.\n\nOCR text:\n${ocrText.substring(0, 1000)}`,
+        content: `Parse this Google ad image OCR text into structured fields. Return ONLY valid JSON with these keys: headline, description, cta, url, sponsored. "sponsored" is a boolean — true if the text contains a "Sponsored" or "Ad" label. Do NOT use the "Sponsored" label as the headline — use the actual ad title. Use null for any field you can't identify.\n\nOCR text:\n${ocrText.substring(0, 1000)}`,
       }],
     });
     const text = response.content[0]?.text || '';
@@ -642,6 +653,7 @@ async function aiParseGoogleAd(ocrText) {
       description: parsed.description || null,
       cta: parsed.cta || null,
       url: parsed.url || null,
+      sponsored: !!parsed.sponsored,
     };
   } catch (err) {
     log.warn(SRC, 'AI OCR parse failed', { err: err.message });
