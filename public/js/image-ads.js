@@ -1,5 +1,5 @@
 /**
- * Image Ads Creator UI
+ * Image Ad Curator UI
  * Page: container.html (loaded after container.js)
  * Globals used: container, containerId, esc() — from container.js
  * Globals defined: renderImageAds(), openImageAdModal(), closeImageAdModal(),
@@ -7,7 +7,7 @@
  * API: POST /api/containers/:id/image-ads, GET /api/containers/:id/image-ads/:adId
  * Interacts with: Links to image-ads.html for full report view
  *
- * Creates AI image ad concepts with copy, visual direction, and AI image prompts.
+ * Curates best competitor ads for cloning with AI model recommendations.
  * Supports platform, objective, audience, tone, and AI model selection.
  */
 // ========== Image Ad Creator ==========
@@ -17,7 +17,7 @@ function renderImageAds() {
   const ads = container.image_ads || [];
 
   if (ads.length === 0) {
-    el.innerHTML = '<div class="text-dim" style="padding:8px 0;">No image ads yet. Create ad concepts with copy, visuals & AI prompts.</div>';
+    el.innerHTML = '<div class="text-dim" style="padding:8px 0;">No ad curation yet. Analyze competitor ads and get clone recommendations.</div>';
     return;
   }
 
@@ -34,7 +34,7 @@ function renderImageAds() {
           <span>${new Date(a.created_at).toLocaleString()}</span>
           <span class="text-dim">${a.status}</span>
           ${isGenerating ? '<div class="spinner" style="width:14px;height:14px;border-width:2px;"></div><span class="text-dim">Generating...</span>' : ''}
-          ${isDone ? `<a href="/image-ads.html?cid=${containerId}&adId=${a.id}" class="btn btn-primary btn-sm" style="margin-left:auto;">View Ads</a>` : ''}
+          ${isDone ? `<a href="/image-ads.html?cid=${containerId}&adId=${a.id}" class="btn btn-primary btn-sm" style="margin-left:auto;">View Report</a>` : ''}
           ${isDone && adCount > 0 ? `<span class="text-dim" style="font-size:12px;">${adCount} concepts</span>` : ''}
           ${a.status === 'failed' ? `<span class="text-dim" style="font-size:12px;color:var(--danger);">${esc(a.result?.error || 'Failed')}</span>` : ''}
         </div>
@@ -48,7 +48,7 @@ function openImageAdModal() {
   document.getElementById('imgad-objective').value = '';
   document.getElementById('imgad-audience').value = '';
   document.getElementById('imgad-tone').value = '';
-  document.getElementById('imgad-count').value = '3';
+  document.getElementById('imgad-count').value = '5';
   document.getElementById('imgad-colors').value = '';
   document.getElementById('imgad-instructions').value = '';
   document.getElementById('imgad-modal').style.display = 'flex';
@@ -73,11 +73,11 @@ async function submitImageAdModal() {
 
   const btn = document.getElementById('imgad-btn');
   btn.disabled = true;
-  btn.textContent = 'Creating...';
+  btn.textContent = 'Curating...';
   const statusEl = document.getElementById('imgad-status');
   statusEl.style.display = 'block';
   statusEl.className = 'status-bar running';
-  statusEl.innerHTML = '<div class="spinner"></div><span>AI is creating image ad concepts...</span>';
+  statusEl.innerHTML = '<div class="spinner"></div><span>AI is curating best ads to clone...</span>';
 
   try {
     const res = await fetch(`/api/containers/${containerId}/image-ads`, {
@@ -91,14 +91,14 @@ async function submitImageAdModal() {
     } else {
       statusEl.style.display = 'none';
       btn.disabled = false;
-      btn.textContent = 'Create Ads';
+      btn.textContent = 'Curate Ads';
       alert(data.error || 'Failed to start');
     }
   } catch (e) {
     statusEl.style.display = 'none';
     btn.disabled = false;
-    btn.textContent = 'Create Ads';
-    alert('Failed to start image ad generation');
+    btn.textContent = 'Curate Ads';
+    alert('Failed to start ad curation');
   }
 }
 
@@ -110,7 +110,7 @@ async function pollImageAds(adId) {
     if (data.status === 'completed' || data.status === 'failed') {
       document.getElementById('imgad-status').style.display = 'none';
       document.getElementById('imgad-btn').disabled = false;
-      document.getElementById('imgad-btn').textContent = 'Create Ads';
+      document.getElementById('imgad-btn').textContent = 'Curate Ads';
       await loadContainer();
       return;
     }

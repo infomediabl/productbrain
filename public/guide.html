@@ -174,7 +174,7 @@
 <body>
   <header>
     <div class="container">
-      <h1><span>Product</span> Analyzer</h1>
+      <h1><a href="/" style="color:inherit;text-decoration:none;"><span>Product</span> Analyzer</a></h1>
       <nav>
         <a href="/">Dashboard</a>
         <a href="/guide.html">Guide</a>
@@ -216,7 +216,7 @@
               <div class="feature-item"><strong>AG-007</strong><span>Product Ideator</span></div>
               <div class="feature-item"><strong>AG-008</strong><span>Keyword Strategist</span></div>
               <div class="feature-item"><strong>AG-009</strong><span>Google Ads Connector</span></div>
-              <div class="feature-item"><strong>AG-010</strong><span>Image Ad Creator</span></div>
+              <div class="feature-item"><strong>AG-010</strong><span>Image Ad Curator</span></div>
               <div class="feature-item"><strong>AG-011</strong><span>Quiz Generator</span></div>
               <div class="feature-item"><strong>AG-012</strong><span>Landing Page Generator</span></div>
               <div class="feature-item"><strong>AG-013</strong><span>RPS Test Ideator</span></div>
@@ -249,7 +249,7 @@
   Google Ads Connector ─> GAds Analysis ┤
   SEO Analyzer (pages) ────────────────>├─> Container ─── ─> Magic AI ──┬─> Prompt Generator
   Metadata & Notes ────────────────────>│   Context           Proposal  │
-  Case Study Analyzer ─────────────────>│                       │       ├─> Image Ad Creator
+  Case Study Analyzer ─────────────────>│                       │       ├─> Image Ad Curator
                                         │                       │       └─> RPS Test Ideator
                                         │                       │
                                         └───────────────────────┼──────> Keyword Strategist
@@ -368,7 +368,7 @@
             <div id="proposal-details">
               <p>The central strategy step. The Proposal reads <strong>all container data</strong> — competitor analyses, SEO insights, Google Ads performance, scraped ads, metadata, and all Container Context items — to generate a comprehensive marketing strategy.</p>
               <p>The output includes positioning strategy, messaging frameworks, creative briefs, channel priorities, budget allocation, and a timeline. This is the most data-hungry tool — push as much context as possible before running it.</p>
-              <p>Downstream agents use the proposal: <strong>Prompt Generator</strong> requires a completed proposal, while <strong>Image Ad Creator</strong> and <strong>RPS Test Ideator</strong> read it for messaging context. Run the proposal before generating assets for best results.</p>
+              <p>Downstream agents use the proposal: <strong>Prompt Generator</strong> requires a completed proposal, while <strong>Image Ad Curator</strong> and <strong>RPS Test Ideator</strong> read it for messaging context. Run the proposal before generating assets for best results.</p>
             </div>
           </div>
 
@@ -381,6 +381,7 @@
             </button>
             <div id="keyword-details">
               <p>Generates a keyword strategy with categories, search intent mapping, content recommendations, and priority rankings. Uses container context to tailor keywords to your market position and competitive landscape.</p>
+              <p>Available from the container dashboard modal <strong>or</strong> the dedicated <a href="/keyword-strategy.html">Keyword Strategy page</a>, which lets you select a container, toggle context inclusion, auto-populates the niche field from your product data, and displays results inline with keyword clusters, quick wins, competitor gaps, and ad keyword recommendations.</p>
             </div>
           </div>
 
@@ -404,10 +405,12 @@
 
           <div class="guide-section generate">
             <button class="guide-collapse-toggle" data-target="imagead-details" aria-expanded="true">
-              <span class="collapse-icon">&#9660;</span> AG-010 Image Ad Creator
+              <span class="collapse-icon">&#9660;</span> AG-010 Image Ad Curator
             </button>
             <div id="imagead-details">
-              <p>Generates image ad concepts with detailed specifications: dimensions, visual layout, copy placement, color schemes, and design notes. Provides ready-to-brief specs for designers or AI image tools. Reads the latest <strong>proposal</strong> for messaging context if one exists.</p>
+              <p>Curates the best competitor ads worth cloning and recommends which AI model to use for each. The curation report shows: ranked ads with effectiveness signals, adaptation strategies with ready-to-use copy, model recommendations, and visual direction.</p>
+              <p>Workflow: <strong>Curate Ads</strong> (AI analyzes all scraped competitor ads) &rarr; <strong>Review Report</strong> (ranked recommendations with adaptation strategies) &rarr; <strong>Clone Ad</strong> (click "Clone This Ad" to jump to the clone section with ad/model/format pre-selected, then generate the image via OpenRouter).</p>
+              <p>Reads scraped ads, competitor analyses, container context, and the latest proposal for informed curation. Select platform, audience, tone, and preferred AI image models before curating.</p>
             </div>
           </div>
 

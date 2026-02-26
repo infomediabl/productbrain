@@ -3,14 +3,16 @@
  * Page: image-ads.html (NOT loaded by container.html)
  * Globals used: (none — self-contained; defines own containerId, esc())
  * Globals defined: containerId, adId, containerData, scrapedAdsFlat, loadImageAds(),
- *   renderImageAds(), buildScrapedAdsList(), renderCloneSection(), previewSelectedAd(),
- *   cloneAd(), renderCloneResult(), copyText(), esc(), escAttr()
+ *   renderImageAds(), renderOptionsUsed(), renderCuratedAds(), renderModelSummary(),
+ *   renderAdConcepts(), scrollToCloneWithAd(), buildScrapedAdsList(),
+ *   renderCloneSection(), previewSelectedAd(), cloneAd(), renderCloneResult(),
+ *   copyText(), esc(), escAttr()
  * API: GET /api/containers/:id/image-ads/:adId, GET /api/containers/:id,
  *   POST /api/containers/:id/clone-ad
  *
- * Displays AI-generated image ad concepts with prompts for multiple AI models.
- * Also provides a "Clone from Scraped Ads" feature that adapts competitor ads
- * for the user's product via OpenRouter image generation.
+ * Displays AI-curated competitor ads with clone recommendations, adaptation
+ * strategies, and model suggestions. Also provides a "Clone from Scraped Ads"
+ * feature that adapts competitor ads via OpenRouter image generation.
  */
 // Standalone image ads report page + Clone from Scraped Ads via OpenRouter
 const params = new URLSearchParams(window.location.search);
@@ -52,7 +54,7 @@ async function loadImageAds() {
 
     if (ad.status === 'generating') {
       statusBar.className = 'status-bar running';
-      statusText.textContent = 'Image ads are still generating...';
+      statusText.textContent = 'AI is curating best ads to clone...';
       setTimeout(loadImageAds, 3000);
       return;
     }
@@ -60,7 +62,7 @@ async function loadImageAds() {
     if (ad.status === 'failed') {
       statusBar.className = 'status-bar failed';
       statusBar.querySelector('.spinner').style.display = 'none';
-      statusText.textContent = `Image ads failed: ${ad.result?.error || 'Unknown error'}`;
+      statusText.textContent = `Ad curation failed: ${ad.result?.error || 'Unknown error'}`;
       return;
     }
 
@@ -74,7 +76,7 @@ async function loadImageAds() {
     } catch (e) {}
 
     const containerName = containerData?.name || '';
-    statusText.textContent = `Image Ads — ${containerName} — ${new Date(ad.created_at).toLocaleString()}`;
+    statusText.textContent = `Ad Curation — ${containerName} — ${new Date(ad.created_at).toLocaleString()}`;
     printBtn.style.display = '';
 
     renderImageAds(ad);
@@ -88,7 +90,7 @@ async function loadImageAds() {
 }
 
 // ============================================================
-// REPORT RENDERING (moved from image-ads.js viewImageAds)
+// REPORT RENDERING
 // ============================================================
 
 function renderImageAds(ad) {
@@ -101,7 +103,7 @@ function renderImageAds(ad) {
   // Report Header
   html += `<div class="report-header">
     <div>
-      <h2>Image Ad Concepts</h2>
+      <h2>Ad Curation Report</h2>
       <div class="report-meta">${new Date(r.generated_at || ad.created_at).toLocaleString()}</div>
     </div>
   </div>`;
@@ -112,16 +114,316 @@ function renderImageAds(ad) {
     return;
   }
 
+  // Options Used badges
+  html += renderOptionsUsed(r.options_used);
+
+  // Curation Summary
+  if (json.curation_summary) {
+    html += `<div class="card" style="margin-bottom:16px;border-left:3px solid #0ea5e9;">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:#0ea5e9;margin-bottom:6px;">Curation Summary</div>
+      <div style="font-size:14px;line-height:1.6;">${esc(json.curation_summary)}</div>
+    </div>`;
+  }
+
+  // Curated Ads (primary new section)
+  if (json.curated_ads && json.curated_ads.length > 0) {
+    html += renderCuratedAds(json.curated_ads);
+  }
+
+  // Model Recommendation Summary
+  if (json.model_recommendation_summary) {
+    html += renderModelSummary(json.model_recommendation_summary);
+  }
+
+  // Ad Concepts (backward compat + new linked concepts)
   const concepts = json.ad_concepts || [];
+  if (concepts.length > 0) {
+    html += renderAdConcepts(concepts);
+  }
+
+  // Creative Guidelines
+  if (json.creative_guidelines) {
+    html += `<div class="report-section actions" style="border-left-color:var(--success);">
+      <div class="report-section-header"><span class="report-section-badge" style="background:var(--success);">Guidelines</span><h3>Creative Guidelines</h3></div>`;
+    const cg = json.creative_guidelines;
+    if (cg.brand_consistency) {
+      html += `<div style="margin-bottom:10px;font-size:13px;line-height:1.6;"><strong>Brand Consistency:</strong> ${esc(cg.brand_consistency)}</div>`;
+    }
+    if (cg.do_nots && cg.do_nots.length > 0) {
+      html += `<div style="margin-bottom:10px;"><strong style="font-size:12px;color:var(--danger);">Do NOT:</strong>`;
+      html += `<ul style="margin:4px 0 0 16px;font-size:13px;">`;
+      cg.do_nots.forEach(d => { html += `<li>${esc(d)}</li>`; });
+      html += `</ul></div>`;
+    }
+    if (cg.performance_tips && cg.performance_tips.length > 0) {
+      html += `<div><strong style="font-size:12px;color:var(--success);">Performance Tips:</strong>`;
+      html += `<ul style="margin:4px 0 0 16px;font-size:13px;">`;
+      cg.performance_tips.forEach(t => { html += `<li>${esc(t)}</li>`; });
+      html += `</ul></div>`;
+    }
+    html += `</div>`;
+  }
+
+  // General Recommendations (backward compat for old records)
+  if (json.general_recommendations) {
+    html += `<div class="report-section actions">
+      <div class="report-section-header"><span class="report-section-badge">Tips</span><h3>Recommendations</h3></div>`;
+    if (Array.isArray(json.general_recommendations)) {
+      for (const rec of json.general_recommendations) {
+        html += `<div style="font-size:13px;padding:6px 10px;background:var(--surface2);border-radius:4px;margin-bottom:4px;">${esc(typeof rec === 'string' ? rec : rec.recommendation || JSON.stringify(rec))}</div>`;
+      }
+    } else {
+      html += `<div style="font-size:13px;line-height:1.6;">${esc(String(json.general_recommendations))}</div>`;
+    }
+    html += `</div>`;
+  }
+
+  contentDiv.innerHTML = html;
+}
+
+// ============================================================
+// OPTIONS USED BADGES
+// ============================================================
+
+function renderOptionsUsed(opts) {
+  if (!opts || Object.keys(opts).length === 0) return '';
+
+  const badges = [];
+  if (opts.platform) badges.push({ label: 'Platform', value: opts.platform });
+  if (opts.objective) badges.push({ label: 'Objective', value: opts.objective });
+  if (opts.target_audience) badges.push({ label: 'Audience', value: opts.target_audience });
+  if (opts.tone) badges.push({ label: 'Tone', value: opts.tone });
+  if (opts.ad_count) badges.push({ label: 'Ad Count', value: opts.ad_count });
+  if (opts.color_scheme) badges.push({ label: 'Colors', value: opts.color_scheme });
+  if (opts.image_models && opts.image_models.length > 0) {
+    badges.push({ label: 'Models', value: opts.image_models.map(m => m.replace(/_/g, ' ')).join(', ') });
+  }
+
+  if (badges.length === 0) return '';
+
+  let html = `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;">`;
+  for (const b of badges) {
+    html += `<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:var(--surface);border:1px solid var(--border);border-radius:20px;font-size:12px;">
+      <strong style="color:var(--text-dim);">${esc(b.label)}:</strong> ${esc(String(b.value))}
+    </span>`;
+  }
+  html += `</div>`;
+  return html;
+}
+
+// ============================================================
+// CURATED ADS RENDERING
+// ============================================================
+
+function renderCuratedAds(curatedAds) {
+  let html = `<div style="margin-bottom:24px;">
+    <h3 style="font-size:18px;margin-bottom:12px;">Curated Ads to Clone</h3>`;
+
+  for (const ca of curatedAds) {
+    const rankColor = ca.rank === 1 ? '#f59e0b' : ca.rank === 2 ? '#94a3b8' : ca.rank === 3 ? '#cd7f32' : '#6b7085';
+
+    html += `<div class="report-section clone" style="border-left-color:${rankColor};margin-bottom:16px;">`;
+
+    // Header: rank + competitor + platform
+    html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+      <span class="badge" style="background:${rankColor};color:#fff;font-weight:700;font-size:13px;">#${ca.rank}</span>
+      <strong style="font-size:15px;">${esc(ca.source_competitor || '')}</strong>
+      <span class="badge" style="font-size:10px;">${esc(ca.source_platform || '')}</span>
+      ${ca.source_ad_ref ? `<span class="text-dim" style="font-size:12px;">${esc(ca.source_ad_ref)}</span>` : ''}
+    </div>`;
+
+    // Original ad info
+    html += `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px 14px;margin-bottom:10px;">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px;">Original Ad</div>`;
+    if (ca.original_headline) html += `<div style="font-size:14px;font-weight:600;margin-bottom:4px;">${esc(ca.original_headline)}</div>`;
+    if (ca.original_ad_text) html += `<div style="font-size:13px;line-height:1.5;margin-bottom:4px;max-height:80px;overflow:auto;">${esc(ca.original_ad_text)}</div>`;
+    if (ca.original_cta) html += `<span class="badge" style="background:var(--surface);font-size:11px;">${esc(ca.original_cta)}</span>`;
+    html += `</div>`;
+
+    // Why clone + effectiveness signals
+    if (ca.why_clone) {
+      html += `<div style="margin-bottom:8px;font-size:13px;line-height:1.5;"><strong style="color:#0ea5e9;">Why Clone:</strong> ${esc(ca.why_clone)}</div>`;
+    }
+    if (ca.effectiveness_signals && ca.effectiveness_signals.length > 0) {
+      html += `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px;">`;
+      for (const sig of ca.effectiveness_signals) {
+        html += `<span style="display:inline-block;padding:2px 8px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:12px;font-size:11px;color:#065f46;">${esc(sig)}</span>`;
+      }
+      html += `</div>`;
+    }
+
+    // Adaptation strategy
+    if (ca.adaptation_strategy) {
+      const as = ca.adaptation_strategy;
+      html += `<div style="background:#fef3c7;border:1px solid #fde68a;border-radius:6px;padding:10px 14px;margin-bottom:10px;">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:#92400e;margin-bottom:6px;">Adaptation Strategy</div>`;
+      if (as.angle) html += `<div style="font-size:13px;margin-bottom:4px;"><strong>Angle:</strong> ${esc(as.angle)}</div>`;
+      if (as.key_changes && as.key_changes.length > 0) {
+        html += `<div style="font-size:13px;margin-bottom:6px;"><strong>Key Changes:</strong></div>
+          <ul style="margin:0 0 6px 16px;font-size:13px;">`;
+        as.key_changes.forEach(c => { html += `<li>${esc(c)}</li>`; });
+        html += `</ul>`;
+      }
+      if (as.adapted_headline) {
+        html += `<div style="margin-bottom:4px;font-size:14px;font-weight:600;">${esc(as.adapted_headline)}
+          <button class="btn btn-ghost btn-sm" style="font-size:10px;padding:1px 6px;margin-left:6px;" onclick="copyText(this, ${escAttr(as.adapted_headline)})">Copy</button>
+        </div>`;
+      }
+      if (as.adapted_ad_text) {
+        html += `<div style="margin-bottom:4px;font-size:13px;line-height:1.5;">${esc(as.adapted_ad_text)}
+          <button class="btn btn-ghost btn-sm" style="font-size:10px;padding:1px 6px;margin-left:6px;" onclick="copyText(this, ${escAttr(as.adapted_ad_text)})">Copy</button>
+        </div>`;
+      }
+      if (as.adapted_cta) {
+        html += `<span class="badge" style="background:var(--primary);color:#fff;">${esc(as.adapted_cta)}</span>`;
+      }
+      html += `</div>`;
+    }
+
+    // Model recommendation + format
+    html += `<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:10px;">`;
+    if (ca.recommended_model) {
+      const modelColors = {
+        midjourney: '#5865F2', dalle: '#10a37f', nano_banana: '#d97706', nanogpt: '#8b5cf6',
+        stable_diffusion: '#a855f7', ideogram: '#ec4899', flux: '#0ea5e9',
+      };
+      const mColor = modelColors[ca.recommended_model] || '#6b7085';
+      const mLabel = ca.recommended_model.replace(/_/g, ' ').toUpperCase();
+      html += `<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;background:${mColor}15;border:1px solid ${mColor}40;border-radius:12px;font-size:12px;font-weight:600;color:${mColor};">
+        <span style="width:8px;height:8px;border-radius:50%;background:${mColor};"></span> ${esc(mLabel)}
+      </span>`;
+    }
+    if (ca.recommended_format) {
+      html += `<span class="badge" style="font-size:11px;">${esc(ca.recommended_format)}</span>`;
+    }
+    html += `</div>`;
+
+    if (ca.model_reasoning) {
+      html += `<div style="font-size:12px;color:var(--text-dim);margin-bottom:10px;"><strong>Model Reasoning:</strong> ${esc(ca.model_reasoning)}</div>`;
+    }
+
+    // Visual Direction
+    const vd = ca.visual_direction;
+    if (vd && typeof vd === 'object') {
+      html += `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px 14px;margin-bottom:8px;">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px;">Visual Direction</div>
+        <div style="font-size:13px;line-height:1.5;">`;
+      if (vd.style) html += `<div><strong>Style:</strong> ${esc(vd.style)}</div>`;
+      if (vd.layout) html += `<div><strong>Layout:</strong> ${esc(vd.layout)}</div>`;
+      if (vd.mood) html += `<div><strong>Mood:</strong> ${esc(vd.mood)}</div>`;
+      if (vd.text_overlay) html += `<div><strong>Text Overlay:</strong> ${esc(vd.text_overlay)}</div>`;
+      html += `</div>`;
+      // Color palette
+      const palette = vd.color_palette || [];
+      if (palette.length > 0) {
+        html += `<div style="display:flex;gap:4px;margin-top:6px;align-items:center;">
+          <span style="font-size:11px;color:var(--text-dim);">Colors:</span>
+          ${palette.map(color => `<span style="display:inline-block;width:20px;height:20px;border-radius:4px;background:${esc(color)};border:1px solid var(--border);" title="${esc(color)}"></span>`).join('')}
+        </div>`;
+      }
+      html += `</div>`;
+    }
+
+    // AI Prompt for recommended model
+    const aiPrompts = ca.ai_prompts || {};
+    if (Object.keys(aiPrompts).length > 0) {
+      const modelColors = {
+        midjourney: '#5865F2', dalle: '#10a37f', nano_banana: '#d97706', nanogpt: '#8b5cf6',
+        stable_diffusion: '#a855f7', ideogram: '#ec4899', flux: '#0ea5e9',
+      };
+      html += `<div style="background:#f5920608;border:1px solid #f5920620;border-radius:6px;padding:10px 14px;margin-bottom:8px;">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:#ea580c;margin-bottom:6px;">AI Image Prompt</div>`;
+      for (const [tool, prompt] of Object.entries(aiPrompts)) {
+        const color = modelColors[tool] || '#6b7085';
+        const label = tool.replace(/_/g, ' ').toUpperCase();
+        const promptText = typeof prompt === 'string' ? prompt : JSON.stringify(prompt);
+        html += `<div style="margin-bottom:6px;">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
+            <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${color};"></span>
+            <span style="font-size:11px;font-weight:700;color:${color};">${esc(label)}</span>
+            <button class="btn btn-ghost btn-sm" style="font-size:10px;padding:1px 6px;margin-left:auto;" onclick="copyText(this, ${escAttr(promptText)})">Copy</button>
+          </div>
+          <div style="font-size:12px;font-family:Consolas,Monaco,monospace;background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:6px 10px;line-height:1.5;">${esc(promptText)}</div>
+        </div>`;
+      }
+      html += `</div>`;
+    }
+
+    // Clone This Ad button
+    html += `<div style="margin-top:10px;">
+      <button class="btn btn-primary btn-sm" onclick="scrollToCloneWithAd(${escAttr(ca.source_competitor || '')}, ${escAttr(ca.original_headline || '')}, ${escAttr(ca.recommended_model || '')}, ${escAttr(ca.recommended_format || '')})">Clone This Ad</button>
+    </div>`;
+
+    html += `</div>`;
+  }
+
+  html += `</div>`;
+  return html;
+}
+
+// ============================================================
+// MODEL RECOMMENDATION SUMMARY
+// ============================================================
+
+function renderModelSummary(summary) {
+  if (!summary) return '';
+
+  const modelColors = {
+    midjourney: '#5865F2', dalle: '#10a37f', nano_banana: '#d97706', nanogpt: '#8b5cf6',
+    stable_diffusion: '#a855f7', ideogram: '#ec4899', flux: '#0ea5e9',
+  };
+
+  let html = `<div class="report-section" style="border-left-color:#8b5cf6;margin-bottom:16px;">
+    <div class="report-section-header"><span class="report-section-badge" style="background:#8b5cf6;">Models</span><h3>Model Recommendations</h3></div>`;
+
+  if (summary.best_for_this_campaign) {
+    const bestColor = modelColors[summary.best_for_this_campaign] || '#6b7085';
+    const bestLabel = summary.best_for_this_campaign.replace(/_/g, ' ').toUpperCase();
+    html += `<div style="margin-bottom:10px;font-size:14px;">
+      <strong>Best for this campaign:</strong>
+      <span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;background:${bestColor}15;border:1px solid ${bestColor}40;border-radius:12px;font-size:12px;font-weight:600;color:${bestColor};margin-left:6px;">
+        <span style="width:8px;height:8px;border-radius:50%;background:${bestColor};"></span> ${esc(bestLabel)}
+      </span>
+    </div>`;
+  }
+  if (summary.reasoning) {
+    html += `<div style="font-size:13px;line-height:1.6;margin-bottom:10px;">${esc(summary.reasoning)}</div>`;
+  }
+  if (summary.model_notes && typeof summary.model_notes === 'object') {
+    html += `<div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(200px, 1fr));gap:8px;">`;
+    for (const [model, note] of Object.entries(summary.model_notes)) {
+      const color = modelColors[model] || '#6b7085';
+      const label = model.replace(/_/g, ' ').toUpperCase();
+      html += `<div style="background:var(--surface2);border-radius:6px;padding:8px 12px;border-left:3px solid ${color};">
+        <div style="font-size:11px;font-weight:700;color:${color};margin-bottom:2px;">${esc(label)}</div>
+        <div style="font-size:12px;color:var(--text-dim);line-height:1.4;">${esc(note)}</div>
+      </div>`;
+    }
+    html += `</div>`;
+  }
+
+  html += `</div>`;
+  return html;
+}
+
+// ============================================================
+// AD CONCEPTS (backward compat + new linked concepts)
+// ============================================================
+
+function renderAdConcepts(concepts) {
+  let html = `<div style="margin-bottom:24px;">
+    <h3 style="font-size:18px;margin-bottom:12px;">Ad Concepts</h3>`;
+
   for (let i = 0; i < concepts.length; i++) {
     const c = concepts[i];
     html += `<div class="report-section clone" style="border-left-color:#ea580c;">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
         <span class="badge" style="background:#ea580c;color:#fff;font-weight:700;">Ad ${i + 1}</span>
         <strong style="font-size:15px;">${esc(c.concept_name || c.name || 'Concept ' + (i + 1))}</strong>
+        ${c.based_on_curated_ad ? `<span class="badge" style="font-size:10px;background:var(--surface);">Based on #${c.based_on_curated_ad}</span>` : ''}
       </div>`;
 
-    // Generated Images
+    // Generated Images (backward compat for old records with Pollinations images)
     const imgs = c.generated_images || {};
     if (imgs.feed_1x1 || imgs.story_9x16 || imgs.banner_16x9) {
       html += `<div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;align-items:flex-end;">`;
@@ -184,7 +486,7 @@ function renderImageAds(ad) {
       </div>`;
     }
 
-    // Size Variants
+    // Size Variants (backward compat)
     if (c.size_variants) {
       const variantKeys = Object.keys(c.size_variants);
       if (variantKeys.length > 0) {
@@ -241,21 +543,79 @@ function renderImageAds(ad) {
     html += `</div>`;
   }
 
-  // General Recommendations
-  if (json.general_recommendations) {
-    html += `<div class="report-section actions">
-      <div class="report-section-header"><span class="report-section-badge">Tips</span><h3>Recommendations</h3></div>`;
-    if (Array.isArray(json.general_recommendations)) {
-      for (const rec of json.general_recommendations) {
-        html += `<div style="font-size:13px;padding:6px 10px;background:var(--surface2);border-radius:4px;margin-bottom:4px;">${esc(typeof rec === 'string' ? rec : rec.recommendation || JSON.stringify(rec))}</div>`;
+  html += `</div>`;
+  return html;
+}
+
+// ============================================================
+// SCROLL TO CLONE WITH PRE-SELECTED AD
+// ============================================================
+
+function scrollToCloneWithAd(sourceCompetitor, originalHeadline, recommendedModel, recommendedFormat) {
+  // Ensure clone section is visible
+  if (cloneSection.style.display === 'none') return;
+
+  // Scroll to clone section
+  cloneSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  // Try to find and select the matching scraped ad
+  const select = document.getElementById('clone-ad-select');
+  if (select && scrapedAdsFlat.length > 0) {
+    let bestIdx = -1;
+    let bestScore = 0;
+
+    for (let i = 0; i < scrapedAdsFlat.length; i++) {
+      const ad = scrapedAdsFlat[i];
+      let score = 0;
+      // Match by competitor name
+      if (sourceCompetitor && ad._compName && ad._compName.toLowerCase() === sourceCompetitor.toLowerCase()) score += 10;
+      // Match by headline
+      if (originalHeadline && ad.headline) {
+        const normOrig = originalHeadline.toLowerCase().trim();
+        const normAd = ad.headline.toLowerCase().trim();
+        if (normAd === normOrig) score += 20;
+        else if (normAd.includes(normOrig.substring(0, 30)) || normOrig.includes(normAd.substring(0, 30))) score += 8;
       }
-    } else {
-      html += `<div style="font-size:13px;line-height:1.6;">${esc(String(json.general_recommendations))}</div>`;
+      if (score > bestScore) { bestScore = score; bestIdx = i; }
     }
-    html += `</div>`;
+
+    if (bestIdx >= 0) {
+      select.value = bestIdx;
+      previewSelectedAd();
+    }
   }
 
-  contentDiv.innerHTML = html;
+  // Pre-select recommended model
+  if (recommendedModel) {
+    const modelSelect = document.getElementById('clone-model');
+    if (modelSelect) {
+      const modelMap = {
+        'nano_banana': 'google/gemini-2.5-flash-image',
+        'dalle': 'openai/gpt-5-image',
+        'midjourney': 'openrouter/auto',
+        'flux': 'openrouter/auto',
+        'stable_diffusion': 'openrouter/auto',
+        'ideogram': 'openrouter/auto',
+        'nanogpt': 'openai/gpt-5-image-mini',
+      };
+      const mappedModel = modelMap[recommendedModel];
+      if (mappedModel) {
+        for (const opt of modelSelect.options) {
+          if (opt.value === mappedModel) { modelSelect.value = mappedModel; break; }
+        }
+      }
+    }
+  }
+
+  // Pre-select recommended format
+  if (recommendedFormat) {
+    const formatSelect = document.getElementById('clone-format');
+    if (formatSelect) {
+      const formatMap = { '1:1': '1:1', '9:16': '9:16', '16:9': '16:9' };
+      const mapped = formatMap[recommendedFormat];
+      if (mapped) formatSelect.value = mapped;
+    }
+  }
 }
 
 // ============================================================

@@ -1,28 +1,27 @@
 /**
- * Agent: Image Ad Creator
+ * Agent: Image Ad Curator
  * Route: routes/image-ads.js → POST /api/containers/:id/image-ads
- * Deps: config, storage, logger, parse-json, gather-data (gatherContainerContext), fs, path
+ * Deps: config, storage, logger, parse-json, gather-data (gatherCompetitorAds, gatherCompetitorAnalyses, gatherContainerContext), summarize-ads
  * Stores: storage.image_ads[]
  *
- * Generates image ad creatives with copy, visual direction, and AI-generated
- * images via Pollinations.ai. Produces multiple size variants (Feed, Story, Banner).
+ * Curates the best competitor ads to clone and recommends which AI model to use
+ * for each. The Clone Ad feature on the report page handles actual image generation.
  */
 
 const log = require('../logger');
 const storage = require('../storage');
 const config = require('../config');
 const { parseJsonFromResponse } = require('../utils/parse-json');
-const { gatherContainerContext } = require('../utils/gather-data');
-const fs = require('fs');
-const path = require('path');
+const { gatherCompetitorAds, gatherCompetitorAnalyses, gatherContainerContext } = require('../utils/gather-data');
+const { summarizeAds } = require('../utils/summarize-ads');
 
 const SRC = 'ImageAdAgent';
 
 const AGENT_META = {
   code: 'ag0010',
   id: 'image-ads',
-  name: 'Image Ad Creator',
-  description: 'Ad copy, visual direction, and AI-generated images via Pollinations.ai.',
+  name: 'Image Ad Curator',
+  description: 'Curates best competitor ads for cloning with AI model recommendations.',
   category: 'generation',
   model: 'AI_MODEL',
   inputs: [
@@ -30,11 +29,12 @@ const AGENT_META = {
     { name: 'options', type: 'object', required: false, from: null },
   ],
   consumes: [
-    { agent: 'scraper', dataKey: 'scrape_results', description: 'Competitor ads for creative inspiration' },
-    { agent: 'analyzer', dataKey: 'competitor_analyses', description: 'Creative format insights' },
+    { agent: 'scraper', dataKey: 'scrape_results', description: 'Competitor ads to curate for cloning' },
+    { agent: 'analyzer', dataKey: 'competitor_analyses', description: 'Creative format insights and effectiveness signals' },
     { agent: 'proposal', dataKey: 'proposals', description: 'Creative brief context' },
+    { agent: 'container-context', dataKey: 'container_context', description: 'Curated insights from all analyses' },
   ],
-  outputs: { storageKey: 'image_ads', dataType: 'mixed', schema: 'ImageAd' },
+  outputs: { storageKey: 'image_ads', dataType: 'json', schema: 'ImageAdCuration' },
   ui: { visible: true },
 };
 
@@ -46,7 +46,7 @@ async function generateImageAds(containerId, options = {}) {
   if (!ad) throw new Error('Failed to create image ad record');
 
   executeImageAds(containerId, ad.id, container, options).catch(async (err) => {
-    log.error(SRC, 'Image ad generation crashed', { err: err.message });
+    log.error(SRC, 'Image ad curation crashed', { err: err.message });
     try {
       await storage.updateImageAd(containerId, ad.id, 'failed', { error: err.message });
     } catch (e) {}
@@ -62,25 +62,25 @@ async function executeImageAds(containerId, adId, container, options) {
 
     const prompt = buildPrompt(container, options);
 
-    log.info(SRC, 'Sending image ad request to Claude', {
+    log.info(SRC, 'Sending ad curation request to Claude', {
       containerId,
-      adCount: options.ad_count || 3,
+      adCount: options.ad_count || 5,
       promptLength: prompt.length,
     });
 
     const message = await client.messages.create({
       model: config.AI_MODEL,
       max_tokens: 12000,
-      system: `You are a senior creative director at a top advertising agency. You design high-converting image ads for digital platforms (Facebook, Instagram, Google Display).
+      system: `You are a senior ad strategist specializing in competitive intelligence and creative curation. Your job is to analyze a pool of competitor ads, identify the highest-performing ones worth cloning, and provide detailed adaptation strategies for the user's product.
 
 CRITICAL RULES:
 1. Output ONLY valid JSON. No markdown, no code fences, no extra text.
-2. Each ad concept must include copy, visual direction, and AI image generation prompts.
-3. Design for thumb-stopping scroll: bold visuals, clear value proposition, emotional hooks.
-4. Follow platform best practices: minimal text overlay (Facebook 20% rule), strong contrast.
-5. Generate prompts ONLY for the AI image tools the user has selected.
-6. Consider ad psychology: social proof, urgency, FOMO, aspiration, problem-solution.
-7. Each concept should have a distinct creative angle — don't repeat the same approach.`,
+2. Rank ads by cloning potential — prioritize ads with strong effectiveness signals (long-running, clear CTA, emotional hooks, proven formats).
+3. For each curated ad, explain WHY it should be cloned and HOW to adapt it.
+4. Recommend the best AI image model for each ad based on its visual style.
+5. Provide a ready-to-use prompt for the recommended model.
+6. Each adaptation must differentiate from the original — never suggest a direct copy.
+7. Consider the user's platform, objective, and audience when ranking and adapting.`,
       messages: [{ role: 'user', content: prompt }],
     });
 
@@ -88,47 +88,6 @@ CRITICAL RULES:
     let jsonData = null;
     try { jsonData = parseJsonFromResponse(fullText); } catch (e) {
       log.warn(SRC, 'JSON parse failed', { err: e.message });
-    }
-
-    // Generate actual images via Pollinations.ai for each concept
-    if (jsonData && jsonData.ad_concepts) {
-      log.info(SRC, 'Generating images via Pollinations.ai', { concepts: jsonData.ad_concepts.length });
-      for (let i = 0; i < jsonData.ad_concepts.length; i++) {
-        const concept = jsonData.ad_concepts[i];
-        try {
-          const imgPrompt = pickBestPrompt(concept);
-          if (imgPrompt) {
-            // Generate 1080x1080 feed image
-            const feedImg = await generatePollinationsImage(imgPrompt, 1080, 1080);
-            const feedFilename = `imgad_${adId}_${i}_feed.png`;
-            const feedPath = path.join(__dirname, '..', 'screenshots', feedFilename);
-            fs.writeFileSync(feedPath, feedImg);
-            concept.generated_images = concept.generated_images || {};
-            concept.generated_images.feed_1x1 = `/screenshots/${feedFilename}`;
-            log.info(SRC, `Image generated for concept ${i + 1} (feed)`, { file: feedFilename });
-
-            // Generate 1080x1920 story image
-            const storyImg = await generatePollinationsImage(imgPrompt, 1080, 1920);
-            const storyFilename = `imgad_${adId}_${i}_story.png`;
-            const storyPath = path.join(__dirname, '..', 'screenshots', storyFilename);
-            fs.writeFileSync(storyPath, storyImg);
-            concept.generated_images.story_9x16 = `/screenshots/${storyFilename}`;
-            log.info(SRC, `Image generated for concept ${i + 1} (story)`, { file: storyFilename });
-
-            // Generate 1200x628 banner image
-            const bannerImg = await generatePollinationsImage(imgPrompt, 1200, 628);
-            const bannerFilename = `imgad_${adId}_${i}_banner.png`;
-            const bannerPath = path.join(__dirname, '..', 'screenshots', bannerFilename);
-            fs.writeFileSync(bannerPath, bannerImg);
-            concept.generated_images.banner_16x9 = `/screenshots/${bannerFilename}`;
-            log.info(SRC, `Image generated for concept ${i + 1} (banner)`, { file: bannerFilename });
-          }
-        } catch (imgErr) {
-          log.warn(SRC, `Image generation failed for concept ${i + 1}`, { err: imgErr.message });
-          concept.generated_images = concept.generated_images || {};
-          concept.generated_images.error = imgErr.message;
-        }
-      }
     }
 
     const result = {
@@ -139,84 +98,28 @@ CRITICAL RULES:
     };
 
     await storage.updateImageAd(containerId, adId, 'completed', result);
-    log.info(SRC, 'Image ads generated', { adId });
+    log.info(SRC, 'Ad curation completed', { adId });
   } catch (err) {
     log.error(SRC, 'Claude API error', { err: err.message });
     await storage.updateImageAd(containerId, adId, 'failed', { error: err.message });
   }
 }
 
-/**
- * Pick the best prompt from a concept's ai_prompts for image generation.
- * Prefers: flux > dalle > nano_banana > stable_diffusion > midjourney > any other
- */
-function pickBestPrompt(concept) {
-  const prompts = concept.ai_prompts || concept.ai_image_prompts || {};
-  // Prefer prompts that work well with Pollinations (which uses FLUX)
-  const priority = ['flux', 'dalle', 'nano_banana', 'stable_diffusion', 'nanogpt', 'ideogram', 'midjourney'];
-  for (const key of priority) {
-    if (prompts[key] && typeof prompts[key] === 'string') return prompts[key];
-  }
-  // Fallback: use any available prompt
-  for (const val of Object.values(prompts)) {
-    if (typeof val === 'string' && val.length > 10) return val;
-  }
-  // Last resort: use visual direction
-  if (concept.visual_direction) {
-    const vd = concept.visual_direction;
-    return `${vd.style || 'photographic'} ad, ${vd.layout || ''}, ${vd.focal_point || ''}, ${vd.background || ''}, ${vd.mood || ''} mood`;
-  }
-  return null;
-}
-
-/**
- * Generate an image using Pollinations.ai (free, no API key)
- * Uses FLUX model. Rate limit: ~1 req/15s for anonymous.
- */
-async function generatePollinationsImage(prompt, width = 1024, height = 1024) {
-  const encodedPrompt = encodeURIComponent(prompt);
-  const params = new URLSearchParams({
-    model: 'flux',
-    width: width.toString(),
-    height: height.toString(),
-    nologo: 'true',
-    enhance: 'true',
-  });
-
-  const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?${params}`;
-
-  // Throttle: wait 16 seconds between requests to respect rate limit
-  await delay(16000);
-
-  const response = await fetch(url, { signal: AbortSignal.timeout(120000) });
-  if (!response.ok) {
-    throw new Error(`Pollinations API error: ${response.status} ${response.statusText}`);
-  }
-
-  const buffer = Buffer.from(await response.arrayBuffer());
-  if (buffer.length < 1000) {
-    throw new Error('Image too small — generation may have failed');
-  }
-  return buffer;
-}
-
-function delay(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
 function buildPrompt(container, options) {
   const parts = [];
 
-  parts.push('## Image Ad Creation Request');
+  parts.push('## Ad Curation & Clone Recommendation Request');
 
+  // Product info
   if (container.my_product) {
-    parts.push(`\n### Product`);
+    parts.push(`\n### Your Product`);
     parts.push(`Name: ${container.my_product.name}`);
     if (container.my_product.website) parts.push(`Website: ${container.my_product.website}`);
     if (container.my_product.target_audience) parts.push(`Target Audience: ${container.my_product.target_audience}`);
     if (container.my_product.unique_angle) parts.push(`Unique Angle: ${container.my_product.unique_angle}`);
   }
 
+  // Options
   if (options.platform) parts.push(`\n### Platform: ${options.platform}`);
   if (options.objective) parts.push(`### Campaign Objective: ${options.objective}`);
   if (options.target_audience) parts.push(`### Target Audience: ${options.target_audience}`);
@@ -224,8 +127,8 @@ function buildPrompt(container, options) {
   if (options.color_scheme) parts.push(`### Preferred Colors: ${options.color_scheme}`);
   if (options.custom_instructions) parts.push(`### Custom Instructions:\n${options.custom_instructions}`);
 
-  const adCount = options.ad_count || 3;
-  parts.push(`\n### Number of Ad Concepts: ${adCount}`);
+  const adCount = options.ad_count || 5;
+  parts.push(`\n### Number of Ads to Curate: ${adCount}`);
 
   // Container Context (curated insights)
   const contextData = gatherContainerContext(container);
@@ -237,120 +140,161 @@ function buildPrompt(container, options) {
     }
   }
 
-  // Gather competitor ad patterns for inspiration
-  const competitorAds = [];
-  const scrapes = (container.scrape_results || []).filter(s => s.status === 'completed');
-  for (const scrape of scrapes.slice(-2)) {
-    for (const [compId, compData] of Object.entries(scrape.scraped_data?.competitors || {})) {
-      const comp = container.competitors.find(c => c.id === compId);
-      for (const ad of [...(compData.facebook || []), ...(compData.google || [])].slice(0, 4)) {
-        competitorAds.push({
-          competitor: comp?.name || 'Unknown',
-          headline: ad.headline,
-          text: ad.ad_text?.substring(0, 150),
-          cta: ad.cta_text,
-          media_type: ad.media_type,
-          ocr_text: ad.ocr_text?.substring(0, 100),
-        });
+  // Gather competitor ads using shared utilities
+  const competitorIds = (container.competitors || []).map(c => c.id);
+  const allAdsForPrompt = [];
+
+  for (const comp of (container.competitors || [])) {
+    const ads = gatherCompetitorAds(container, comp.id, { limit: 15 });
+    const fbAds = (ads.facebook || []).map(a => ({ ...a, platform: 'facebook' }));
+    const gAds = (ads.google || []).map(a => ({ ...a, platform: 'google' }));
+    const combined = [...fbAds, ...gAds];
+    if (combined.length > 0) {
+      parts.push(`\n### ${comp.name} — Scraped Ads (${combined.length} ads)`);
+      parts.push(summarizeAds(combined, { maxAds: 15, textLimit: 400, ocrLimit: 200, includeLastShown: true }));
+      allAdsForPrompt.push({ competitor: comp.name, count: combined.length });
+    }
+  }
+
+  if (allAdsForPrompt.length === 0) {
+    parts.push('\n### No scraped competitor ads found. Base recommendations on container context and product info only.');
+  }
+
+  // Competitor analyses (creative intel)
+  const analyses = gatherCompetitorAnalyses(container, competitorIds);
+  if (Object.keys(analyses).length > 0) {
+    parts.push('\n### Competitor Analysis Intel');
+    for (const [compId, analysis] of Object.entries(analyses)) {
+      const comp = (container.competitors || []).find(c => c.id === compId);
+      const compName = comp?.name || compId;
+      if (analysis.creative_formats) {
+        parts.push(`**${compName} Creative Formats:** dominant: ${analysis.creative_formats.dominant_format || 'unknown'}`);
+        if (analysis.creative_formats.notable_creative_approaches) {
+          analysis.creative_formats.notable_creative_approaches.slice(0, 3).forEach(a => parts.push(`  - ${a}`));
+        }
+      }
+      if (analysis.key_themes) {
+        const themes = Array.isArray(analysis.key_themes) ? analysis.key_themes.slice(0, 3).join(', ') : analysis.key_themes;
+        parts.push(`**${compName} Key Themes:** ${themes}`);
+      }
+      if (analysis.messaging_patterns) {
+        parts.push(`**${compName} Messaging:** ${JSON.stringify(analysis.messaging_patterns).substring(0, 300)}`);
       }
     }
   }
 
-  if (competitorAds.length > 0) {
-    parts.push(`\n### Competitor Ad Examples (for differentiation)`);
-    for (const ca of competitorAds.slice(0, 10)) {
-      parts.push(`- [${ca.competitor}] "${ca.headline || ''}" | ${ca.media_type || 'image'} | CTA: "${ca.cta || ''}"${ca.ocr_text ? ` | Image text: "${ca.ocr_text}"` : ''}`);
-    }
-  }
-
-  // Get latest proposal for messaging context
+  // Proposal context
   const proposals = container.proposals || [];
   const latestProposal = [...proposals].reverse().find(p => p.status === 'completed');
   if (latestProposal?.result?.json_data) {
     const p = latestProposal.result.json_data;
     if (p.creative_briefs) {
-      parts.push(`\n### Creative Brief Context`);
+      parts.push(`\n### Creative Brief Context (from Proposal)`);
       for (const brief of (p.creative_briefs || []).slice(0, 3)) {
         parts.push(`- Theme: ${brief.theme || brief.name || ''} | Tone: ${brief.tone || ''} | Key message: ${brief.key_message || ''}`);
       }
     }
   }
 
-  // Get competitor analysis insights
-  for (const comp of container.competitors.slice(0, 3)) {
-    const analyses = (container.competitor_analyses || {})[comp.id] || [];
-    const latest = [...analyses].reverse().find(a => a.status === 'completed');
-    if (latest?.result?.json_data?.creative_formats) {
-      parts.push(`\n### ${comp.name} Creative Intel`);
-      const cf = latest.result.json_data.creative_formats;
-      parts.push(`Dominant format: ${cf.dominant_format}`);
-      if (cf.notable_creative_approaches) {
-        cf.notable_creative_approaches.slice(0, 3).forEach(a => parts.push(`- ${a}`));
-      }
+  // AI Model capabilities reference
+  const selectedModels = options.image_models || ['nano_banana', 'dalle', 'midjourney'];
+  const modelCapabilities = {
+    nano_banana: { name: 'Nano Banana (Gemini Flash)', strengths: 'Cheapest, fast, good for simple product shots and clean layouts', weaknesses: 'Less artistic control, simpler compositions', best_for: 'Product-focused ads, clean backgrounds, e-commerce style' },
+    dalle: { name: 'ChatGPT / DALL-E (GPT Image)', strengths: 'Best text rendering, photorealistic, follows complex instructions well', weaknesses: 'Slower, more expensive', best_for: 'Ads needing text overlay, lifestyle photography, detailed scenes' },
+    midjourney: { name: 'Midjourney', strengths: 'Most artistic, stunning aesthetics, great mood/atmosphere', weaknesses: 'Text rendering poor, needs specific syntax', best_for: 'Brand imagery, aspirational lifestyle, artistic/premium feel' },
+    stable_diffusion: { name: 'Stable Diffusion', strengths: 'Free/local, highly customizable with LoRAs, good for specific styles', weaknesses: 'Needs more prompt engineering, inconsistent quality', best_for: 'Iterating quickly, specific trained styles, batch generation' },
+    ideogram: { name: 'Ideogram', strengths: 'Excellent text-in-image, good typography rendering', weaknesses: 'Limited artistic range compared to MJ', best_for: 'Ads with prominent text, logos, typographic designs' },
+    flux: { name: 'Flux', strengths: 'Fast, good quality, natural language prompts', weaknesses: 'Less control over fine details', best_for: 'Quick iterations, general-purpose ad imagery' },
+    nanogpt: { name: 'NanoGPT', strengths: 'Good quality-to-cost ratio, diverse outputs', weaknesses: 'Less predictable than top-tier models', best_for: 'Budget-friendly ad campaigns, testing variations' },
+  };
+
+  parts.push(`\n### Available AI Image Models for Cloning`);
+  parts.push('When recommending a model, consider the ad\'s visual style and what model would best reproduce it:');
+  for (const modelKey of selectedModels) {
+    const cap = modelCapabilities[modelKey];
+    if (cap) {
+      parts.push(`- **${cap.name}**: ${cap.strengths}. Best for: ${cap.best_for}`);
     }
   }
 
-  // Build dynamic ai_prompts schema based on selected models
-  const selectedModels = options.image_models || ['midjourney', 'dalle', 'nano_banana'];
-  const modelPromptDescriptions = {
-    midjourney: '"midjourney": "detailed Midjourney prompt with --ar, --style, --v parameters"',
-    dalle: '"dalle": "detailed DALL-E/ChatGPT image generation prompt"',
-    nano_banana: '"nano_banana": "direct descriptive prompt optimized for Nano Banana image generator"',
-    nanogpt: '"nanogpt": "detailed prompt for NanoGPT image generation, descriptive and specific"',
-    stable_diffusion: '"stable_diffusion": "Stable Diffusion prompt with quality tags, negative prompt hints"',
-    ideogram: '"ideogram": "Ideogram prompt optimized for text-in-image rendering"',
-    flux: '"flux": "Flux/FLUX.1 prompt, natural language, detailed scene description"',
-  };
-
-  const aiPromptsBlock = selectedModels
-    .map(m => modelPromptDescriptions[m] || `"${m}": "detailed prompt for ${m}"`)
-    .join(',\n        ');
-
-  parts.push(`\n### Selected AI Image Tools: ${selectedModels.join(', ')}
-Generate prompts ONLY for these tools. Tailor each prompt to the specific tool's strengths and syntax.`);
-
+  // Output schema
   parts.push(`\n## Output Format
-Generate ${adCount} distinct ad concepts. Output JSON:
+Curate the top ${adCount} competitor ads worth cloning. Rank by cloning potential. Output JSON:
 
 {
-  "campaign_theme": "overarching theme for this ad set",
-  "target_platforms": ["Facebook Feed", "Instagram Feed", "Instagram Stories", "Google Display"],
+  "curation_summary": "2-3 sentence overview of what was found and the curation strategy",
+  "curated_ads": [
+    {
+      "rank": 1,
+      "source_competitor": "competitor name",
+      "source_platform": "facebook|google",
+      "source_ad_ref": "ad number or identifier from the scraped data (e.g. 'Ad 3')",
+      "original_headline": "the original ad's headline",
+      "original_ad_text": "the original ad's body text (truncated if long)",
+      "original_cta": "the original CTA",
+      "why_clone": "1-2 sentences explaining why this ad is worth cloning",
+      "effectiveness_signals": ["long-running (X days)", "strong emotional hook", "clear value prop", "etc."],
+      "adaptation_strategy": {
+        "angle": "the creative angle to take for adaptation",
+        "key_changes": ["change 1", "change 2", "change 3"],
+        "adapted_headline": "new headline for user's product",
+        "adapted_ad_text": "new ad text adapted for user's product",
+        "adapted_cta": "new CTA"
+      },
+      "recommended_model": "model_key from available models",
+      "model_reasoning": "why this model is best for this particular ad's visual style",
+      "recommended_format": "1:1|9:16|16:9",
+      "visual_direction": {
+        "style": "photographic|illustrated|3d-render|flat-design|minimalist",
+        "layout": "description of composition",
+        "mood": "energetic|calm|luxurious|playful|professional|bold",
+        "color_palette": ["#hex1", "#hex2", "#hex3"],
+        "text_overlay": "what text to overlay on the image"
+      },
+      "ai_prompts": {
+        "<recommended_model_key>": "detailed prompt optimized for that specific model"
+      }
+    }
+  ],
   "ad_concepts": [
     {
       "concept_number": 1,
       "concept_name": "short creative name",
+      "based_on_curated_ad": 1,
       "creative_angle": "problem-solution|aspirational|social-proof|urgency|educational|emotional",
       "copy": {
-        "primary_text": "main ad body text (125 chars for FB, compelling hook)",
-        "headline": "bold headline (40 chars max)",
-        "description": "link description (30 chars)",
-        "cta_button": "Shop Now|Learn More|Sign Up|Get Started|etc."
+        "primary_text": "main ad body text",
+        "headline": "headline",
+        "description": "link description",
+        "cta_button": "CTA text"
       },
       "visual_direction": {
-        "layout": "description of the layout composition",
-        "focal_point": "what draws the eye first",
+        "layout": "layout description",
+        "focal_point": "what draws the eye",
         "background": "background description",
-        "text_overlay": "what text appears on the image itself (keep minimal)",
-        "color_palette": ["#hex1", "#hex2", "#hex3"],
-        "style": "photographic|illustrated|3d-render|flat-design|collage|minimalist",
-        "mood": "energetic|calm|luxurious|playful|professional|bold"
-      },
-      "size_variants": {
-        "feed_1x1": "1080x1080 specific notes",
-        "story_9x16": "1080x1920 specific notes",
-        "banner_16x9": "1200x628 specific notes"
+        "text_overlay": "text on image",
+        "color_palette": ["#hex1", "#hex2"],
+        "style": "photographic|illustrated|etc",
+        "mood": "mood description"
       },
       "ai_prompts": {
-        ${aiPromptsBlock}
+        ${selectedModels.map(m => `"${m}": "detailed prompt for ${m}"`).join(',\n        ')}
       },
-      "psychology_hooks": ["what psychological triggers this ad uses"],
-      "a_b_test_suggestion": "what element to test in a variant"
+      "psychology_hooks": ["psychological trigger used"],
+      "a_b_test_suggestion": "what to test in a variant"
     }
   ],
+  "model_recommendation_summary": {
+    "best_for_this_campaign": "model_key",
+    "reasoning": "why this model is the best overall pick for this campaign",
+    "model_notes": {
+      ${selectedModels.map(m => `"${m}": "brief note on how this model fits this specific campaign"`).join(',\n      ')}
+    }
+  },
   "creative_guidelines": {
-    "brand_consistency": "notes on maintaining brand consistency across concepts",
-    "do_nots": ["things to avoid in these ads"],
-    "performance_tips": ["tips for maximizing ad performance"]
+    "brand_consistency": "notes on maintaining brand consistency",
+    "do_nots": ["things to avoid"],
+    "performance_tips": ["tips for maximizing performance"]
   }
 }`);
 

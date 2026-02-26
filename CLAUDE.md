@@ -29,6 +29,7 @@ Each page is fully independent with its own JS file.
 - `public/proposal.html` + `public/js/proposal-report.js`
 - `public/test-plan.html` + `public/js/test-plan-report.js`
 - `public/image-ads.html` + `public/js/image-ads-report.js`
+- `public/keyword-strategy.html` + `public/js/keyword-strategy-page.js`
 
 ---
 
@@ -97,7 +98,7 @@ Additional dependencies per agent:
 | AG-005 | proposal-agent | gather-data.* (all 5 functions), summarize-ads |
 | AG-007 | product-ideator-agent | gather-data.gatherScrapeData, gatherCompetitorAnalyses |
 | AG-008 | keyword-ideator-agent | gather-data.gatherContainerContext |
-| AG-010 | image-ad-agent | gather-data.gatherCompetitorAds, gatherScrapeData, gatherContainerContext |
+| AG-010 | image-ad-agent | gather-data.gatherCompetitorAds, gatherCompetitorAnalyses, gatherContainerContext, summarize-ads |
 | AG-012 | landing-page-agent | gather-data.gatherContainerContext, inject-tracking |
 | AG-011 | quiz-agent | gather-data.gatherContainerContext, inject-tracking |
 | AG-013 | test-planner-agent | gather-data.gatherContainerContext |
@@ -149,6 +150,7 @@ Additional dependencies per agent:
 | `image-ads.html` | `image-ads-report.js` | GET /api/containers/:id/image-ads/:id |
 | `scrape-details.html` | `scrape-details.js` | GET /api/containers/:id/scrapes/:id |
 | `chat.html` | `chat-page.js` | GET /api/containers, POST /api/containers/:id/chat |
+| `keyword-strategy.html` | `keyword-strategy-page.js` | GET /api/containers, GET /api/containers/:id, POST /api/containers/:id/keyword-strategy, GET /api/containers/:id/keyword-strategies/:id |
 | `guide.html` | `guide.js` | None (static content) |
 
 ---
@@ -211,7 +213,7 @@ When adding a new agent, assign the next sequential code.
 | ag0007 | product-ideator | Product Ideator | generation |
 | ag0008 | keyword-ideator | Keyword Strategist | generation |
 | ag0009 | google-ads | Google Ads Connector | api |
-| ag0010 | image-ads | Image Ad Creator | generation |
+| ag0010 | image-ads | Image Ad Curator | generation |
 | ag0011 | quiz | Quiz Generator | generation |
 | ag0012 | landing-page | Landing Page Generator | generation |
 | ag0013 | test-planner | RPS Test Ideator | generation |

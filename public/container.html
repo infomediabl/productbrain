@@ -9,7 +9,7 @@
 <body>
   <header>
     <div class="container">
-      <h1><span>Product</span> Analyzer</h1>
+      <h1><a href="/" style="color:inherit;text-decoration:none;"><span>Product</span> Analyzer</a></h1>
       <nav>
         <a href="/">Dashboard</a>
         <a href="/guide.html">Guide</a>
@@ -321,14 +321,14 @@
         <div id="quiz-list"></div>
       </div>
 
-      <!-- Image Ad Creator -->
+      <!-- Image Ad Curator -->
       <div class="card agent-card" style="margin-bottom:24px;" id="imgad-section">
         <div class="agent-header">
           <span class="agent-badge agent-badge-imgad">AG-010</span>
-          <h3>Image Ad Creator</h3>
-          <span class="agent-help">?<span class="agent-help-bubble">Creates complete image ad concepts using Claude AI. For each ad, generates headline, body copy, CTA, visual description, color palette, and ready-to-use prompts for AI image generators (DALL-E, Midjourney, Stable Diffusion, etc). Choose platform, objective, audience, and tone.</span></span>
-          <span class="text-dim" style="font-size:12px;">AI generates ad concepts with copy, visuals & prompts</span>
-          <button class="btn btn-primary btn-sm" id="imgad-btn" onclick="openImageAdModal()" style="margin-left:auto;">Create Ads</button>
+          <h3>Image Ad Curator</h3>
+          <span class="agent-help">?<span class="agent-help-bubble">AI curates the best competitor ads worth cloning and recommends which AI model to use for each. View the curation report for adaptation strategies, then use Clone Ad to generate the actual image via OpenRouter.</span></span>
+          <span class="text-dim" style="font-size:12px;">AI curates best competitor ads for cloning with model recommendations</span>
+          <button class="btn btn-primary btn-sm" id="imgad-btn" onclick="openImageAdModal()" style="margin-left:auto;">Curate Ads</button>
         </div>
         <div id="imgad-status" style="display:none;"></div>
         <div id="imgad-list"></div>
@@ -719,7 +719,7 @@
         </div>
         <div class="form-group" style="flex:1;margin-bottom:0;">
           <label style="font-size:13px;font-weight:600;">Ad Count</label>
-          <input type="number" id="imgad-count" min="1" max="10" value="3" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;">
+          <input type="number" id="imgad-count" min="1" max="10" value="5" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;">
         </div>
       </div>
       <div class="form-group" style="margin-bottom:12px;">
@@ -759,7 +759,7 @@
       </div>
       <div style="display:flex;gap:8px;justify-content:flex-end;">
         <button class="btn btn-ghost btn-sm" onclick="closeImageAdModal()">Cancel</button>
-        <button class="btn btn-primary btn-sm" onclick="submitImageAdModal()">Create Ads</button>
+        <button class="btn btn-primary btn-sm" onclick="submitImageAdModal()">Curate Ads</button>
       </div>
     </div>
   </div>
