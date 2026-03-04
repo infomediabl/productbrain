@@ -1,12 +1,12 @@
 /**
  * Storage Layer (SHARED — do not edit from multiple sessions)
- * Used by: ALL 21 route files, several agents directly
+ * Used by: ALL 22 route files, several agents directly
  * Data: JSON files in data/<container-id>.json
  *
  * Provides CRUD for all entities: containers, metadata, scrape_results,
  * competitor_analyses, seo_analyses, proposals, generated_prompts,
  * product_ideas, keyword_strategies, landing_pages, image_ads, quizzes,
- * test_plans, case_studies, gads_analyses, container_context, settings.
+ * test_plans, case_studies, gads_analyses, container_context, spinoff_ideas, settings.
  *
  * Uses per-container write queue (enqueueWrite) to prevent JSON corruption
  * from concurrent writes.
@@ -69,6 +69,9 @@ function ensureFields(container) {
   if (!container.case_studies) container.case_studies = [];
   if (!container.container_context) container.container_context = [];
   if (!container.keyword_ideas) container.keyword_ideas = [];
+  if (!container.taboola_campaigns) container.taboola_campaigns = [];
+  if (!container.spinoff_ideas) container.spinoff_ideas = [];
+  if (!container.hooks_results) container.hooks_results = [];
   // my_product can be null (no existing product) — don't default it
   return container;
 }
@@ -76,7 +79,7 @@ function ensureFields(container) {
 // --- Container CRUD ---
 
 function listContainers() {
-  const files = fs.readdirSync(DATA_DIR).filter(f => f.endsWith('.json') && f !== 'last_analysis.json');
+  const files = fs.readdirSync(DATA_DIR).filter(f => f.endsWith('.json') && f !== 'last_analysis.json' && f !== 'web-research.json' && f !== 'changelog.json' && f !== 'desire-spring.json');
   const summaries = [];
   for (const file of files) {
     try {
@@ -1061,6 +1064,19 @@ function getCaseStudy(containerId, studyId) {
   return container.case_studies.find(s => s.id === studyId) || null;
 }
 
+function deleteCaseStudy(containerId, studyId) {
+  return enqueueWrite(containerId, () => {
+    const container = readContainerFile(containerId);
+    if (!container || !container.case_studies) return false;
+    const idx = container.case_studies.findIndex(s => s.id === studyId);
+    if (idx === -1) return false;
+    container.case_studies.splice(idx, 1);
+    container.updated_at = new Date().toISOString();
+    writeContainerFile(container);
+    return true;
+  });
+}
+
 // ========== Container Context (Collector) ==========
 
 function addContainerContext(containerId, { source_type, source_id, section_name, content, text_brief }) {
@@ -1165,7 +1181,7 @@ function getKnownAdIds(containerId) {
  * Returns array of { id, name, my_product, competitors }.
  */
 function listAutoScrapeContainers() {
-  const files = fs.readdirSync(DATA_DIR).filter(f => f.endsWith('.json') && f !== 'last_analysis.json');
+  const files = fs.readdirSync(DATA_DIR).filter(f => f.endsWith('.json') && f !== 'last_analysis.json' && f !== 'web-research.json' && f !== 'changelog.json' && f !== 'desire-spring.json');
   const results = [];
   for (const file of files) {
     try {
@@ -1199,6 +1215,203 @@ function updateScrapeNewAdsCount(containerId, scrapeId, count) {
     writeContainerFile(container);
     return scrape;
   });
+}
+
+// ========== ResearchWeb CRUD (global, not per-container) ==========
+
+const RESEARCH_WEB_PATH = path.join(DATA_DIR, 'web-research.json');
+let researchWriteQueue = Promise.resolve();
+
+function enqueueResearchWrite(fn) {
+  const next = researchWriteQueue.then(() => fn());
+  researchWriteQueue = next.catch(err => {
+    const log = require('./logger');
+    log.error('Storage', 'ResearchWeb write queue error', { err: err.message });
+  });
+  return next;
+}
+
+function readResearchWebFile() {
+  if (!fs.existsSync(RESEARCH_WEB_PATH)) return { records: [] };
+  const raw = fs.readFileSync(RESEARCH_WEB_PATH, 'utf8');
+  return JSON.parse(raw);
+}
+
+function writeResearchWebFile(data) {
+  fs.writeFileSync(RESEARCH_WEB_PATH, JSON.stringify(data, null, 2), 'utf8');
+}
+
+function addResearchWeb(topic) {
+  return enqueueResearchWrite(() => {
+    const data = readResearchWebFile();
+    const record = {
+      id: uuidv4(),
+      created_at: new Date().toISOString(),
+      topic,
+      status: 'searching',
+      result: null,
+    };
+    data.records.push(record);
+    writeResearchWebFile(data);
+    return record;
+  });
+}
+
+function updateResearchWeb(id, status, result) {
+  return enqueueResearchWrite(() => {
+    const data = readResearchWebFile();
+    const record = data.records.find(r => r.id === id);
+    if (!record) return null;
+    record.status = status;
+    if (result !== undefined) record.result = result;
+    writeResearchWebFile(data);
+    return record;
+  });
+}
+
+function getResearchWeb(id) {
+  const data = readResearchWebFile();
+  return data.records.find(r => r.id === id) || null;
+}
+
+function listResearchWeb() {
+  const data = readResearchWebFile();
+  return data.records.map(r => ({
+    id: r.id,
+    created_at: r.created_at,
+    topic: r.topic,
+    status: r.status,
+    source_count: r.result?.sources?.length || 0,
+    summary_count: r.result?.summaries?.length || 0,
+  }));
+}
+
+function deleteResearchWeb(id) {
+  return enqueueResearchWrite(() => {
+    const data = readResearchWebFile();
+    const idx = data.records.findIndex(r => r.id === id);
+    if (idx === -1) return false;
+    data.records.splice(idx, 1);
+    writeResearchWebFile(data);
+    return true;
+  });
+}
+
+// ========== Taboola Campaign Cloner CRUD ==========
+
+function addTaboolaCampaign(containerId) {
+  return enqueueWrite(containerId, () => {
+    const container = readContainerFile(containerId);
+    if (!container) return null;
+    ensureFields(container);
+    const campaign = {
+      id: uuidv4(),
+      created_at: new Date().toISOString(),
+      status: 'generating',
+      source_ad_ids: [],
+      result: null,
+    };
+    container.taboola_campaigns.push(campaign);
+    container.updated_at = new Date().toISOString();
+    writeContainerFile(container);
+    return campaign;
+  });
+}
+
+function updateTaboolaCampaign(containerId, campaignId, status, result) {
+  return enqueueWrite(containerId, () => {
+    const container = readContainerFile(containerId);
+    if (!container) return null;
+    ensureFields(container);
+    const campaign = container.taboola_campaigns.find(c => c.id === campaignId);
+    if (!campaign) return null;
+    campaign.status = status;
+    if (result !== undefined) campaign.result = result;
+    writeContainerFile(container);
+    return campaign;
+  });
+}
+
+function getTaboolaCampaign(containerId, campaignId) {
+  const container = readContainerFile(containerId);
+  if (!container) return null;
+  ensureFields(container);
+  return container.taboola_campaigns.find(c => c.id === campaignId) || null;
+}
+
+// ========== SpinOff Ideas CRUD ==========
+
+function addSpinoffIdea(containerId) {
+  return enqueueWrite(containerId, () => {
+    const container = readContainerFile(containerId);
+    if (!container) return null;
+    ensureFields(container);
+    const idea = {
+      id: uuidv4(),
+      created_at: new Date().toISOString(),
+      status: 'generating',
+      result: null,
+    };
+    container.spinoff_ideas.push(idea);
+    container.updated_at = new Date().toISOString();
+    writeContainerFile(container);
+    return idea;
+  });
+}
+
+function updateSpinoffIdea(containerId, ideaId, status, result) {
+  return enqueueWrite(containerId, () => {
+    const container = readContainerFile(containerId);
+    if (!container) return null;
+    ensureFields(container);
+    const idea = container.spinoff_ideas.find(i => i.id === ideaId);
+    if (!idea) return null;
+    idea.status = status;
+    if (result !== undefined) idea.result = result;
+    writeContainerFile(container);
+    return idea;
+  });
+}
+
+function getSpinoffIdea(containerId, ideaId) {
+  const container = readContainerFile(containerId);
+  if (!container) return null;
+  ensureFields(container);
+  return container.spinoff_ideas.find(i => i.id === ideaId) || null;
+}
+
+// ========== Hooks Results CRUD ==========
+function addHooksResult(containerId) {
+  return enqueueWrite(containerId, () => {
+    const container = readContainerFile(containerId);
+    if (!container) return null;
+    ensureFields(container);
+    const item = { id: uuidv4(), created_at: new Date().toISOString(), status: 'generating', result: null };
+    container.hooks_results.push(item);
+    writeContainerFile(container);
+    return item;
+  });
+}
+
+function updateHooksResult(containerId, hookId, status, result) {
+  return enqueueWrite(containerId, () => {
+    const container = readContainerFile(containerId);
+    if (!container) return null;
+    ensureFields(container);
+    const item = container.hooks_results.find(h => h.id === hookId);
+    if (!item) return null;
+    item.status = status;
+    if (result !== undefined) item.result = result;
+    writeContainerFile(container);
+    return item;
+  });
+}
+
+function getHooksResult(containerId, hookId) {
+  const container = readContainerFile(containerId);
+  if (!container) return null;
+  ensureFields(container);
+  return container.hooks_results.find(h => h.id === hookId) || null;
 }
 
 module.exports = {
@@ -1241,7 +1454,15 @@ module.exports = {
   // Keyword Ideas (Google Keyword Planner)
   addKeywordIdeas, updateKeywordIdeas, getKeywordIdeas,
   // Case Study Analyzer
-  addCaseStudy, updateCaseStudy, getCaseStudy,
+  addCaseStudy, updateCaseStudy, getCaseStudy, deleteCaseStudy,
   // Container Context (Collector)
   addContainerContext, deleteContainerContext, clearContainerContext, getContainerContext,
+  // ResearchWeb (global)
+  addResearchWeb, updateResearchWeb, getResearchWeb, listResearchWeb, deleteResearchWeb,
+  // Taboola Campaign Cloner
+  addTaboolaCampaign, updateTaboolaCampaign, getTaboolaCampaign,
+  // SpinOff Ideas
+  addSpinoffIdea, updateSpinoffIdea, getSpinoffIdea,
+  // Hooks Results
+  addHooksResult, updateHooksResult, getHooksResult,
 };

@@ -85,14 +85,63 @@ function showValidationReport(scrapeId) {
     </div>
   </div>`;
 
+  // Historical comparison
+  const cmp = r.comparison;
+  if (cmp && cmp.deltas) {
+    const d = cmp.deltas;
+    const fmtDelta = (val, inverted) => {
+      if (val === 0) return '<span class="text-dim">—</span>';
+      const improved = inverted ? val < 0 : val > 0;
+      const color = improved ? 'var(--success)' : 'var(--danger)';
+      const arrow = val > 0 ? '&#9650;' : '&#9660;';
+      const sign = val > 0 ? '+' : '';
+      return `<span style="color:${color};font-weight:600;">${arrow} ${sign}${val}</span>`;
+    };
+    const fmtPctDelta = (val, inverted) => {
+      if (val === 0) return '<span class="text-dim">—</span>';
+      const improved = inverted ? val < 0 : val > 0;
+      const color = improved ? 'var(--success)' : 'var(--danger)';
+      const arrow = val > 0 ? '&#9650;' : '&#9660;';
+      const sign = val > 0 ? '+' : '';
+      return `<span style="color:${color};font-weight:600;">${arrow} ${sign}${val}%</span>`;
+    };
+
+    const prevDate = cmp.previous_validated_at ? new Date(cmp.previous_validated_at).toLocaleDateString() : '?';
+    html += `<div style="margin-bottom:20px;padding:12px;border-radius:8px;background:var(--card-bg);border:1px solid var(--border);">
+      <h4 style="font-size:14px;margin-bottom:10px;">Compared to Previous Validation <span class="text-dim" style="font-size:12px;font-weight:400;">(${prevDate})</span></h4>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;font-size:13px;">
+        <div style="text-align:center;"><div class="text-dim" style="font-size:11px;margin-bottom:2px;">Score</div>${fmtDelta(d.overall_score)}</div>
+        <div style="text-align:center;"><div class="text-dim" style="font-size:11px;margin-bottom:2px;">Total Ads</div>${fmtDelta(d.total_ads)}</div>
+        <div style="text-align:center;"><div class="text-dim" style="font-size:11px;margin-bottom:2px;">Images%</div>${fmtPctDelta(d.image_pct)}</div>
+        <div style="text-align:center;"><div class="text-dim" style="font-size:11px;margin-bottom:2px;">Text%</div>${fmtPctDelta(d.text_pct)}</div>
+        <div style="text-align:center;"><div class="text-dim" style="font-size:11px;margin-bottom:2px;">Headlines%</div>${fmtPctDelta(d.headline_pct)}</div>
+        <div style="text-align:center;"><div class="text-dim" style="font-size:11px;margin-bottom:2px;">Screenshots%</div>${fmtPctDelta(d.screenshot_pct)}</div>
+        <div style="text-align:center;"><div class="text-dim" style="font-size:11px;margin-bottom:2px;">EU%</div>${fmtPctDelta(d.eu_pct)}</div>
+        <div style="text-align:center;"><div class="text-dim" style="font-size:11px;margin-bottom:2px;">Broken URLs</div>${fmtDelta(d.broken_urls, true)}</div>
+      </div>`;
+
+    // New/resolved issues summary
+    if ((cmp.new_issues && cmp.new_issues.length > 0) || (cmp.resolved_issues && cmp.resolved_issues.length > 0)) {
+      html += `<div style="margin-top:10px;font-size:12px;border-top:1px solid var(--border);padding-top:8px;">`;
+      if (cmp.resolved_issues && cmp.resolved_issues.length > 0) {
+        html += `<div style="color:var(--success);margin-bottom:4px;">&#10003; ${cmp.resolved_issues.length} issue(s) resolved</div>`;
+      }
+      if (cmp.new_issues && cmp.new_issues.length > 0) {
+        html += `<div style="color:var(--danger);">&#9888; ${cmp.new_issues.length} new issue(s)</div>`;
+      }
+      html += `</div>`;
+    }
+    html += `</div>`;
+  }
+
   // Coverage bars
   const bars = [
-    { label: 'Images', pct: s.image_pct || 0, count: `${s.with_image || 0}/${r.total_ads}` },
-    { label: 'Ad Text', pct: s.text_pct || 0, count: `${s.with_text || 0}/${r.total_ads}` },
-    { label: 'Headlines', pct: s.headline_pct || 0, count: `${s.with_headline || 0}/${r.total_ads}` },
-    { label: 'Screenshots', pct: s.screenshot_pct || 0, count: `${s.with_screenshot || 0}/${r.total_ads}` },
-    { label: 'EU Data (FB)', pct: s.eu_pct || 0, count: `${s.with_eu_data || 0}/${s.facebook_ads || 0}` },
-    { label: 'CTA', pct: r.total_ads > 0 ? Math.round(((s.with_cta || 0) / r.total_ads) * 100) : 0, count: `${s.with_cta || 0}/${r.total_ads}` },
+    { label: 'Images', pct: s.image_pct || 0, count: `${s.with_image || 0}/${r.total_ads}`, deltaKey: 'image_pct' },
+    { label: 'Ad Text', pct: s.text_pct || 0, count: `${s.with_text || 0}/${r.total_ads}`, deltaKey: 'text_pct' },
+    { label: 'Headlines', pct: s.headline_pct || 0, count: `${s.with_headline || 0}/${r.total_ads}`, deltaKey: 'headline_pct' },
+    { label: 'Screenshots', pct: s.screenshot_pct || 0, count: `${s.with_screenshot || 0}/${r.total_ads}`, deltaKey: 'screenshot_pct' },
+    { label: 'EU Data (FB)', pct: s.eu_pct || 0, count: `${s.with_eu_data || 0}/${s.facebook_ads || 0}`, deltaKey: 'eu_pct' },
+    { label: 'CTA', pct: r.total_ads > 0 ? Math.round(((s.with_cta || 0) / r.total_ads) * 100) : 0, count: `${s.with_cta || 0}/${r.total_ads}`, deltaKey: null },
   ];
 
   html += `<div style="margin-bottom:20px;">
@@ -107,7 +156,7 @@ function showValidationReport(scrapeId) {
       <div class="validation-bar-track">
         <div class="validation-bar-fill" style="width:${bar.pct}%;background:${barColor};"></div>
       </div>
-      <span class="validation-bar-value">${bar.pct}% <span class="text-dim">(${bar.count})</span></span>
+      <span class="validation-bar-value">${bar.pct}% ${cmp && cmp.deltas && bar.deltaKey && cmp.deltas[bar.deltaKey] !== 0 ? (() => { const dv = cmp.deltas[bar.deltaKey]; const clr = dv > 0 ? 'var(--success)' : 'var(--danger)'; return `<span style="color:${clr};font-size:11px;font-weight:600;">${dv > 0 ? '&#9650;+' : '&#9660;'}${dv}%</span>`; })() : ''} <span class="text-dim">(${bar.count})</span></span>
     </div>`;
   }
   html += `</div>`;
@@ -132,10 +181,13 @@ function showValidationReport(scrapeId) {
       <h4 style="font-size:14px;margin-bottom:8px;">Issues</h4>`;
     for (const issue of r.issues) {
       const iColor = issue.severity === 'error' ? 'var(--danger)' : issue.severity === 'warning' ? 'var(--warning)' : 'var(--text-dim)';
-      html += `<div style="display:flex;align-items:flex-start;gap:6px;margin-bottom:6px;font-size:13px;">
+      html += `<div style="display:flex;align-items:flex-start;gap:6px;margin-bottom:${issue.fix_action ? '2' : '6'}px;font-size:13px;">
         <span style="color:${iColor};font-weight:600;text-transform:uppercase;font-size:11px;flex-shrink:0;margin-top:1px;">${esc(issue.severity)}</span>
         <span>${esc(issue.message)}</span>
       </div>`;
+      if (issue.fix_action) {
+        html += `<div style="margin-left:52px;margin-bottom:6px;font-size:12px;color:var(--text-dim);font-style:italic;">Fix: ${esc(issue.fix_action)}</div>`;
+      }
     }
     html += `</div>`;
   }
@@ -151,7 +203,11 @@ function showValidationReport(scrapeId) {
           <th>EU Data</th><th>Screenshots</th><th>OCR</th><th>Issues</th>
         </tr></thead><tbody>`;
     for (const e of r.entries) {
-      const rowIssues = (e.issues || []).length + (e.broken_images || []).length + (e.broken_videos || []).length;
+      const allEntryIssues = [...(e.issues || [])];
+      if ((e.broken_images || []).length > 0) allEntryIssues.push({ message: `${e.broken_images.length} broken image URL(s)`, fix_action: 'Re-scrape to capture fresh media URLs.' });
+      if ((e.broken_videos || []).length > 0) allEntryIssues.push({ message: `${e.broken_videos.length} broken video URL(s)`, fix_action: 'Re-scrape to capture fresh media URLs.' });
+      const rowIssues = allEntryIssues.length;
+      const issueTooltip = allEntryIssues.map(i => i.fix_action ? `${i.message} — Fix: ${i.fix_action}` : i.message).join('\n');
       html += `<tr>
         <td><strong>${esc(e.entry_name)}</strong></td>
         <td><span class="badge ${e.entry_type === 'product' ? 'badge-primary' : 'badge-competitor'}">${e.entry_type}</span></td>
@@ -159,7 +215,7 @@ function showValidationReport(scrapeId) {
         <td>${e.with_image}</td><td>${e.with_video}</td><td>${e.with_text}</td>
         <td>${e.with_headline}</td><td>${e.with_cta}</td><td>${e.with_eu_data}</td>
         <td>${e.with_screenshot}</td><td>${e.with_ocr}</td>
-        <td>${rowIssues > 0 ? `<span style="color:var(--warning);">${rowIssues}</span>` : '<span style="color:var(--success);">0</span>'}</td>
+        <td>${rowIssues > 0 ? `<span style="color:var(--warning);cursor:help;" title="${esc(issueTooltip)}">${rowIssues}</span>` : '<span style="color:var(--success);">0</span>'}</td>
       </tr>`;
     }
     html += `</tbody></table></div></div>`;

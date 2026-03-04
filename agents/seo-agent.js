@@ -46,6 +46,7 @@ const AGENT_META = {
   ],
   outputs: { storageKey: 'seo_analyses', dataType: 'json', schema: 'SeoAnalysis' },
   ui: { visible: true },
+  prompt_summary: 'Two modes: (1) Competitor — analyzes competitor website SEO to extract strategies we can learn from. (2) Own product — audits our website with actionable priority actions.',
 };
 
 // ========== Competitor Intelligence ==========

@@ -37,6 +37,7 @@ const AGENT_META = {
   ],
   outputs: { storageKey: 'proposals', dataType: 'json', schema: 'Proposal' },
   ui: { visible: true },
+  prompt_summary: 'Selects the 5-10 best competitor ads to clone/adapt and produces structured creative briefs with evidence-based patterns and fresh ideas.',
 };
 
 /**

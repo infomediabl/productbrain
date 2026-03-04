@@ -28,7 +28,7 @@ router.post('/', async (req, res) => {
     tone: req.body.tone || '',
     color_scheme: req.body.color_scheme || '',
     ad_count: parseInt(req.body.ad_count) || 3,
-    image_models: req.body.image_models || ['midjourney', 'dalle', 'nano_banana'],
+    image_models: req.body.image_models || ['gemini_flash', 'gpt5_image_mini', 'gemini_pro'],
     custom_instructions: req.body.custom_instructions || '',
   };
 

@@ -4,9 +4,10 @@
  * Agent: case-study-agent.analyzeCaseStudy()
  * Deps: express, storage, case-study-agent, logger
  *
- * POST /         — Trigger case study analysis (requires source_type, content; accepts source_name, competitor_id)
- * GET  /:studyId — Get a specific case study
- * GET  /         — List all case studies
+ * POST /            — Trigger case study analysis (requires source_type, content; accepts source_name, competitor_id)
+ * GET  /:studyId    — Get a specific case study
+ * GET  /            — List all case studies
+ * DELETE /:studyId  — Delete a case study
  */
 const express = require('express');
 const router = express.Router({ mergeParams: true });
@@ -43,6 +44,18 @@ router.post('/', async (req, res) => {
   } catch (err) {
     log.error(SRC, 'Failed to start case study analysis', { err: err.message });
     res.status(400).json({ error: err.message });
+  }
+});
+
+// Delete a case study
+router.delete('/:studyId', async (req, res) => {
+  try {
+    const deleted = await storage.deleteCaseStudy(req.params.id, req.params.studyId);
+    if (!deleted) return res.status(404).json({ error: 'Case study not found' });
+    res.json({ deleted: true });
+  } catch (err) {
+    log.error(SRC, 'Failed to delete case study', { err: err.message });
+    res.status(500).json({ error: err.message });
   }
 });
 

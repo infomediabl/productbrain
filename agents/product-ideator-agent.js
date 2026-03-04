@@ -33,6 +33,7 @@ const AGENT_META = {
   ],
   outputs: { storageKey: 'product_ideas', dataType: 'json', schema: 'ProductIdea' },
   ui: { visible: true },
+  prompt_summary: 'Identifies market gaps and underserved segments from competitor data. Generates new product concepts with brand names, positioning, and competitive advantages.',
 };
 
 /**

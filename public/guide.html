@@ -179,7 +179,9 @@
         <a href="/">Dashboard</a>
         <a href="/guide.html">Guide</a>
         <a href="/chat.html">Chat</a>
+        <a href="/research-web.html">Research</a>
         <a href="/changelog.html">Changelog</a>
+        <a href="/desire-spring.html">DesireSpring</a>
         <a href="/add-container.html">New Container</a>
       </nav>
     </div>
@@ -223,6 +225,12 @@
               <div class="feature-item"><strong>AG-013</strong><span>RPS Test Ideator</span></div>
               <div class="feature-item"><strong>AG-014</strong><span>Case Study Analyzer</span></div>
               <div class="feature-item"><strong>AG-015</strong><span>Container Chat</span></div>
+              <div class="feature-item"><strong>AG-016</strong><span>DesireSpring</span></div>
+              <div class="feature-item"><strong>AG-017</strong><span>ResearchWeb</span></div>
+              <div class="feature-item"><strong>AG-018</strong><span>Taboola Campaign Cloner</span></div>
+              <div class="feature-item"><strong>AG-019</strong><span>SpinOff Ideas</span></div>
+              <div class="feature-item"><strong>AG-020</strong><span>Hooks Generator / Ad Workshop</span></div>
+              <div class="feature-item"><strong>AG-021</strong><span>Folder Ad Importer</span></div>
             </div>
           </div>
 
@@ -294,6 +302,24 @@
             <div id="scraper-details">
               <p>Scrapes live competitor ads from <strong>Facebook Ad Library</strong> and <strong>Google Ads Transparency Center</strong>. It uses a headless browser to navigate the pages, captures screenshots of each ad, and extracts ad copy, images, and metadata.</p>
               <p>To use: add a competitor with their Ad Library or Transparency URL, then click "Scrape". Results appear as cards showing each ad's creative, copy, and link. You can also validate scrape quality with the Scrape Validator.</p>
+              <p>Each ad card in scrape details has two action buttons:</p>
+              <ul style="margin:6px 0 6px 18px;font-size:14px;">
+                <li><strong>Push</strong> — pushes the ad's headline, description, CTA, and image path to Container Context for use by downstream agents.</li>
+                <li><strong>Clone</strong> — opens a modal to generate a new ad image via OpenRouter AI, adapted for your product. Choose model, format (1:1, 9:16, 16:9), and add custom instructions. Cloned images are saved to the <code>clonedAd/</code> folder.</li>
+              </ul>
+              <p><a href="/agent-guide.html?agent=scraper">Learn more &rarr;</a></p>
+            </div>
+          </div>
+
+          <div class="guide-section collect">
+            <button class="guide-collapse-toggle" data-target="validator-details" aria-expanded="true">
+              <span class="collapse-icon">&#9660;</span> AG-002 Scrape Validator
+            </button>
+            <div id="validator-details">
+              <p>Validates scrape quality by checking data completeness, media URL integrity, and screenshot availability. Produces a weighted quality score (0-100) with per-entry breakdowns and a global issues list. Each issue includes a recommended fix action. Does not use AI — purely data-driven validation.</p>
+              <p>When prior validations exist, shows a historical comparison with delta arrows for score, ad counts, and coverage percentages, plus a summary of new and resolved issues.</p>
+              <p>Run this after scraping to check whether data quality is sufficient for analysis, or whether you need to re-scrape.</p>
+              <p><a href="/agent-guide.html?agent=scrape-validator">Learn more &rarr;</a></p>
             </div>
           </div>
 
@@ -304,6 +330,7 @@
             <div id="gads-details">
               <p>Connects to <strong>your own Google Ads account via API</strong> to pull campaign performance data: clicks, impressions, CTR, conversions, cost, ad copy, and keywords. This is your own ad data — not competitor data.</p>
               <p>You can then run <strong>AI analysis on your campaigns</strong> to identify what's working and what isn't. The analysis results get pushed to Container Context as "Google Ads Performance" insights, which generation agents (Proposal, Keyword Strategist, Test Ideator, Container Chat) read automatically to produce better-informed output.</p>
+              <p><a href="/agent-guide.html?agent=google-ads">Learn more &rarr;</a></p>
             </div>
           </div>
 
@@ -322,6 +349,9 @@
             </button>
             <div id="casestudy-details">
               <p>Paste a URL or text of a marketing case study and the AI will extract key lessons: what worked, target audience, channels used, metrics achieved, and actionable takeaways relevant to your product.</p>
+              <p>Results open in a <strong>dedicated report page</strong> with formatted sections for summary, key metrics, strategies, channels, strengths/weaknesses, lessons, and quotes. Each section has a <strong>Push to Context</strong> button to feed insights into other agents, and a <strong>Push All</strong> button sends all key sections at once.</p>
+              <p>Case studies can be <strong>deleted</strong> from the dashboard when no longer needed.</p>
+              <p><a href="/agent-guide.html?agent=case-study">Learn more &rarr;</a></p>
             </div>
           </div>
 
@@ -335,6 +365,7 @@
             <div id="analyzer-details">
               <p>AI-powered analysis of a competitor's scraped ads. It examines ad copy patterns, messaging angles, CTAs, visual strategies, and targeting approaches. The output includes: key themes, content patterns, strengths, weaknesses, and opportunities for your product.</p>
               <p>Run this after scraping a competitor to understand their advertising strategy. Each analysis can be pushed to Container Context.</p>
+              <p><a href="/agent-guide.html?agent=analyzer">Learn more &rarr;</a></p>
             </div>
           </div>
 
@@ -345,6 +376,7 @@
             <div id="seo-details">
               <p>Analyzes <strong>websites and pages directly</strong> — not ads. Two modes: <strong>Competitor SEO</strong> studies a competitor's website to extract strategies, keyword patterns, and content structures you can learn from. <strong>Own Product SEO</strong> audits your product's site with scores and improvement recommendations.</p>
               <p>Results include keyword gaps, content opportunities, technical SEO issues, and competitive positioning insights. Push results to Container Context for use in generation.</p>
+              <p><a href="/agent-guide.html?agent=seo">Learn more &rarr;</a></p>
             </div>
           </div>
 
@@ -370,6 +402,7 @@
               <p>The central strategy step. The Proposal reads <strong>all container data</strong> — competitor analyses, SEO insights, Google Ads performance, scraped ads, metadata, and all Container Context items — to generate a comprehensive marketing strategy.</p>
               <p>The output includes positioning strategy, messaging frameworks, creative briefs, channel priorities, budget allocation, and a timeline. This is the most data-hungry tool — push as much context as possible before running it.</p>
               <p>Downstream agents use the proposal: <strong>Prompt Generator</strong> requires a completed proposal, while <strong>Image Ad Curator</strong> and <strong>RPS Test Ideator</strong> read it for messaging context. Run the proposal before generating assets for best results.</p>
+              <p><a href="/agent-guide.html?agent=proposal">Learn more &rarr;</a></p>
             </div>
           </div>
 
@@ -383,6 +416,7 @@
             <div id="keyword-details">
               <p>Generates a keyword strategy with categories, search intent mapping, content recommendations, and priority rankings. Uses container context to tailor keywords to your market position and competitive landscape.</p>
               <p>Available from the container dashboard modal <strong>or</strong> the dedicated <a href="/keyword-strategy.html">Keyword Strategy page</a>, which lets you select a container, toggle context inclusion, auto-populates the niche field from your product data, and displays results inline with keyword clusters, quick wins, competitor gaps, and ad keyword recommendations.</p>
+              <p><a href="/agent-guide.html?agent=keyword-ideator">Learn more &rarr;</a></p>
             </div>
           </div>
 
@@ -392,6 +426,7 @@
             </button>
             <div id="lp-details">
               <p>Creates a complete, ready-to-deploy HTML landing page with responsive design, persuasive copy, and conversion-focused layout. Automatically injects your Facebook Pixel and GA4 tracking codes if configured in Settings.</p>
+              <p><a href="/agent-guide.html?agent=landing-page">Learn more &rarr;</a></p>
             </div>
           </div>
 
@@ -401,6 +436,7 @@
             </button>
             <div id="quiz-details">
               <p>Creates an interactive lead-generation quiz as a standalone HTML page. The quiz guides prospects through questions that segment them, then presents personalized product recommendations. Includes tracking code injection.</p>
+              <p><a href="/agent-guide.html?agent=quiz">Learn more &rarr;</a></p>
             </div>
           </div>
 
@@ -418,6 +454,7 @@
               </ol>
               <p>After viewing the report, use <strong>Clone This Ad</strong> to jump to the clone section with the ad, model, and format pre-selected, then generate the actual image via OpenRouter.</p>
               <p>Reads scraped ads, competitor analyses, container context, and the latest proposal for informed curation. Old report links (<code>?cid=X&amp;adId=Y</code>) still work for viewing existing curations.</p>
+              <p><a href="/agent-guide.html?agent=image-ads">Learn more &rarr;</a></p>
             </div>
           </div>
 
@@ -427,6 +464,7 @@
             </button>
             <div id="prompt-details">
               <p><strong>Requires a completed proposal.</strong> Takes the proposal's creative briefs and generates detailed, ready-to-use prompts for AI image tools (Midjourney, DALL-E, Stable Diffusion). Each prompt is tailored to the strategy and messaging outlined in the proposal.</p>
+              <p><a href="/agent-guide.html?agent=prompt-generator">Learn more &rarr;</a></p>
             </div>
           </div>
 
@@ -436,6 +474,7 @@
             </button>
             <div id="testplan-details">
               <p>Generates A/B test plans organized around the KNOWNS/UNKNOWNS framework. Identifies what you know about your audience and market (knowns) and what assumptions need testing (unknowns), then designs specific experiments to validate them. Reads the latest <strong>proposal</strong> and Google Ads data for richer context.</p>
+              <p><a href="/agent-guide.html?agent=test-planner">Learn more &rarr;</a></p>
             </div>
           </div>
 
@@ -445,6 +484,94 @@
             </button>
             <div id="ideator-details">
               <p>Brainstorms new product ideas, features, and positioning angles based on your scrape data and competitor analyses. Useful for finding market gaps and differentiation opportunities.</p>
+              <p><a href="/agent-guide.html?agent=product-ideator">Learn more &rarr;</a></p>
+            </div>
+          </div>
+
+          <div class="guide-section generate">
+            <button class="guide-collapse-toggle" data-target="taboola-details" aria-expanded="true">
+              <span class="collapse-icon">&#9660;</span> AG-018 Taboola Campaign Cloner
+            </button>
+            <div id="taboola-details">
+              <p>Clones your top-performing Facebook ads into live <strong>Taboola native advertising campaigns</strong> via the Taboola Backstage API. Uses a <strong>2-step preview flow</strong>: AI generates Taboola-optimized copy first, you review and edit the rewrites side-by-side against the originals, then confirm to launch the live campaign.</p>
+
+              <h3 style="margin-top:16px;">Setup (one-time)</h3>
+              <ol style="padding-left:20px;margin:8px 0;line-height:1.8;">
+                <li>Go to <strong>Taboola Backstage</strong> &rarr; Account Settings &rarr; API to get your OAuth Client ID, Client Secret, and Advertiser Account ID.</li>
+                <li>In your container, click <strong>Settings</strong> &rarr; scroll to <strong>Taboola Integration</strong>.</li>
+                <li>Enter all three credentials. Click <strong>Test Connection</strong> to verify they work.</li>
+                <li>Click <strong>Save Settings</strong>. Credentials are saved per-container, so different containers can use different Taboola accounts.</li>
+              </ol>
+
+              <h3>How to use</h3>
+              <ol style="padding-left:20px;margin:8px 0;line-height:1.8;">
+                <li><strong>Scrape first</strong> &mdash; You need FB ads in your container. Run the Ad Scraper (AG-001) on at least one competitor.</li>
+                <li><strong>Push context</strong> &mdash; Push competitor analyses and product info to Container Context. The AI reads this when rewriting ad copy for Taboola's native format.</li>
+                <li><strong>Open the section</strong> &mdash; On the container dashboard, find "Taboola Campaign Cloner" (AG-018) and click to expand.</li>
+                <li><strong>Select ads</strong> &mdash; Check the FB ads you want to clone. Use "Select Top Ads" to auto-pick proven (non-new) ads. Each ad shows its thumbnail and headline.</li>
+                <li><strong>Configure</strong> &mdash; Set campaign name (auto-suggested), daily budget (default $20), CPC bid (default $0.50), country targeting (default US), and platforms (Desktop, Phone, Tablet).</li>
+                <li><strong>Step 1: Preview Copy</strong> &mdash; Click "Preview Copy". The AI generates Taboola-optimized titles (&lt;60 chars, curiosity/teaser style) and descriptions (&lt;150 chars). No campaign is created yet.</li>
+                <li><strong>Step 2: Review &amp; Launch</strong> &mdash; Click "Review &amp; Launch" to open the preview report. You'll see a <strong>side-by-side comparison</strong> of each original FB ad vs the AI-rewritten Taboola version. You can edit the title and description directly before confirming.</li>
+                <li><strong>Confirm</strong> &mdash; Click "Confirm &amp; Launch on Taboola" to create the live campaign. The system creates the campaign, uploads images, and creates all ad items with your approved copy.</li>
+                <li><strong>Monitor</strong> &mdash; When done, click "View Report" to see campaign details, or "Open in Taboola" to go to the Taboola Ads Manager.</li>
+              </ol>
+
+              <h3>What you get</h3>
+              <p>The campaign report shows: side-by-side comparison of original FB ads vs Taboola rewrites, Taboola campaign ID, campaign URL, each cloned item with its status, budget and targeting summary, and any errors for individual items.</p>
+
+              <div class="tip-box">
+                <strong>Tip:</strong> Start with a low daily cap ($10&ndash;$20) and 1&ndash;3 proven ads. The preview step lets you tweak every headline before going live &mdash; use it to add product-specific angles the AI might have missed.
+              </div>
+            </div>
+          </div>
+
+          <div class="guide-section generate">
+            <button class="guide-collapse-toggle" data-target="spinoff-ideas-details" aria-expanded="true">
+              <span class="collapse-icon">&#9660;</span> AG-019 SpinOff Ideas
+            </button>
+            <div id="spinoff-ideas-details">
+              <p>Analyzes your container data &mdash; product info, competitor analyses, scrape results, SEO data, and curated context &mdash; to propose <strong>spin-off product and business ideas</strong> adjacent to your current market. Think: if you sell wedding songs, what about birthday songs, anniversary videos, or pet memorial music?</p>
+              <p><strong>Inputs:</strong> Selected competitors (with data badges showing what's available), Container Context toggle, optional instructions prompt.</p>
+              <p><strong>Outputs:</strong> A landscape summary (transferable assets, adjacent opportunities) plus 5 spin-off idea cards, each with: name, description, why it could work, target audience, revenue model, effort estimate (low/medium/high), differentiators, next steps, and synergy with current product.</p>
+              <p><strong>Report Page:</strong> Click "View Report" to open a dedicated standalone page with full details for each idea. The report includes per-idea <strong>Push to Context</strong> buttons and a "Push All Ideas" button to send landscape data and individual ideas to Container Context for use by other agents.</p>
+              <div class="tip-box">
+                <strong>Tip:</strong> Push key competitor analyses and SEO data into Container Context first for richer spin-off ideas. Use the instructions prompt to steer the AI toward specific verticals (e.g., "focus on B2B SaaS ideas" or "mobile-first products only").
+              </div>
+            </div>
+          </div>
+
+          <!-- Folder Ad Importer -->
+          <h2 id="folder-scraper">Folder Ad Importer</h2>
+          <div class="guide-section collect">
+            <button class="guide-collapse-toggle" data-target="folder-scraper-details" aria-expanded="true">
+              <span class="collapse-icon">&#9660;</span> Folder Ad Importer
+            </button>
+            <div id="folder-scraper-details">
+              <p>Import ad creatives from a local folder instead of scraping them from the web. Useful when you have downloaded competitor ads manually or received them from a client.</p>
+              <p><strong>Setup:</strong></p>
+              <ul style="padding-left:20px;margin:8px 0;line-height:1.8;">
+                <li>Create a folder at <code>data/uploads/&lt;container-id&gt;/</code></li>
+                <li>Place image files (.jpg, .png, .webp, .gif) in the folder</li>
+                <li>Optionally add an <code>ads.csv</code> file with columns: <code>filename, title, description, cta, url, competitor_name</code></li>
+              </ul>
+              <p><strong>Usage:</strong> Click "Check Folder" to verify the folder exists and see file counts. Click "Import Ads" to create a scrape result from the folder contents. Imported scrapes appear in the Ad Scraper history with a "FOLDER" badge.</p>
+              <p>Once imported, folder ads can be analyzed by the Scraped Ads Analyzer just like web-scraped ads.</p>
+            </div>
+          </div>
+
+          <!-- Ad Workshop -->
+          <h2 id="ad-workshop">AG-020 Ad Workshop</h2>
+          <div class="guide-section">
+            <button class="guide-collapse-toggle" data-target="ad-workshop-details" aria-expanded="true">
+              <span class="collapse-icon">&#9660;</span> AG-020 Ad Workshop &amp; Hooks Generator
+            </button>
+            <div id="ad-workshop-details">
+              <p>A standalone page with two tabs for creating new ad creatives:</p>
+              <p><strong>Tab 1 — Clone Existing Ad:</strong> Displays a full-width table of all scraped ads across all scrape results. Each row shows the ad thumbnail, competitor name, source (FB/Google), headline, description, CTA, and a Clone button. Clicking Clone opens a modal where you pick an AI image model, format (1:1, 9:16, 16:9), and optional custom instructions, then generates a new image via OpenRouter.</p>
+              <p><strong>Tab 2 — Make New Ad:</strong> Uses the Hooks Generator (AG-020) to analyze your scraped ads and generate 8-12 advertising hooks/angles. Each hook includes the angle name, hook text, emotion, target segment, rationale, and visual suggestions. You can clone individual hooks or select multiple hooks and batch-clone them.</p>
+              <div class="tip-box">
+                <strong>Tip:</strong> Run a scrape and competitor analysis first to give the Hooks Generator more data to work with. The more ads in your container, the better the generated hooks.
+              </div>
             </div>
           </div>
 
@@ -460,9 +587,49 @@
               <li>"Summarize the key takeaways from all my analyses"</li>
             </ul>
             <p>The more context you've pushed, the more informed the chat responses will be.</p>
+            <p><a href="/agent-guide.html?agent=container-chat">Learn more &rarr;</a></p>
           </div>
 
-          <!-- 9. Tips -->
+          <!-- 9. Web Research -->
+          <h2 id="web-research">AG-017 Web Research</h2>
+          <div class="guide-section collect">
+            <button class="guide-collapse-toggle" data-target="web-research-details" aria-expanded="true">
+              <span class="collapse-icon">&#9660;</span> AG-017 ResearchWeb
+            </button>
+            <div id="web-research-details">
+              <p><strong>Web Research</strong> is a standalone tool accessible from the top navigation bar via the "Research" link. Unlike other agents, it is <em>not</em> tied to a specific container — it operates globally.</p>
+              <p>It works in two phases:</p>
+              <ul style="padding-left:20px;margin:8px 0;line-height:1.8;">
+                <li><strong>Phase 1 — Search:</strong> Enter any research topic. The agent uses Claude's built-in web search to find 8-15 high-quality sources (articles, videos, PDFs, social posts).</li>
+                <li><strong>Phase 2 — Summarize:</strong> Select which sources to summarize. The agent fetches each page via Puppeteer, then uses Claude to produce a summary, key insights, and relevance notes. A combined brief synthesizes all summaries.</li>
+              </ul>
+              <p>After summarization, you can <strong>push individual summaries or all summaries</strong> to any container's Context system using the container dropdown and Push buttons. This feeds your web research directly into the knowledge base that downstream agents (Proposal, Keyword Strategist, etc.) read.</p>
+              <p>Available from the dedicated <a href="/research-web.html">Research page</a>. Past research sessions appear in the sidebar for easy retrieval.</p>
+              <p><a href="/agent-guide.html?agent=research-web">Learn more &rarr;</a></p>
+            </div>
+          </div>
+
+          <!-- 10. DesireSpring -->
+          <h2 id="desire-spring">AG-016 DesireSpring</h2>
+          <div class="guide-section">
+            <button class="guide-collapse-toggle" data-target="desire-spring-details" aria-expanded="true">
+              <span class="collapse-icon">&#9660;</span> AG-016 DesireSpring
+            </button>
+            <div id="desire-spring-details">
+              <p><strong>DesireSpring</strong> is a standalone tool accessible from the top navigation bar. It captures feature ideas for the Product Analyzer app itself and generates structured implementation instructions.</p>
+              <p>The workflow:</p>
+              <ul style="padding-left:20px;margin:8px 0;line-height:1.8;">
+                <li><strong>Write an idea</strong> — Describe a feature you want to add to the app (e.g., "Add Semrush data integration").</li>
+                <li><strong>AI generates instructions</strong> — The agent reads the app's CLAUDE.md architecture document and produces step-by-step implementation instructions referencing real files, routes, and patterns.</li>
+                <li><strong>Review & edit</strong> — The generated instructions appear in an editable text area. You can modify them before saving.</li>
+                <li><strong>Save to file</strong> — Save the final instructions to the <code>instructions/</code> folder as a text file for future reference.</li>
+              </ul>
+              <p>Available from the dedicated <a href="/desire-spring.html">DesireSpring page</a>. All past ideas are listed in the sidebar with status badges (generating, ready, saved).</p>
+              <p><a href="/agent-guide.html?agent=desire-spring">Learn more &rarr;</a></p>
+            </div>
+          </div>
+
+          <!-- 11. Tips -->
           <h2 id="tips">Tips & Best Practices</h2>
 
           <div class="tip-box">

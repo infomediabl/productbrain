@@ -33,6 +33,7 @@ const AGENT_META = {
   ],
   outputs: { storageKey: 'competitor_analyses', dataType: 'json', schema: 'CompetitorAnalysis' },
   ui: { visible: true },
+  prompt_summary: 'Analyzes a single competitor\'s scraped ads to extract key findings, messaging patterns, creative formats, targeting insights, long-running ads, and opportunities.',
 };
 
 /**

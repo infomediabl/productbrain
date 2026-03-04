@@ -35,6 +35,7 @@ const AGENT_META = {
   ],
   outputs: { storageKey: 'keyword_strategies', dataType: 'json', schema: 'KeywordStrategy' },
   ui: { visible: true },
+  prompt_summary: 'Builds keyword strategy with clusters, quick wins, competitor gaps, and ad recommendations. Uses real CPC/volume data from Google Ads when available.',
 };
 
 async function generateKeywordStrategy(containerId, options = {}) {

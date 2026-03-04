@@ -31,7 +31,7 @@ function renderScrapes() {
     const isLegacy = !container.scrape_results.some(s => s.id === a.id);
     const viewUrl = isLegacy
       ? `/analysis.html?cid=${containerId}&aid=${a.id}`
-      : `/analysis.html?cid=${containerId}&aid=${a.id}&type=scrape`;
+      : `/scrape-details.html?cid=${containerId}&sid=${a.id}`;
     const isDone = a.status === 'completed' || a.status === 'timed_out';
     const v = a.validation;
     const vStatus = v?.status;
@@ -54,6 +54,7 @@ function renderScrapes() {
           <span class="text-dim">${a.status}</span>
           ${isLegacy ? '<span class="badge" style="background:#6b708515;color:#6b7085;">legacy</span>' : ''}
           ${a.trigger === 'auto' ? '<span class="badge badge-auto" style="font-size:11px;">AUTO</span>' : ''}
+          ${a.trigger === 'folder' ? '<span class="badge" style="font-size:11px;background:#78716c20;color:#78716c;">FOLDER</span>' : ''}
           ${a.new_ads_count > 0 ? `<span class="badge badge-new" style="font-size:11px;">+${a.new_ads_count} new</span>` : ''}
           ${a.error_message ? `<span class="text-dim" style="font-size:12px;">${esc(a.error_message).substring(0, 60)}</span>` : ''}
         </div>
@@ -196,7 +197,7 @@ async function pollSingleScrape(entryId, entryName, scrapeId) {
 
     if (data.status === 'completed') {
       statusEl.className = 'entry-analyze-status completed';
-      statusEl.innerHTML = `<span>Done!</span> <a href="/analysis.html?cid=${containerId}&aid=${scrapeId}&type=scrape" class="btn btn-primary btn-sm" style="padding:2px 8px;font-size:12px;">View</a>`;
+      statusEl.innerHTML = `<span>Done!</span> <a href="/scrape-details.html?cid=${containerId}&sid=${scrapeId}" class="btn btn-primary btn-sm" style="padding:2px 8px;font-size:12px;">View</a>`;
       if (btn) { btn.disabled = false; btn.textContent = 'Scrape'; }
       await loadContainer();
       return;
@@ -225,7 +226,7 @@ async function pollScrapeStatus(scrapeId) {
       if (statusEl) {
         statusEl.className = `status-bar ${data.status === 'completed' ? 'completed' : 'failed'}`;
         statusEl.innerHTML = `<span>${data.status === 'completed' ? 'Scraping completed!' : data.status === 'timed_out' ? 'Timed out' : 'Failed'} ${data.error_message ? '(' + esc(data.error_message).substring(0, 80) + ')' : ''}</span>
-          <a href="/analysis.html?cid=${containerId}&aid=${scrapeId}&type=scrape" class="btn btn-primary btn-sm" style="margin-left:12px;">View Results</a>`;
+          <a href="/scrape-details.html?cid=${containerId}&sid=${scrapeId}" class="btn btn-primary btn-sm" style="margin-left:12px;">View Results</a>`;
       }
       if (btn) { btn.disabled = false; btn.textContent = 'Scrape All Ads'; }
       await loadContainer();

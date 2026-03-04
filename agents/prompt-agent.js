@@ -31,6 +31,7 @@ const AGENT_META = {
   ],
   outputs: { storageKey: 'generated_prompts', dataType: 'json', schema: 'GeneratedPrompts' },
   ui: { visible: false },
+  prompt_summary: 'Converts creative briefs into AI image prompts for Nano Banana, ChatGPT/DALL-E, and Midjourney with scene composition, lighting, style, and copy overlays.',
 };
 
 /**

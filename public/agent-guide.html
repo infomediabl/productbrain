@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent Guide - Product Analyzer</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .ag-layout {
+      display: flex;
+      gap: 32px;
+      align-items: flex-start;
+    }
+
+    /* Sidebar nav */
+    .ag-sidebar {
+      position: sticky;
+      top: 80px;
+      width: 220px;
+      min-width: 220px;
+      max-height: calc(100vh - 100px);
+      overflow-y: auto;
+      padding: 12px 0;
+    }
+    .ag-sidebar h4 {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-dim);
+      padding: 8px 12px 4px;
+      margin: 0;
+    }
+    .ag-sidebar a {
+      display: block;
+      padding: 6px 12px;
+      font-size: 13px;
+      color: var(--text-dim);
+      border-left: 2px solid transparent;
+      border-radius: 0 4px 4px 0;
+      transition: all 0.15s;
+      text-decoration: none;
+    }
+    .ag-sidebar a:hover {
+      color: var(--text);
+      background: var(--surface2);
+    }
+    .ag-sidebar a.active {
+      color: var(--primary);
+      border-left-color: var(--primary);
+      background: var(--surface2);
+      font-weight: 500;
+    }
+
+    /* Main content */
+    .ag-content {
+      flex: 1;
+      min-width: 0;
+      max-width: 860px;
+    }
+    .ag-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--text-dim);
+      margin-bottom: 20px;
+    }
+    .ag-back:hover { color: var(--primary); }
+
+    /* Header */
+    .ag-header {
+      margin-bottom: 28px;
+    }
+    .ag-header h2 {
+      font-size: 26px;
+      font-weight: 700;
+      margin: 0 0 8px;
+    }
+    .ag-badges {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .ag-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .ag-badge.code {
+      background: var(--primary);
+      color: #fff;
+    }
+    .ag-badge.cat-scraping { background: #e0f2fe; color: #0369a1; }
+    .ag-badge.cat-validation { background: #fef3c7; color: #92400e; }
+    .ag-badge.cat-analysis { background: #ede9fe; color: #6d28d9; }
+    .ag-badge.cat-generation { background: #dcfce7; color: #15803d; }
+    .ag-badge.cat-api { background: #fce7f3; color: #9d174d; }
+    .ag-badge.cat-chat { background: #e0e7ff; color: #3730a3; }
+    .ag-badge.cat-research { background: #ccfbf1; color: #0f766e; }
+
+    /* Sections */
+    .ag-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    .ag-section h3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin: 0 0 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .ag-section p {
+      line-height: 1.65;
+      margin-bottom: 10px;
+      color: var(--text);
+    }
+    .ag-section p:last-child { margin-bottom: 0; }
+    .ag-section ul, .ag-section ol {
+      padding-left: 20px;
+      margin: 8px 0;
+      line-height: 1.7;
+    }
+    .ag-section li { margin-bottom: 4px; }
+
+    /* Steps */
+    .ag-steps {
+      counter-reset: ag-step;
+      list-style: none;
+      padding: 0;
+    }
+    .ag-steps li {
+      counter-increment: ag-step;
+      padding: 8px 0 8px 40px;
+      position: relative;
+      line-height: 1.6;
+    }
+    .ag-steps li::before {
+      content: counter(ag-step);
+      position: absolute;
+      left: 0; top: 8px;
+      width: 26px; height: 26px;
+      background: var(--primary);
+      color: #fff;
+      border-radius: 50%;
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Nav buttons */
+    .ag-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 32px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+    .ag-nav a {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 13px;
+      color: var(--text-dim);
+      text-decoration: none;
+      transition: all 0.15s;
+    }
+    .ag-nav a:hover {
+      color: var(--primary);
+      border-color: var(--primary);
+    }
+
+    /* Placeholder */
+    .ag-placeholder {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--text-dim);
+    }
+    .ag-placeholder h2 { font-size: 20px; margin-bottom: 12px; color: var(--text); }
+
+    @media (max-width: 860px) {
+      .ag-sidebar { display: none; }
+      .ag-content { max-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1><a href="/" style="color:inherit;text-decoration:none;"><span>Product</span> Analyzer</a></h1>
+      <nav>
+        <a href="/">Dashboard</a>
+        <a href="/guide.html">Guide</a>
+        <a href="/chat.html">Chat</a>
+        <a href="/research-web.html">Research</a>
+        <a href="/changelog.html">Changelog</a>
+        <a href="/desire-spring.html">DesireSpring</a>
+        <a href="/add-container.html">New Container</a>
+      </nav>
+    </div>
+  </header>
+  <main>
+    <div class="container">
+      <div class="ag-layout">
+        <aside class="ag-sidebar" id="ag-sidebar"></aside>
+        <div class="ag-content" id="ag-content"></div>
+      </div>
+    </div>
+  </main>
+  <script src="/js/agent-guide.js"></script>
+</body>
+</html>

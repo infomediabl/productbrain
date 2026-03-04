@@ -8,7 +8,8 @@
  *   Calls renderEntries(), renderIdeatorSection(), renderCaseStudies(), renderMetadata(),
  *   renderScrapes(), renderCompetitorAnalyses(), renderOwnProductSeo(), renderSeoAnalyses(),
  *   checkGadsStatus(), renderKeywordStrategies(), renderTestPlans(), renderLandingPages(),
- *   renderQuizzes(), renderImageAds(), renderProposals(), renderPrompts(), loadContainerContext().
+ *   renderQuizzes(), renderImageAds(), renderSpinoffIdeas(), renderProposals(), renderPrompts(),
+ *   loadContainerContext().
  *
  * Reads containerId from URL query param, fetches the container object, and orchestrates
  * rendering across all container.html sub-modules. Defines the shared esc() HTML-escape utility.
@@ -40,6 +41,7 @@ async function loadContainer() {
   renderLandingPages();
   renderQuizzes();
   renderImageAds();
+  renderSpinoffIdeas();
   renderProposals();
   renderPrompts();
   loadContainerContext();
@@ -50,6 +52,8 @@ function renderHeader() {
   document.getElementById('edit-link').href = `/add-container.html?id=${container.id}`;
   const chatLink = document.getElementById('chat-page-link');
   if (chatLink) chatLink.href = `/chat.html?cid=${container.id}`;
+  const workshopLink = document.getElementById('workshop-link');
+  if (workshopLink) workshopLink.href = `/ad-workshop.html?cid=${container.id}`;
 }
 
 function esc(str) {
@@ -62,4 +66,5 @@ function esc(str) {
 window.addEventListener('beforeunload', () => {
   if (typeof scrapePollTimer !== 'undefined' && scrapePollTimer) clearTimeout(scrapePollTimer);
   if (typeof proposalPollTimer !== 'undefined' && proposalPollTimer) clearTimeout(proposalPollTimer);
+  if (typeof spinoffPollTimer !== 'undefined' && spinoffPollTimer) clearTimeout(spinoffPollTimer);
 });

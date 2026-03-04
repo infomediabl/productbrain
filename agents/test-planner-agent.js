@@ -37,6 +37,7 @@ const AGENT_META = {
   ],
   outputs: { storageKey: 'test_plans', dataType: 'json', schema: 'TestPlan' },
   ui: { visible: true },
+  prompt_summary: 'Designs advertising tests using KNOWNS/UNKNOWNS framework with max 1-2 unknowns per test. Provides budget, geo, audience, and success criteria.',
 };
 
 async function generateTestPlan(containerId, options = {}) {

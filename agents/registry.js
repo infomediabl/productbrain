@@ -30,6 +30,12 @@ register(require('./landing-page-agent'));
 register(require('./test-planner-agent'));
 register(require('./case-study-agent'));
 register(require('./container-chat-agent'));
+register(require('./desire-spring-agent'));
+register(require('./research-web-agent'));
+register(require('./taboola-agent'));
+register(require('./spinoff-ideas-agent'));
+register(require('./folder-scraper-agent'));
+register(require('./hooks-agent'));
 
 /**
  * Get an agent by its AGENT_META.id.

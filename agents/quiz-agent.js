@@ -31,6 +31,7 @@ const AGENT_META = {
   consumes: [],
   outputs: { storageKey: 'quizzes', dataType: 'html', schema: 'Quiz' },
   ui: { visible: true },
+  prompt_summary: 'Creates interactive HTML quizzes with question navigation, scoring, and image prompt cards. Runs a QA validation pass for correctness.',
 };
 
 async function generateQuiz(containerId, options = {}) {

@@ -1,10 +1,14 @@
 /**
  * Central Configuration (SHARED — do not edit from multiple sessions)
- * Used by: ALL 14 agents in agents/*.js, routes/clone-ad.js
+ * Used by: ALL 15 agents in agents/*.js, routes/clone-ad.js
  *
  * Exports: AI_MODEL, AI_MODEL_HEAVY, AI_MODEL_FAST, DEFAULT_MAX_TOKENS,
  *          API_TIMEOUT_MS, CONCISENESS_INSTRUCTION, OPENROUTER_API_KEY,
+ *          TABOOLA_CLIENT_ID, TABOOLA_CLIENT_SECRET, TABOOLA_ACCOUNT_ID,
  *          APP_CONTEXT
+ *
+ * Taboola uses OAuth 2.0 client credentials flow.
+ * Token endpoint: https://backstage.taboola.com/backstage/oauth/token
  */
 
 module.exports = {
@@ -15,6 +19,11 @@ module.exports = {
   API_TIMEOUT_MS: 600000,
   CONCISENESS_INSTRUCTION: 'Be extremely concise. Max 1-2 sentences per text field. No filler, no generic advice. Reference specific data points only.',
   OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY || '',
+
+  // Taboola Backstage API (OAuth 2.0 client credentials)
+  TABOOLA_CLIENT_ID: process.env.TABOOLA_CLIENT_ID,
+  TABOOLA_CLIENT_SECRET: process.env.TABOOLA_CLIENT_SECRET,
+  TABOOLA_ACCOUNT_ID: process.env.TABOOLA_ACCOUNT_ID,
 
   /**
    * APP_CONTEXT — The mission statement for this entire application.

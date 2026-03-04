@@ -5,8 +5,11 @@
  * Globals defined: containerId, scrapeId, container, scrape, esc(), formatDate(),
  *   openLightbox(), resolveImageSrc(), getAllLocalImages(), getEntryName(), getEntryUrls(),
  *   renderStatusBadge(), renderAdImages(), renderAdLinks(), renderEuAudience(), renderAd(),
- *   renderSourceSection(), renderEntrySection(), render(), init()
- * API: GET /api/containers/:id, GET /api/containers/:id/scrapes/:scrapeId
+ *   renderSourceSection(), renderEntrySection(), render(), init(),
+ *   pushAdToContext(), openCloneModal(), closeCloneModal(), submitClone(), fetchCloneModels()
+ * API: GET /api/containers/:id, GET /api/containers/:id/scrapes/:scrapeId,
+ *      POST /api/containers/:id/context, GET /api/containers/:id/clone-ad/models,
+ *      POST /api/containers/:id/clone-ad
  *
  * Displays detailed scrape results grouped by entry (product/competitor) and source
  * (Facebook/Google). Shows ad cards with images, text, metadata, EU audience data,
@@ -161,7 +164,7 @@ function renderEuAudience(ad) {
   </div>`;
 }
 
-function renderAd(ad, index) {
+function renderAd(ad, index, entryKey, source) {
   const imgSrc = resolveImageSrc(ad);
   return `
     <div class="scrape-ad-card card">
@@ -205,6 +208,11 @@ function renderAd(ad, index) {
         ${ad.ocr_structured.cta ? `<div style="margin-bottom:4px;"><strong>CTA:</strong> ${esc(ad.ocr_structured.cta)}</div>` : ''}
         ${ad.ocr_structured.url ? `<div><strong>URL:</strong> <a href="${esc(ad.ocr_structured.url)}" target="_blank" rel="noopener" style="font-size:12px;">${esc(ad.ocr_structured.url)}</a></div>` : ''}
       </div>` : ''}
+
+      <div class="ad-action-buttons">
+        <button class="btn-ad-push" onclick="pushAdToContext('${esc(entryKey)}','${esc(source)}',${index},this)">Push</button>
+        <button class="btn-ad-clone" onclick="openCloneModal('${esc(entryKey)}','${esc(source)}',${index})">Clone</button>
+      </div>
     </div>
   `;
 }
@@ -219,7 +227,7 @@ function renderSourceSection(entryKey, source, ads) {
         <span class="badge ${badgeClass}" style="font-size:11px;">${ads.length} ads</span>
       </div>
       <div class="scrape-ads-grid">
-        ${ads.map((ad, i) => renderAd(ad, i)).join('')}
+        ${ads.map((ad, i) => renderAd(ad, i, entryKey, source)).join('')}
       </div>
     </div>
   `;
@@ -256,6 +264,189 @@ function renderEntrySection(entryKey, entryData) {
       ${gAds.length ? renderSourceSection(entryKey, 'google', gAds) : ''}
     </div>
   `;
+}
+
+// ========== Push to Context & Clone Ad ==========
+
+let cloneModels = [];
+let cloneCurrentAd = null; // { entryKey, source, index, ad }
+
+function getAdFromScrape(entryKey, source, index) {
+  const sd = scrape?.scraped_data;
+  if (!sd) return null;
+  let entryData;
+  if (entryKey === 'my_product') {
+    entryData = sd.my_product;
+  } else {
+    entryData = sd.competitors?.[entryKey];
+  }
+  if (!entryData) return null;
+  const ads = entryData[source] || [];
+  return ads[index] || null;
+}
+
+async function pushAdToContext(entryKey, source, index, btnEl) {
+  const ad = getAdFromScrape(entryKey, source, index);
+  if (!ad) return;
+
+  btnEl.disabled = true;
+  btnEl.textContent = 'Pushing...';
+
+  const entryName = getEntryName(entryKey);
+  const content = {
+    headline: ad.headline || ad.ocr_structured?.headline || null,
+    description: ad.ad_text || ad.ocr_structured?.description || null,
+    cta: ad.cta_text || ad.ocr_structured?.cta || null,
+    image_path: ad.local_media_path || null,
+    source: ad.source || source,
+    advertiser: ad.advertiser_name
+  };
+
+  try {
+    const res = await fetch(`/api/containers/${containerId}/context`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        section_name: `Scraped Ad — ${entryName} (${source})`,
+        source_type: 'manual',
+        content
+      })
+    });
+    if (!res.ok) throw new Error('Failed to push');
+    btnEl.textContent = 'Pushed';
+    btnEl.classList.add('pushed');
+  } catch (err) {
+    btnEl.textContent = 'Error';
+    btnEl.style.color = 'var(--danger)';
+    setTimeout(() => {
+      btnEl.textContent = 'Push';
+      btnEl.style.color = '';
+      btnEl.disabled = false;
+    }, 2000);
+  }
+}
+
+async function fetchCloneModels() {
+  try {
+    const res = await fetch(`/api/containers/${containerId}/clone-ad/models`);
+    if (!res.ok) return;
+    const data = await res.json();
+    cloneModels = data.models || [];
+    const sel = document.getElementById('clone-model');
+    sel.innerHTML = cloneModels.map(m => `<option value="${esc(m.id)}">${esc(m.label)}</option>`).join('');
+  } catch {}
+}
+
+function openCloneModal(entryKey, source, index) {
+  const ad = getAdFromScrape(entryKey, source, index);
+  if (!ad) return;
+
+  cloneCurrentAd = { entryKey, source, index, ad };
+
+  // Build preview
+  const imgSrc = resolveImageSrc(ad);
+  const entryName = getEntryName(entryKey);
+  const headline = ad.headline || ad.ocr_structured?.headline || '';
+  const text = ad.ad_text || ad.ocr_structured?.description || '';
+
+  document.getElementById('clone-ad-preview').innerHTML = `
+    ${imgSrc ? `<img src="${esc(imgSrc)}" alt="Ad preview">` : ''}
+    <div class="preview-text">
+      <strong>${esc(entryName)}</strong>
+      ${headline ? `<div>${esc(headline)}</div>` : ''}
+      ${text ? `<div class="text-dim" style="margin-top:2px;">${esc(text.substring(0, 120))}${text.length > 120 ? '...' : ''}</div>` : ''}
+    </div>
+  `;
+
+  // Reset form
+  document.getElementById('clone-format').value = '1:1';
+  document.getElementById('clone-instructions').value = '';
+  document.getElementById('clone-submit-btn').disabled = false;
+  document.getElementById('clone-submit-btn').innerHTML = 'Generate Clone';
+  document.getElementById('clone-result').style.display = 'none';
+
+  document.getElementById('clone-modal').style.display = 'flex';
+}
+
+function closeCloneModal() {
+  document.getElementById('clone-modal').style.display = 'none';
+  cloneCurrentAd = null;
+}
+
+// Close modal on overlay click
+document.getElementById('clone-modal').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) closeCloneModal();
+});
+
+async function submitClone() {
+  if (!cloneCurrentAd) return;
+  const { entryKey, source, index, ad } = cloneCurrentAd;
+
+  const model = document.getElementById('clone-model').value;
+  const format = document.getElementById('clone-format').value;
+  const customInstructions = document.getElementById('clone-instructions').value.trim();
+  const btn = document.getElementById('clone-submit-btn');
+
+  if (!model) return;
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="clone-spinner"></span>Generating...';
+  document.getElementById('clone-result').style.display = 'none';
+
+  const entryName = getEntryName(entryKey);
+  const safeName = entryName.replace(/[^a-zA-Z0-9_-]/g, '');
+
+  // Build product context from container
+  const productCtx = container?.my_product ?
+    `Product: ${container.my_product.name || 'N/A'}\nDescription: ${container.my_product.description || 'N/A'}\nWebsite: ${container.my_product.website || 'N/A'}` :
+    '';
+
+  try {
+    const res = await fetch(`/api/containers/${containerId}/clone-ad`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        headline: ad.headline || ad.ocr_structured?.headline || '',
+        ad_text: ad.ad_text || ad.ocr_structured?.description || '',
+        cta: ad.cta_text || ad.ocr_structured?.cta || '',
+        image_url: ad.media_url || null,
+        source_competitor: entryName,
+        product_context: productCtx,
+        format,
+        network: source === 'google' ? 'google' : 'facebook',
+        model,
+        save_dir: 'clonedAd',
+        save_filename: `${safeName}-${index}`,
+        custom_instructions: customInstructions || undefined
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: 'Clone failed' }));
+      throw new Error(err.error || 'Clone failed');
+    }
+
+    const data = await res.json();
+    const resultEl = document.getElementById('clone-result');
+    resultEl.style.display = 'block';
+    resultEl.innerHTML = `
+      ${data.image_path ? `<img src="${esc(data.image_path)}" alt="Cloned ad" onclick="openLightbox('${esc(data.image_path)}')">` : '<div class="text-dim" style="font-size:12px;">No image generated</div>'}
+      <div class="adapted-copy">
+        ${data.adapted_copy?.headline ? `<div><strong>Headline:</strong> ${esc(data.adapted_copy.headline)}</div>` : ''}
+        ${data.adapted_copy?.ad_text ? `<div><strong>Ad Text:</strong> ${esc(data.adapted_copy.ad_text)}</div>` : ''}
+        ${data.adapted_copy?.cta ? `<div><strong>CTA:</strong> ${esc(data.adapted_copy.cta)}</div>` : ''}
+      </div>
+      ${data.image_path ? `<div style="margin-top:8px;font-size:11px;color:var(--text-dim);">Saved: ${esc(data.image_path)}</div>` : ''}
+    `;
+
+    btn.innerHTML = 'Done';
+  } catch (err) {
+    btn.innerHTML = 'Generate Clone';
+    btn.disabled = false;
+    const resultEl = document.getElementById('clone-result');
+    resultEl.style.display = 'block';
+    resultEl.innerHTML = `<div style="color:var(--danger);font-size:13px;">${esc(err.message)}</div>`;
+  }
 }
 
 function render() {
@@ -330,6 +521,7 @@ async function init() {
     scrape = await scrapeRes.json();
 
     render();
+    fetchCloneModels();
 
     // If still running, poll for updates
     if (scrape.status === 'pending' || scrape.status === 'running') {

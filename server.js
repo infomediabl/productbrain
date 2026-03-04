@@ -1,6 +1,6 @@
 /**
  * Express Server (SHARED — do not edit from multiple sessions)
- * Entry point. Mounts all 21 route groups. Serves static files.
+ * Entry point. Mounts all 22 route groups. Serves static files.
  * Port: process.env.PORT || 3100
  *
  * When adding a new route:
@@ -23,6 +23,8 @@ const PORT = process.env.PORT || 3100;
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/screenshots', express.static(path.join(__dirname, 'screenshots')));
+app.use('/clonedAd', express.static(path.join(__dirname, 'clonedAd')));
+app.use('/data/uploads', express.static(path.join(__dirname, 'data', 'uploads')));
 
 // Routes
 const containersRouter = require('./routes/containers');
@@ -46,6 +48,13 @@ const cloneAdRouter = require('./routes/clone-ad');                   // Clone A
 const caseStudyRouter = require('./routes/case-study');               // Case Study Analyzer
 const containerContextRouter = require('./routes/container-context'); // Container Context (Collector)
 const containerChatRouter = require('./routes/container-chat');       // Container Chat
+const desireSpringRouter = require('./routes/desire-spring');         // DesireSpring
+const researchWebRouter = require('./routes/research-web');             // ResearchWeb (AG-016)
+const taboolaRouter = require('./routes/taboola');                       // Taboola Campaign Cloner (AG-018)
+const spinoffIdeasRouter = require('./routes/spinoff-ideas');             // SpinOff Ideas (AG-019)
+const agentInfoRouter = require('./routes/agent-info');                     // Agent Info (registry introspection)
+const folderScraperRouter = require('./routes/folder-scraper');               // Folder Ad Importer
+const hooksRouter = require('./routes/hooks');                                 // Hooks Generator (AG-020)
 
 app.use('/api/containers', containersRouter);
 app.use('/api/containers/:id/metadata', metadataRouter);
@@ -104,6 +113,28 @@ app.use('/api/containers/:id/context', containerContextRouter);
 
 // Container Chat
 app.use('/api/containers/:id/chat', containerChatRouter);
+
+// DesireSpring
+app.use('/api/desire-spring', desireSpringRouter);
+
+// ResearchWeb (AG-016) — global, not per-container
+app.use('/api/research-web', researchWebRouter);
+
+// Taboola Campaign Cloner (AG-018)
+app.use('/api/containers/:id/taboola-campaign', taboolaRouter);
+app.use('/api/containers/:id/taboola-campaigns', taboolaRouter);  // alias
+
+// SpinOff Ideas (AG-019)
+app.use('/api/containers/:id/spinoff-ideas', spinoffIdeasRouter);
+
+// Agent Info (registry introspection)
+app.use('/api/agent-info', agentInfoRouter);
+
+// Folder Ad Importer
+app.use('/api/containers/:id/folder-scrape', folderScraperRouter);
+
+// Hooks Generator (AG-020)
+app.use('/api/containers/:id/hooks', hooksRouter);
 
 // Clone Ad (OpenRouter)
 app.use('/api/containers/:id/clone-ad', cloneAdRouter);
@@ -211,5 +242,12 @@ app.listen(PORT, () => {
   console.log(`  Clone Ad (OpenRouter)  — POST /api/containers/:id/clone-ad`);
   console.log(`  Magic AI               — POST /api/containers/:id/propose`);
   console.log(`  Agent 4: Prompt Gen    — POST /api/containers/:id/generate-prompts`);
+  console.log(`  DesireSpring           — POST /api/desire-spring`);
+  console.log(`  ResearchWeb (AG-017)   — POST /api/research-web/search`);
+  console.log(`  Taboola Cloner (AG-018)— POST /api/containers/:id/taboola-campaign`);
+  console.log(`  SpinOff Ideas (AG-019) — POST /api/containers/:id/spinoff-ideas`);
+  console.log(`  Agent Info              — GET  /api/agent-info`);
+  console.log(`  Folder Ad Importer     — POST /api/containers/:id/folder-scrape`);
+  console.log(`  Hooks Generator (AG-020)— POST /api/containers/:id/hooks`);
   console.log(`  Auto-Scrape            — every 6h for enabled containers`);
 });

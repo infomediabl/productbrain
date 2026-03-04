@@ -34,6 +34,7 @@ const AGENT_META = {
   ],
   outputs: { storageKey: 'landing_pages', dataType: 'html', schema: 'LandingPage' },
   ui: { visible: true },
+  prompt_summary: 'Generates complete, self-contained HTML landing pages optimized for conversion with SEO best practices, hero sections, testimonials, and FAQ.',
 };
 
 async function generateLandingPage(containerId, options = {}) {

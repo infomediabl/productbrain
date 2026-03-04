@@ -29,6 +29,7 @@ const AGENT_META = {
   consumes: [],
   outputs: { storageKey: 'case_studies', dataType: 'json', schema: 'CaseStudy' },
   ui: { visible: true },
+  prompt_summary: 'Extracts structured insights from case studies (PDF, text, image, URL): metrics, strategies, channels, strengths, weaknesses, lessons, and quotes.',
 };
 
 async function analyzeCaseStudy(containerId, options = {}) {

@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Web Research - Product Analyzer</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .rw-layout {
+      display: flex;
+      gap: 20px;
+      min-height: calc(100vh - 120px);
+    }
+
+    /* Sidebar */
+    .rw-sidebar {
+      width: 260px;
+      flex-shrink: 0;
+    }
+    .rw-sidebar-inner {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      position: sticky;
+      top: 20px;
+    }
+    .rw-sidebar h3 {
+      font-size: 14px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .rw-history-item {
+      display: block;
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-size: 13px;
+      color: var(--text);
+      text-decoration: none;
+      cursor: pointer;
+      border: 1px solid transparent;
+      margin-bottom: 4px;
+    }
+    .rw-history-item:hover { background: var(--surface2); }
+    .rw-history-item.active { background: var(--surface2); border-color: var(--primary); }
+    .rw-history-topic {
+      font-weight: 600;
+      display: block;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .rw-history-meta {
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-top: 2px;
+    }
+    .rw-history-empty {
+      color: var(--text-dim);
+      font-size: 13px;
+      text-align: center;
+      padding: 20px 0;
+    }
+
+    /* Main area */
+    .rw-main {
+      flex: 1;
+      min-width: 0;
+    }
+
+    /* Search form */
+    .rw-search-form {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .rw-search-form h2 {
+      font-size: 16px;
+      margin-bottom: 12px;
+    }
+    .rw-search-row {
+      display: flex;
+      gap: 10px;
+    }
+    .rw-search-row input {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 14px;
+      color: var(--text);
+      font-size: 14px;
+      font-family: inherit;
+    }
+    .rw-search-row input:focus { outline: none; border-color: var(--primary); }
+
+    /* Status */
+    #rw-status {
+      display: none;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+
+    /* Sources */
+    #rw-sources { display: none; }
+    .rw-sources-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .rw-sources-header h3 { font-size: 15px; }
+    .rw-sources-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .rw-source-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      margin-bottom: 8px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    .rw-source-card input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--primary);
+      margin-top: 2px;
+      flex-shrink: 0;
+    }
+    .rw-source-body { flex: 1; min-width: 0; }
+    .rw-source-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+    .rw-source-title a {
+      color: var(--primary);
+      text-decoration: none;
+    }
+    .rw-source-title a:hover { text-decoration: underline; }
+    .rw-source-url {
+      font-size: 11px;
+      color: var(--text-dim);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 4px;
+    }
+    .rw-source-snippet {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+    .rw-source-relevance {
+      font-size: 12px;
+      color: var(--accent);
+      font-style: italic;
+    }
+    .rw-source-type {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: var(--surface2);
+      color: var(--text-dim);
+      margin-left: 6px;
+    }
+    .rw-search-summary {
+      background: var(--surface2);
+      border-left: 3px solid var(--primary);
+      padding: 10px 14px;
+      margin-bottom: 16px;
+      font-size: 13px;
+      border-radius: 0 6px 6px 0;
+    }
+
+    /* Summaries */
+    #rw-summaries { display: none; }
+    .rw-summary-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--success);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 10px;
+    }
+    .rw-summary-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .rw-summary-title {
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .rw-summary-text {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+    .rw-insights {
+      margin: 8px 0;
+    }
+    .rw-insights li {
+      font-size: 13px;
+      margin-bottom: 4px;
+      color: var(--text);
+    }
+    .rw-combined-brief {
+      background: var(--surface2);
+      border-left: 3px solid var(--accent);
+      padding: 14px 16px;
+      margin-bottom: 16px;
+      border-radius: 0 6px 6px 0;
+    }
+    .rw-combined-brief h4 {
+      font-size: 14px;
+      margin-bottom: 6px;
+    }
+    .rw-combined-brief p {
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    /* Push to context */
+    .rw-push-bar {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .rw-push-bar label {
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .rw-push-bar select {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 10px;
+      color: var(--text);
+      font-size: 13px;
+      font-family: inherit;
+    }
+
+    /* Delete */
+    .rw-delete-area {
+      margin-top: 20px;
+      text-align: right;
+    }
+
+    @media (max-width: 768px) {
+      .rw-layout { flex-direction: column; }
+      .rw-sidebar { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1><a href="/" style="color:inherit;text-decoration:none;"><span>Product</span> Analyzer</a></h1>
+      <nav>
+        <a href="/">Dashboard</a>
+        <a href="/guide.html">Guide</a>
+        <a href="/chat.html">Chat</a>
+        <a href="/research-web.html">Research</a>
+        <a href="/changelog.html">Changelog</a>
+        <a href="/desire-spring.html">DesireSpring</a>
+        <a href="/add-container.html">New Container</a>
+      </nav>
+    </div>
+  </header>
+  <main>
+    <div class="container">
+      <div class="rw-layout">
+
+        <!-- Sidebar: History -->
+        <div class="rw-sidebar">
+          <div class="rw-sidebar-inner">
+            <h3>
+              History
+              <button class="btn btn-sm btn-ghost" onclick="newResearch()" title="New Research">+ New</button>
+            </h3>
+            <div id="rw-history"></div>
+          </div>
+        </div>
+
+        <!-- Main area -->
+        <div class="rw-main">
+
+          <!-- Search Form -->
+          <div class="rw-search-form">
+            <h2>Web Research <span class="badge badge-sm" style="font-size:10px;">AG-017</span></h2>
+            <p style="font-size:13px;color:var(--text-dim);margin-bottom:12px;">Search any topic, curate sources, summarize key findings, and push insights to any container's context.</p>
+            <div class="rw-search-row">
+              <input type="text" id="rw-topic" placeholder="Enter a research topic (e.g. &quot;Meta Ads best practices 2025&quot;)">
+              <button class="btn btn-primary" id="rw-search-btn" onclick="startSearch()">Search</button>
+            </div>
+          </div>
+
+          <!-- Status -->
+          <div id="rw-status"></div>
+
+          <!-- Sources -->
+          <div id="rw-sources">
+            <div class="rw-sources-header">
+              <h3>Sources Found</h3>
+              <div class="rw-sources-actions">
+                <button class="btn btn-sm btn-ghost" onclick="toggleAllSources()">Select All</button>
+                <button class="btn btn-sm btn-primary" id="rw-summarize-btn" onclick="summarizeSelected()">Summarize Selected</button>
+              </div>
+            </div>
+            <div id="rw-search-summary-box"></div>
+            <div id="rw-source-list"></div>
+          </div>
+
+          <!-- Push to Context bar -->
+          <div id="rw-push-section" style="display:none;">
+            <div class="rw-push-bar">
+              <label>Push to:</label>
+              <select id="rw-container-select">
+                <option value="">Select a container...</option>
+              </select>
+              <button class="btn btn-sm btn-primary" onclick="pushAllSummaries()">Push All Summaries</button>
+            </div>
+          </div>
+
+          <!-- Summaries -->
+          <div id="rw-summaries">
+            <h3 style="margin-bottom:12px;">Summaries</h3>
+            <div id="rw-combined-brief-box"></div>
+            <div id="rw-summary-list"></div>
+          </div>
+
+          <!-- Delete -->
+          <div id="rw-delete-area" class="rw-delete-area" style="display:none;">
+            <button class="btn btn-sm" style="color:var(--error);" onclick="deleteResearch()">Delete this research</button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </main>
+  <script src="/js/research-web-page.js"></script>
+</body>
+</html>

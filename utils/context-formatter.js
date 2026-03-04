@@ -8,7 +8,7 @@
  * container_context has a `content` (JSON) and a `text_brief` (string).
  * Agents consume text_brief, not raw JSON.
  *
- * Handles: competitor_analysis, seo_analysis, gads_analysis, keyword_strategy
+ * Handles: competitor_analysis, seo_analysis, gads_analysis, keyword_strategy, web_research, case_study, spinoff_ideas
  */
 
 // ========== Main entry ==========
@@ -22,6 +22,9 @@ function formatBrief(sourceType, content, sectionName) {
     case 'seo_analysis':        return formatSeoAnalysis(content, sectionName);
     case 'gads_analysis':       return formatGadsAnalysis(content);
     case 'keyword_strategy':    return formatKeywordStrategy(content);
+    case 'web_research':        return formatWebResearch(content);
+    case 'case_study':          return formatCaseStudy(content, sectionName);
+    case 'spinoff_ideas':       return formatSpinoffIdeas(content, sectionName);
     default:                    return formatGeneric(content);
   }
 }
@@ -324,6 +327,165 @@ function formatKeywordStrategy(c) {
   }
 
   return parts.join('. ') || formatGeneric(c);
+}
+
+// ========== Web Research ==========
+
+function formatWebResearch(c) {
+  const parts = [];
+
+  if (c.title) parts.push(c.title);
+  if (c.summary) parts.push(c.summary);
+
+  if (c.key_insights?.length) {
+    parts.push('Key insights: ' + c.key_insights.join('; '));
+  }
+
+  if (c.relevance_to_topic) {
+    parts.push(`Relevance: ${c.relevance_to_topic}`);
+  }
+
+  if (c.url) parts.push(`Source: ${c.url}`);
+
+  return parts.join('. ') || formatGeneric(c);
+}
+
+// ========== Case Study ==========
+
+function formatCaseStudy(c, sectionName) {
+  // Per-item: summary
+  if (c.summary && Object.keys(c).length <= 2) {
+    return `Case study summary: ${c.summary}`;
+  }
+
+  // Per-item: single metric
+  if (c.metric && c.value) {
+    let t = `Key metric — ${c.metric}: ${c.value}`;
+    if (c.context) t += ` (${c.context})`;
+    return t;
+  }
+
+  // Per-item: single strategy
+  if (c.strategy && c.description && !c.strategies_used) {
+    let t = `Strategy: ${c.strategy}`;
+    if (c.effectiveness) t += ` [${c.effectiveness}]`;
+    t += ` — ${c.description}`;
+    return t;
+  }
+
+  // Per-item: string arrays (strengths, weaknesses, lessons, quotes, channels)
+  if (Array.isArray(c.strengths) && Object.keys(c).length <= 1) {
+    return c.strengths.map(s => `+ ${s}`).join('\n');
+  }
+  if (Array.isArray(c.weaknesses) && Object.keys(c).length <= 1) {
+    return c.weaknesses.map(w => `- ${w}`).join('\n');
+  }
+  if (Array.isArray(c.lessons_for_us) && Object.keys(c).length <= 1) {
+    return c.lessons_for_us.map(l => `Lesson: ${l}`).join('\n');
+  }
+  if (Array.isArray(c.quotes) && Object.keys(c).length <= 1) {
+    return c.quotes.map(q => `"${q}"`).join('\n');
+  }
+  if (Array.isArray(c.channels_used) && Object.keys(c).length <= 1) {
+    return `Channels used: ${c.channels_used.join(', ')}`;
+  }
+
+  // Per-item: target audience
+  if (c.target_audience && Object.keys(c).length <= 1) {
+    return `Target audience: ${c.target_audience}`;
+  }
+
+  // Per-item: timeline
+  if (c.timeline && Object.keys(c).length <= 1) {
+    return `Timeline: ${c.timeline}`;
+  }
+
+  // Full case study (push-all): summarize the most important parts
+  if (c.summary && (c.strategies_used || c.lessons_for_us || c.key_metrics)) {
+    return formatFullCaseStudy(c);
+  }
+
+  return formatGeneric(c);
+}
+
+function formatFullCaseStudy(c) {
+  const parts = [];
+  if (c.competitor_name) parts.push(`Case study: ${c.competitor_name}`);
+  if (c.summary) parts.push(c.summary);
+  if (c.target_audience) parts.push(`Target audience: ${c.target_audience}`);
+
+  if (c.key_metrics?.length) {
+    parts.push('Key metrics: ' + c.key_metrics
+      .map(m => `${m.metric}: ${m.value}${m.context ? ` (${m.context})` : ''}`)
+      .join('; '));
+  }
+
+  if (c.strategies_used?.length) {
+    parts.push('Strategies: ' + c.strategies_used
+      .map(s => `${s.strategy} [${s.effectiveness || '?'}]`)
+      .join('; '));
+  }
+
+  if (c.channels_used?.length) {
+    parts.push(`Channels: ${c.channels_used.join(', ')}`);
+  }
+
+  if (c.strengths?.length) {
+    parts.push('Strengths: ' + c.strengths.join('; '));
+  }
+
+  if (c.weaknesses?.length) {
+    parts.push('Weaknesses: ' + c.weaknesses.join('; '));
+  }
+
+  if (c.lessons_for_us?.length) {
+    parts.push('Lessons: ' + c.lessons_for_us.join('; '));
+  }
+
+  return parts.join('. ');
+}
+
+// ========== SpinOff Ideas ==========
+
+function formatSpinoffIdeas(c, sectionName) {
+  // Per-item: landscape summary
+  if (c.landscape_summary) {
+    const ls = c.landscape_summary;
+    const parts = [];
+    if (ls.market_type) parts.push(`Market: ${ls.market_type}`);
+    if (ls.current_product) parts.push(`Current product: ${ls.current_product}`);
+    if (ls.transferable_assets?.length) parts.push(`Transferable assets: ${ls.transferable_assets.join(', ')}`);
+    if (ls.adjacent_opportunities?.length) parts.push(`Adjacent opportunities: ${ls.adjacent_opportunities.join(', ')}`);
+    return `Landscape summary — ${parts.join('. ')}`;
+  }
+
+  // Per-item: single idea
+  if (c.idea_name && c.description) {
+    const parts = [`Spin-off idea: ${c.idea_name} — ${c.description}`];
+    if (c.why_it_could_work) parts.push(`Why it could work: ${c.why_it_could_work}`);
+    if (c.target_audience) parts.push(`Target audience: ${c.target_audience}`);
+    if (c.revenue_model) parts.push(`Revenue model: ${c.revenue_model}`);
+    if (c.effort_estimate) parts.push(`Effort: ${c.effort_estimate}`);
+    if (c.synergy_with_current) parts.push(`Synergy: ${c.synergy_with_current}`);
+    if (c.key_differentiators?.length) parts.push(`Differentiators: ${c.key_differentiators.join('; ')}`);
+    if (c.next_steps?.length) parts.push(`Next steps: ${c.next_steps.join('; ')}`);
+    return parts.join('. ');
+  }
+
+  // Full report (push-all with both landscape + ideas)
+  if (c.spinoff_ideas && Array.isArray(c.spinoff_ideas)) {
+    const parts = [];
+    if (c.landscape_summary?.market_type) parts.push(`Market: ${c.landscape_summary.market_type}`);
+    for (const si of c.spinoff_ideas) {
+      let t = `- ${si.idea_name}: ${si.description}`;
+      if (si.effort_estimate) t += ` [${si.effort_estimate} effort]`;
+      if (si.target_audience) t += ` (audience: ${si.target_audience})`;
+      parts.push(t);
+    }
+    return parts.join('\n');
+  }
+
+  return formatGeneric(c);
 }
 
 // ========== Generic fallback ==========

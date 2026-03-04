@@ -33,6 +33,7 @@ const AGENT_META = {
   ],
   outputs: { storageKey: 'scrape_results', dataType: 'json', schema: 'ValidationReport' },
   ui: { visible: true },
+  prompt_summary: 'No AI prompt — algorithmic validation of scrape data quality: URL checks, image accessibility, text completeness, EU data presence.',
 };
 
 const URL_CHECK_TIMEOUT_MS = 8000;
@@ -184,16 +185,16 @@ async function executeValidation(containerId, scrapeId, scrape, isLegacy) {
 
   // Global issues
   if (totalAds === 0) {
-    report.issues.push({ severity: 'error', message: 'No ads were scraped at all' });
+    report.issues.push({ severity: 'error', message: 'No ads were scraped at all', fix_action: 'Verify that the ad library URLs are correct and accessible. Try running the scraper again.' });
   }
   if (totalFb > 0 && totalWithEuData === 0) {
-    report.issues.push({ severity: 'warning', message: 'No EU audience data found on any Facebook ad. EU transparency may not be available for these advertisers.' });
+    report.issues.push({ severity: 'warning', message: 'No EU audience data found on any Facebook ad. EU transparency may not be available for these advertisers.', fix_action: 'EU transparency data requires a European IP. Consider using a VPN or proxy set to an EU country, then re-scrape.' });
   }
   if (totalWithImage === 0 && totalWithVideo === 0) {
-    report.issues.push({ severity: 'warning', message: 'No media (images or videos) found in any ad' });
+    report.issues.push({ severity: 'warning', message: 'No media (images or videos) found in any ad', fix_action: 'The scraper may have been blocked from loading media. Try re-scraping. Check network connectivity.' });
   }
   if (totalWithText === 0 && totalWithHeadline === 0) {
-    report.issues.push({ severity: 'warning', message: 'No text content (ad_text or headline) found in any ad' });
+    report.issues.push({ severity: 'warning', message: 'No text content (ad_text or headline) found in any ad', fix_action: 'Ad text may not have loaded during scraping. Try re-scraping with increased timeouts.' });
   }
 
   // Overall score (weighted)
@@ -220,11 +221,16 @@ async function executeValidation(containerId, scrapeId, scrape, isLegacy) {
     report.overall_score = Math.min(100, score);
   }
 
+  // Historical comparison with previous validation
+  const comparison = buildComparison(containerId, scrapeId, report);
+  if (comparison) report.comparison = comparison;
+
   log.info(SRC, 'Validation completed', {
     scrapeId,
     totalAds,
     score: report.overall_score,
     issues: report.issues.length,
+    hasComparison: !!comparison,
   });
 
   await storage.updateScrapeValidation(containerId, scrapeId, isLegacy, {
@@ -261,7 +267,7 @@ async function validateEntry(entryKey, entryName, entryType, entryData, globalRe
   };
 
   if (allAds.length === 0) {
-    entry.issues.push({ severity: 'warning', message: `No ads scraped for ${entryName}` });
+    entry.issues.push({ severity: 'warning', message: `No ads scraped for ${entryName}`, fix_action: 'Re-run the scraper for this entry. Check that the ad library URLs are correct and publicly accessible.' });
     return entry;
   }
 
@@ -356,19 +362,19 @@ async function validateEntry(entryKey, entryName, entryType, entryData, globalRe
 
   // Entry-level issues
   if (fbAds.length > 0 && entry.with_eu_data === 0) {
-    entry.issues.push({ severity: 'info', message: `No EU audience data for ${entryName}'s Facebook ads` });
+    entry.issues.push({ severity: 'info', message: `No EU audience data for ${entryName}'s Facebook ads`, fix_action: 'EU data requires a European IP. Consider using a VPN/proxy set to an EU country, then re-scrape.' });
   }
   if (entry.missing_screenshots.length > 0) {
-    entry.issues.push({ severity: 'warning', message: `${entry.missing_screenshots.length} screenshot file(s) missing on disk` });
+    entry.issues.push({ severity: 'warning', message: `${entry.missing_screenshots.length} screenshot file(s) missing on disk`, fix_action: 'Screenshots may have been deleted. Re-scrape this entry to regenerate, or check the screenshots/ directory.' });
   }
   if (entry.broken_images.length > 0) {
-    entry.issues.push({ severity: 'warning', message: `${entry.broken_images.length} image URL(s) not accessible` });
+    entry.issues.push({ severity: 'warning', message: `${entry.broken_images.length} image URL(s) not accessible`, fix_action: 'Image URLs may have expired or been removed. Re-scrape to capture fresh media URLs.' });
   }
   if (entry.broken_videos.length > 0) {
-    entry.issues.push({ severity: 'warning', message: `${entry.broken_videos.length} video URL(s) not accessible` });
+    entry.issues.push({ severity: 'warning', message: `${entry.broken_videos.length} video URL(s) not accessible`, fix_action: 'Video URLs may have expired or been removed. Re-scrape to capture fresh media URLs.' });
   }
   if (entry.with_text === 0 && entry.with_headline === 0) {
-    entry.issues.push({ severity: 'warning', message: `No text content found for ${entryName}'s ads` });
+    entry.issues.push({ severity: 'warning', message: `No text content found for ${entryName}'s ads`, fix_action: 'Try re-scraping, or check the ad library page manually to confirm ads have visible text.' });
   }
 
   return entry;
@@ -408,10 +414,74 @@ function buildEmptyReport(message) {
     overall_score: 0,
     total_ads: 0,
     entries: [],
-    issues: [{ severity: 'error', message }],
+    issues: [{ severity: 'error', message, fix_action: 'This scrape has no data. It may have failed. Try running the scraper again.' }],
     url_checks: { total: 0, ok: 0, failed: 0, skipped: 0 },
     summary: {},
   };
+}
+
+/**
+ * Compare current validation report against the most recent prior validation
+ * for the same container. Returns deltas object or null if no prior exists.
+ */
+function buildComparison(containerId, currentScrapeId, currentReport) {
+  try {
+    const container = storage.readContainer(containerId);
+    if (!container) return null;
+
+    const allItems = [
+      ...(container.scrape_results || []),
+      ...(container.analyses || []),
+    ];
+
+    // Find items with completed validations, excluding the current scrape
+    const validated = allItems.filter(item =>
+      item.id !== currentScrapeId &&
+      item.validation &&
+      item.validation.status === 'completed' &&
+      item.validation.report &&
+      item.validation.report.validated_at
+    );
+    if (validated.length === 0) return null;
+
+    // Sort by validated_at descending, take most recent
+    validated.sort((a, b) =>
+      new Date(b.validation.report.validated_at) - new Date(a.validation.report.validated_at)
+    );
+    const prev = validated[0];
+    const pr = prev.validation.report;
+    const ps = pr.summary || {};
+    const cs = currentReport.summary || {};
+
+    // Compute deltas (current - previous)
+    const deltas = {
+      overall_score: (currentReport.overall_score || 0) - (pr.overall_score || 0),
+      total_ads: (currentReport.total_ads || 0) - (pr.total_ads || 0),
+      image_pct: (cs.image_pct || 0) - (ps.image_pct || 0),
+      text_pct: (cs.text_pct || 0) - (ps.text_pct || 0),
+      headline_pct: (cs.headline_pct || 0) - (ps.headline_pct || 0),
+      screenshot_pct: (cs.screenshot_pct || 0) - (ps.screenshot_pct || 0),
+      eu_pct: (cs.eu_pct || 0) - (ps.eu_pct || 0),
+      broken_urls: ((currentReport.url_checks || {}).failed || 0) - ((pr.url_checks || {}).failed || 0),
+    };
+
+    // Identify new and resolved issues by message
+    const prevMessages = new Set((pr.issues || []).map(i => i.message));
+    const currMessages = new Set((currentReport.issues || []).map(i => i.message));
+    const newIssues = [...currMessages].filter(m => !prevMessages.has(m));
+    const resolvedIssues = [...prevMessages].filter(m => !currMessages.has(m));
+
+    return {
+      previous_scrape_id: prev.id,
+      previous_validated_at: pr.validated_at,
+      deltas,
+      new_issues: newIssues,
+      resolved_issues: resolvedIssues,
+    };
+  } catch (err) {
+    log.warn(SRC, 'buildComparison failed, skipping', { err: err.message });
+    return null;
+  }
 }
 
 module.exports = { validateScrape, run: validateScrape, AGENT_META };

@@ -30,6 +30,13 @@ Each page is fully independent with its own JS file.
 - `public/test-plan.html` + `public/js/test-plan-report.js`
 - `public/image-ads.html` + `public/js/image-ads-report.js`
 - `public/keyword-strategy.html` + `public/js/keyword-strategy-page.js`
+- `public/desire-spring.html` + `public/js/desire-spring-page.js`
+- `public/research-web.html` + `public/js/research-web-page.js`
+- `public/case-study.html` + `public/js/case-study-report.js`
+- `public/agent-guide.html` + `public/js/agent-guide.js`
+- `public/taboola-campaign.html` + `public/js/taboola-campaign-report.js`
+- `public/spinoff-ideas.html` + `public/js/spinoff-ideas-report.js`
+- `public/ad-workshop.html` + `public/js/ad-workshop.js`
 
 ---
 
@@ -37,17 +44,18 @@ Each page is fully independent with its own JS file.
 
 ```
 server.js
-  ├── routes/*.js (21 route files, each handles one API path)
-  │     └── agents/*.js (14 AI agents, each called by one route)
+  ├── routes/*.js (26 route files, each handles one API path)
+  │     └── agents/*.js (21 agents, each called by one route)
   │           ├── config.js (AI model settings)
   │           ├── storage.js (JSON file persistence)
   │           ├── utils/parse-json.js (extract JSON from Claude responses)
   │           ├── utils/gather-data.js (collect container data for prompts)
   │           ├── utils/context-formatter.js (JSON → natural language briefs)
   │           ├── utils/summarize-ads.js (format ads for prompts)
-  │           └── utils/inject-tracking.js (FB/GA code injection)
-  ├── public/*.html (13 pages)
-  │     └── public/js/*.js (45 frontend scripts)
+  │           ├── utils/inject-tracking.js (FB/GA code injection)
+  │           └── utils/taboola-auth.js (Taboola OAuth 2.0 token cache)
+  ├── public/*.html (15 pages)
+  │     └── public/js/*.js (48 frontend scripts)
   └── public/css/style.css
 ```
 
@@ -59,7 +67,7 @@ server.js
 | `config.js` | AI_MODEL, API keys, constants | All agents |
 | `logger.js` | info/warn/error/debug + getLogPath() | All files |
 | `storage.js` | JSON file CRUD for all entities | All routes, some agents |
-| `server.js` | Express app, mounts 21 route groups | Entry point |
+| `server.js` | Express app, mounts 23 route groups | Entry point |
 
 ### Routes → Agent Mapping
 | Route File | Mounts At | Code | Calls Agent |
@@ -80,11 +88,18 @@ server.js
 | `routes/quiz.js` | `/api/containers/:id/quiz` | AG-011 | quiz-agent.generateQuiz() |
 | `routes/test-planner.js` | `/api/containers/:id/test-plan` | AG-013 | test-planner-agent.generateTestPlan() |
 | `routes/case-study.js` | `/api/containers/:id/case-studies` | AG-014 | case-study-agent.analyzeCaseStudy() |
-| `routes/clone-ad.js` | `/api/containers/:id/clone-ad` | | None (direct OpenRouter API) |
+| `routes/clone-ad.js` | `/api/containers/:id/clone-ad` | | None (direct OpenRouter API; accepts save_dir, save_filename, custom_instructions) |
 | `routes/google-ads.js` | `/api/google-ads` | AG-009 | google-ads-agent (various) |
 | `routes/container-context.js` | `/api/containers/:id/context` | | None (uses gather-data + context-formatter) |
 | `routes/container-chat.js` | `/api/containers/:id/chat` | AG-015 | container-chat-agent.chat() |
 | `routes/analysis.js` | `/api/containers/:id/analyze` | | Legacy (direct scraper calls) |
+| `routes/desire-spring.js` | `/api/desire-spring` | AG-016 | desire-spring-agent.generateInstructions() |
+| `routes/research-web.js` | `/api/research-web` | AG-017 | research-web-agent.searchWeb(), summarizeSources() |
+| `routes/taboola.js` | `/api/containers/:id/taboola-campaign` | AG-018 | taboola-agent.cloneToCampaign() |
+| `routes/spinoff-ideas.js` | `/api/containers/:id/spinoff-ideas` | AG-019 | spinoff-ideas-agent.generateSpinoffIdeas() |
+| `routes/agent-info.js` | `/api/agent-info` | | None (reads agents/registry.js) |
+| `routes/folder-scraper.js` | `/api/containers/:id/folder-scrape` | AG-021 | folder-scraper-agent.importFromFolder() |
+| `routes/hooks.js` | `/api/containers/:id/hooks` | AG-020 | hooks-agent.generateHooks() |
 
 ### Agent Dependencies
 All agents require: `config.js`, `logger.js`, `storage.js`, `utils/parse-json.js`
@@ -103,17 +118,24 @@ Additional dependencies per agent:
 | AG-011 | quiz-agent | gather-data.gatherContainerContext, inject-tracking |
 | AG-013 | test-planner-agent | gather-data.gatherContainerContext |
 | AG-015 | container-chat-agent | gather-data.gatherContainerContext |
+| AG-016 | desire-spring-agent | fs (reads CLAUDE.md), self-contained storage in data/desire-spring.json |
+| AG-017 | research-web-agent | scrapers/browser (Puppeteer), self-contained storage in data/web-research.json |
+| AG-018 | taboola-agent | gather-data.gatherContainerContext, utils/taboola-auth, Taboola Backstage API |
+| AG-019 | spinoff-ideas-agent | gather-data.gatherScrapeData, gatherCompetitorAnalyses, gatherContainerContext |
+| AG-020 | hooks-agent | gather-data.gatherContainerContext, gatherScrapeData |
+| AG-021 | folder-scraper-agent | fs (reads data/uploads/) |
 | | clone-ad (route only) | config.OPENROUTER_API_KEY |
 
 ### Utils
 | File | Exports | Used By |
 |------|---------|---------|
-| `parse-json.js` | parseJsonFromResponse(text) | All 14 agents |
-| `gather-data.js` | gatherScrapeData, gatherCompetitorAnalyses, gatherCompetitorAds, gatherGadsData, gatherContainerContext | 7 agents + container-context route |
+| `parse-json.js` | parseJsonFromResponse(text) | All 16 agents |
+| `gather-data.js` | gatherScrapeData, gatherCompetitorAnalyses, gatherCompetitorAds, gatherGadsData, gatherContainerContext | 8 agents + container-context route |
 | `context-formatter.js` | formatBrief(sourceType, content, sectionName) | container-context route, gather-data.js |
 | `summarize-ads.js` | summarizeAds(ads, options) | analyzer-agent, proposal-agent |
 | `inject-tracking.js` | injectTrackingCodes(html, settings) | quiz-agent, landing-page-agent |
 | `changelog.js` | updateChangelog(), getChangelog() | server.js (startup + API route) |
+| `taboola-auth.js` | getTaboolaToken(credentials?) | taboola-agent, routes/taboola.js |
 
 ---
 
@@ -126,7 +148,8 @@ Additional dependencies per agent:
 4. `metadata.js` — Uses `container`, `containerId`, `esc()`
 5. `scraper.js` — Uses `container`, `containerId`, `esc()`
 6. `scrape-validator.js` — Uses `container`, `containerId`, `esc()`
-7. `product-ideator.js` — Uses `container`, `containerId`, `esc()`
+7. `folder-scraper.js` — Uses `container`, `containerId`, `esc()`
+8. `product-ideator.js` — Uses `container`, `containerId`, `esc()`
 8. `competitor-analyzer.js` — Uses `container`, `containerId`, `esc()`
 9. `seo-analysis.js` — Uses `container`, `containerId`, `esc()`
 10. `google-ads.js` — Uses `container`, `containerId`, `esc()`
@@ -136,10 +159,13 @@ Additional dependencies per agent:
 14. `quiz.js` — Uses `container`, `containerId`, `esc()`
 15. `case-study.js` — Uses `container`, `containerId`, `esc()`
 16. `image-ads.js` — Uses `container`, `containerId`, `esc()`
-17. `proposal.js` — Uses `container`, `containerId`, `esc()`
-18. `prompts.js` — Uses `container`, `containerId`, `esc()`
-19. `settings.js` — Uses `container`, `containerId`, `esc()`
-20. `gads-analysis.js` — Uses `container`, `containerId`, `esc()`
+17. `taboola.js` — Uses `container`, `containerId`, `esc()`
+18. `spinoff-ideas.js` — Uses `container`, `containerId`, `esc()`
+19. `proposal.js` — Uses `container`, `containerId`, `esc()`
+20. `prompts.js` — Uses `container`, `containerId`, `esc()`
+21. `settings.js` — Uses `container`, `containerId`, `esc()`
+22. `gads-analysis.js` — Uses `container`, `containerId`, `esc()`
+23. `agent-info.js` — Self-contained (agent info modal)
 
 ### Standalone Pages (no shared globals)
 | HTML | JS | API Used |
@@ -149,11 +175,18 @@ Additional dependencies per agent:
 | `proposal.html` | `proposal-report.js` | GET /api/containers/:id/proposals/:id |
 | `test-plan.html` | `test-plan-report.js` | GET /api/containers/:id/test-plans/:id |
 | `image-ads.html` | `image-ads-report.js` | Dual-mode: Workflow (?cid=X) — GET /api/containers/:id, POST /api/containers/:id/image-ads, POST /api/containers/:id/context; Report (?cid=X&adId=Y) — GET /api/containers/:id/image-ads/:id, POST /api/containers/:id/context |
-| `scrape-details.html` | `scrape-details.js` | GET /api/containers/:id/scrapes/:id |
+| `scrape-details.html` | `scrape-details.js` | GET /api/containers/:id/scrapes/:id, POST /api/containers/:id/context, GET /api/containers/:id/clone-ad/models, POST /api/containers/:id/clone-ad |
 | `chat.html` | `chat-page.js` | GET /api/containers, POST /api/containers/:id/chat |
 | `keyword-strategy.html` | `keyword-strategy-page.js` | GET /api/containers, GET /api/containers/:id, POST /api/containers/:id/keyword-strategy, GET /api/containers/:id/keyword-strategies/:id |
 | `guide.html` | `guide.js` | None (static content) |
+| `agent-guide.html` | `agent-guide.js` | None (static content, reads ?agent= query param) |
 | `changelog.html` | `changelog.js` | GET /api/changelog |
+| `desire-spring.html` | `desire-spring-page.js` | POST /api/desire-spring, GET /api/desire-spring, GET /api/desire-spring/:id, POST /api/desire-spring/:id/save, DELETE /api/desire-spring/:id |
+| `research-web.html` | `research-web-page.js` | POST /api/research-web/search, GET /api/research-web, GET /api/research-web/:id, POST /api/research-web/:id/summarize, DELETE /api/research-web/:id, POST /api/containers/:id/context |
+| `case-study.html` | `case-study-report.js` | GET /api/containers/:id/case-studies/:studyId, POST /api/containers/:id/context |
+| `taboola-campaign.html` | `taboola-campaign-report.js` | GET /api/containers/:id/taboola-campaign/:campaignId |
+| `spinoff-ideas.html` | `spinoff-ideas-report.js` | GET /api/containers/:id/spinoff-ideas/:ideaId, POST /api/containers/:id/context |
+| `ad-workshop.html` | `ad-workshop.js` | GET /api/containers/:id, GET /api/containers/:id/clone-ad/models, POST /api/containers/:id/clone-ad, POST /api/containers/:id/hooks, GET /api/containers/:id/hooks/:id |
 
 ---
 
@@ -177,10 +210,15 @@ All data stored in `data/<container-id>.json`. Key fields:
 - `case_studies[]` — Case study analyses
 - `gads_analyses[]` — Google Ads campaign analyses
 - `keyword_ideas[]` — Persisted Google Keyword Planner results (search volume, CPC bids, competition)
+- `taboola_campaigns[]` — Taboola campaign clone results {id, created_at, status, source_ad_ids[], result: {campaign_name, taboola_campaign_id, campaign_url, items[], daily_cap, cpc_bid, country_targeting, platform_targeting}}
+- `spinoff_ideas[]` — Spin-off product idea results {id, created_at, status, result: {full_text, json_data: {landscape_summary, spinoff_ideas[]}, generated_at}}
+- `hooks_results[]` — Hooks/angles generation results {id, created_at, status, result: {hooks: [{id, angle_name, hook_text, emotion, angle_type, target_segment, inspired_by, rationale, adapted_for_product, suggested_visuals}], angle_summary}}
 - `container_context[]` — Curated insights (content + text_brief)
-- `settings{}` — FB Pixel, GA4, custom code, user context, `auto_scrape_enabled` (bool)
+- `settings{}` — FB Pixel, GA4, custom code, user context, `auto_scrape_enabled` (bool), `taboola` ({client_id, client_secret, account_id})
 
 Also: `data/changelog.json` — Git commit history + app-start events (not per-container)
+Also: `data/desire-spring.json` — DesireSpring feature ideas + generated instructions (not per-container)
+Also: `data/web-research.json` — Web research sessions with sources, summaries, and combined briefs (not per-container)
 
 ## Container Context System
 
@@ -196,15 +234,16 @@ Source types: `competitor_analysis`, `seo_analysis`, `gads_analysis`, `keyword_s
 
 - Port: `process.env.PORT || 3100`
 - Static files: `public/` directory
-- Screenshots: `screenshots/` directory
+- Screenshots: `screenshots/` directory (scraper captures, clone-ad defaults)
+- Cloned ads: `clonedAd/` directory (clone-ad output from scrape-details page)
 - Logs: JSON lines file via logger.js
 
 ---
 
 ## Agent Naming Convention
 
-Every agent has a unique code (`ag0001`–`ag0015`), stored in `AGENT_META.code`.
-Dashboard badges display the formatted version: `AG-001` through `AG-015`.
+Every agent has a unique code (`ag0001`–`ag0019`), stored in `AGENT_META.code`.
+Dashboard badges display the formatted version: `AG-001` through `AG-019`.
 When adding a new agent, assign the next sequential code.
 
 | Code | ID | Display Name | Category |
@@ -224,6 +263,12 @@ When adding a new agent, assign the next sequential code.
 | ag0013 | test-planner | RPS Test Ideator | generation |
 | ag0014 | case-study | Case Study Analyzer | analysis |
 | ag0015 | container-chat | Container Chat | chat |
+| ag0016 | desire-spring | DesireSpring | generation |
+| ag0017 | research-web | ResearchWeb | research |
+| ag0018 | taboola | Taboola Campaign Cloner | generation |
+| ag0019 | spinoff-ideas | SpinOff Ideas | generation |
+| ag0020 | hooks | Hooks Generator | generation |
+| ag0021 | folder-scraper | Folder Ad Importer | collection |
 
 ---
 

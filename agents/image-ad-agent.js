@@ -36,6 +36,7 @@ const AGENT_META = {
   ],
   outputs: { storageKey: 'image_ads', dataType: 'json', schema: 'ImageAdCuration' },
   ui: { visible: true },
+  prompt_summary: 'Ranks scraped ads by cloning potential, recommends the best AI image model for each, and provides adaptation strategies and visual direction.',
 };
 
 async function generateImageAds(containerId, options = {}) {
@@ -214,15 +215,14 @@ function buildPrompt(container, options) {
   }
 
   // AI Model capabilities reference
-  const selectedModels = options.image_models || ['nano_banana', 'dalle', 'midjourney'];
+  // These keys match the OpenRouter model IDs used in clone-ad.js
+  const selectedModels = options.image_models || ['gemini_flash', 'gpt5_image_mini', 'gemini_pro'];
   const modelCapabilities = {
-    nano_banana: { name: 'Nano Banana (Gemini Flash)', strengths: 'Cheapest, fast, good for simple product shots and clean layouts', weaknesses: 'Less artistic control, simpler compositions', best_for: 'Product-focused ads, clean backgrounds, e-commerce style' },
-    dalle: { name: 'ChatGPT / DALL-E (GPT Image)', strengths: 'Best text rendering, photorealistic, follows complex instructions well', weaknesses: 'Slower, more expensive', best_for: 'Ads needing text overlay, lifestyle photography, detailed scenes' },
-    midjourney: { name: 'Midjourney', strengths: 'Most artistic, stunning aesthetics, great mood/atmosphere', weaknesses: 'Text rendering poor, needs specific syntax', best_for: 'Brand imagery, aspirational lifestyle, artistic/premium feel' },
-    stable_diffusion: { name: 'Stable Diffusion', strengths: 'Free/local, highly customizable with LoRAs, good for specific styles', weaknesses: 'Needs more prompt engineering, inconsistent quality', best_for: 'Iterating quickly, specific trained styles, batch generation' },
-    ideogram: { name: 'Ideogram', strengths: 'Excellent text-in-image, good typography rendering', weaknesses: 'Limited artistic range compared to MJ', best_for: 'Ads with prominent text, logos, typographic designs' },
-    flux: { name: 'Flux', strengths: 'Fast, good quality, natural language prompts', weaknesses: 'Less control over fine details', best_for: 'Quick iterations, general-purpose ad imagery' },
-    nanogpt: { name: 'NanoGPT', strengths: 'Good quality-to-cost ratio, diverse outputs', weaknesses: 'Less predictable than top-tier models', best_for: 'Budget-friendly ad campaigns, testing variations' },
+    gemini_flash: { name: 'Gemini 2.5 Flash Image', model_id: 'google/gemini-2.5-flash-image', strengths: 'Cheapest option, fast (~7s), good for simple product shots and clean layouts', weaknesses: 'Less artistic control, simpler compositions', best_for: 'Product-focused ads, clean backgrounds, e-commerce style, budget campaigns' },
+    gemini_flash_new: { name: 'Gemini 3.1 Flash Image', model_id: 'google/gemini-3.1-flash-image-preview', strengths: 'Newest Gemini, cheap, good quality-to-cost ratio', weaknesses: 'Preview model, may have inconsistencies', best_for: 'Testing latest capabilities at budget price' },
+    gemini_pro: { name: 'Gemini 3 Pro Image', model_id: 'google/gemini-3-pro-image-preview', strengths: 'Best Gemini quality, fast (~4s), strong composition', weaknesses: 'Mid-range cost', best_for: 'High-quality ad imagery with good detail, product lifestyle shots' },
+    gpt5_image_mini: { name: 'GPT-5 Image Mini', model_id: 'openai/gpt-5-image-mini', strengths: 'Fastest (~1s), excellent text rendering, follows complex instructions well', weaknesses: 'Higher cost than Gemini', best_for: 'Ads needing text overlay, typography, detailed scenes, quick iterations' },
+    gpt5_image: { name: 'GPT-5 Image', model_id: 'openai/gpt-5-image', strengths: 'Premium quality, best text rendering, most photorealistic', weaknesses: 'Most expensive, slower', best_for: 'Hero images, premium brand campaigns, ads requiring precise text placement' },
   };
 
   parts.push(`\n### Available AI Image Models for Cloning`);

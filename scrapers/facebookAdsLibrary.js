@@ -460,6 +460,9 @@ async function attemptScrape(url, analysisId, attempt) {
     // Deep scrape: visit each ad's detail page for EU audience demographics — SLOWER
     await scrapeAdDetails(browser, ads, analysisId);
 
+    // In-browser image download (while page session cookies are still active)
+    await downloadImagesInBrowser(page, ads, analysisId);
+
     // Sort: impressions desc, then oldest first
     ads.sort((a, b) => {
       const impA = parseImpressions(a.extra_data?.impressions);
@@ -490,6 +493,59 @@ async function attemptScrape(url, analysisId, attempt) {
     await page.close();
   }
   return ads;
+}
+
+/**
+ * Download ad images in-browser while the Puppeteer page still has valid Facebook session cookies.
+ * This bypasses the CDN auth issue where direct HTTPS requests fail for session-bound URLs.
+ */
+async function downloadImagesInBrowser(page, ads, analysisId) {
+  let downloaded = 0;
+  let skipped = 0;
+
+  for (let i = 0; i < ads.length; i++) {
+    const ad = ads[i];
+    const mediaUrl = ad.media_url;
+
+    // Skip non-image ads, ads without media_url, or video ads
+    if (!mediaUrl || ad.media_type !== 'image' || ad.local_media_path) {
+      skipped++;
+      continue;
+    }
+
+    try {
+      const base64Data = await page.evaluate(async (url) => {
+        try {
+          const resp = await fetch(url, { credentials: 'include' });
+          if (!resp.ok) return null;
+          const buf = await resp.arrayBuffer();
+          const bytes = new Uint8Array(buf);
+          let binary = '';
+          for (let j = 0; j < bytes.length; j++) {
+            binary += String.fromCharCode(bytes[j]);
+          }
+          return btoa(binary);
+        } catch (e) {
+          return null;
+        }
+      }, mediaUrl);
+
+      if (base64Data && base64Data.length > 100) {
+        const filename = `${analysisId}_fb_dl_${i}.jpg`;
+        const filePath = path.join(SCREENSHOTS_DIR, filename);
+        fs.writeFileSync(filePath, Buffer.from(base64Data, 'base64'));
+        ad.local_media_path = `screenshots/${filename}`;
+        downloaded++;
+      } else {
+        skipped++;
+      }
+    } catch (err) {
+      skipped++;
+      log.debug(SRC, `In-browser download failed for ad ${i}`, { err: err.message });
+    }
+  }
+
+  log.info(SRC, `In-browser image download: ${downloaded} downloaded, ${skipped} skipped`);
 }
 
 async function checkPageHealth(page, httpStatus) {

@@ -26,6 +26,7 @@ const AGENT_META = {
   consumes: [],
   outputs: { storageKey: null, dataType: 'text', schema: null },
   ui: { visible: true },
+  prompt_summary: 'Answers questions about container data using all available product info, competitor analyses, scrape results, keyword strategies, and context items.',
 };
 
 async function chat(containerId, { message, history = [] }) {

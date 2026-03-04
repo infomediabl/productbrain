@@ -38,6 +38,7 @@ const AGENT_META = {
   consumes: [],
   outputs: { storageKey: 'scrape_results', dataType: 'json', schema: 'ScrapeResult' },
   ui: { visible: true },
+  prompt_summary: 'No AI prompt — uses Puppeteer to scrape FB/Google ad libraries. Runs Tesseract OCR on images, uses Claude to structure Google ad OCR text.',
 };
 
 const SCREENSHOTS_DIR = path.join(__dirname, '..', 'screenshots');
@@ -291,6 +292,9 @@ async function downloadAllAdMedia(containerId, scrapeId) {
 
   for (let i = 0; i < allAds.length; i++) {
     const { ad, entryKey, source } = allAds[i];
+
+    // Skip ads already downloaded in-browser (F2 fix)
+    if (ad.local_media_path) continue;
 
     // Download primary media_url
     if (ad.media_url && ad.media_url.startsWith('http') && ad.media_type !== 'video') {

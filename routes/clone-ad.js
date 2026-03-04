@@ -17,11 +17,12 @@ const log = require('../logger');
 const SRC = 'CloneAdRoute';
 
 const OPENROUTER_IMAGE_MODELS = [
-  { id: 'google/gemini-2.5-flash-image', label: 'Nano Banana — cheapest' },
-  { id: 'google/gemini-3-pro-image-preview', label: 'Nano Banana Pro — best quality' },
-  { id: 'openai/gpt-5-image', label: 'GPT-5 Image' },
-  { id: 'openai/gpt-5-image-mini', label: 'GPT-5 Image Mini' },
-  { id: 'openrouter/auto', label: 'Auto (best available)' },
+  { id: 'google/gemini-2.5-flash-image', label: 'Gemini 2.5 Flash — cheapest, ~7s', tier: 'budget' },
+  { id: 'google/gemini-3.1-flash-image-preview', label: 'Gemini 3.1 Flash — newest, ~10s', tier: 'budget' },
+  { id: 'google/gemini-3-pro-image-preview', label: 'Gemini 3 Pro — best Gemini, ~4s', tier: 'mid' },
+  { id: 'openai/gpt-5-image-mini', label: 'GPT-5 Image Mini — fast, good text, ~1s', tier: 'mid' },
+  { id: 'openai/gpt-5-image', label: 'GPT-5 Image — premium quality', tier: 'premium' },
+  { id: 'openrouter/auto', label: 'Auto (best available)', tier: 'auto' },
 ];
 
 // GET /api/openrouter/models — list available image models + key status
@@ -38,7 +39,7 @@ router.post('/', async (req, res) => {
     return res.status(400).json({ error: 'OPENROUTER_API_KEY not set in .env. Get one at https://openrouter.ai/settings/keys' });
   }
 
-  const { headline, ad_text, cta, image_url, screenshot_path, source_competitor, product_context, format, network, model } = req.body;
+  const { headline, ad_text, cta, image_url, screenshot_path, source_competitor, product_context, format, network, model, save_dir, save_filename, custom_instructions } = req.body;
 
   if (!model) return res.status(400).json({ error: 'Missing model parameter' });
 
@@ -62,7 +63,7 @@ TARGET:
 - Network: ${network || 'facebook'}
 - Image Format: ${formatDesc}
 
-INSTRUCTIONS:
+${custom_instructions ? `ADDITIONAL CONTEXT:\n${custom_instructions}\n\n` : ''}INSTRUCTIONS:
 1. Generate a visually compelling ad image adapted for our product in ${formatDesc} format for ${network || 'facebook'}.
 2. The image should capture the same creative strategy and visual appeal as the original ad but be completely original and tailored to our product.
 3. Include any text overlays that would appear on the ad image (headline, CTA).
@@ -122,12 +123,29 @@ CTA: [adapted call to action]`;
         if (match) {
           const ext = match[1] === 'jpeg' ? 'jpg' : match[1];
           const buffer = Buffer.from(match[2], 'base64');
-          const filename = `clone_${Date.now()}.${ext}`;
-          const screenshotsDir = path.join(__dirname, '..', 'screenshots');
-          if (!fs.existsSync(screenshotsDir)) fs.mkdirSync(screenshotsDir, { recursive: true });
-          fs.writeFileSync(path.join(screenshotsDir, filename), buffer);
-          imagePath = `/screenshots/${filename}`;
-          log.info(SRC, 'Image saved', { filename });
+
+          // Determine save directory and filename
+          let targetDir, urlPrefix;
+          if (save_dir === 'clonedAd') {
+            targetDir = path.join(__dirname, '..', 'clonedAd');
+            urlPrefix = '/clonedAd';
+          } else {
+            targetDir = path.join(__dirname, '..', 'screenshots');
+            urlPrefix = '/screenshots';
+          }
+          if (!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, { recursive: true });
+
+          let filename;
+          if (save_filename) {
+            const sanitized = save_filename.replace(/[^a-zA-Z0-9_-]/g, '');
+            filename = `${sanitized || 'clone'}.${ext}`;
+          } else {
+            filename = `clone_${Date.now()}.${ext}`;
+          }
+
+          fs.writeFileSync(path.join(targetDir, filename), buffer);
+          imagePath = `${urlPrefix}/${filename}`;
+          log.info(SRC, 'Image saved', { filename, dir: urlPrefix });
         }
       }
     }

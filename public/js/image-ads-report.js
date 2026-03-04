@@ -142,8 +142,8 @@ async function loadWorkflow() {
 function goToStep(step) {
   if (step === 3) return; // step 3 only via generation
   if (step === 2 && selectedAdIndices.size === 0) return;
-  currentStep = step;
-  updateStepUI();
+  if (step === 1) renderStep1();
+  if (step === 2) renderStep2();
 }
 
 function updateStepUI() {
@@ -405,31 +405,25 @@ function renderStep2() {
     </div>
 
     <div class="form-group" style="margin-bottom:12px;">
-      <label style="font-size:13px;font-weight:600;">AI Image Models</label>
+      <label style="font-size:13px;font-weight:600;">AI Image Models (via OpenRouter)</label>
       <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;">
         <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);">
-          <input type="checkbox" class="wf-model-chk" value="nano_banana" checked> Nano Banana
+          <input type="checkbox" class="wf-model-chk" value="gemini_flash" checked> Gemini 2.5 Flash
         </label>
         <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);">
-          <input type="checkbox" class="wf-model-chk" value="dalle" checked> ChatGPT / DALL-E
+          <input type="checkbox" class="wf-model-chk" value="gpt5_image_mini" checked> GPT-5 Image Mini
         </label>
         <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);">
-          <input type="checkbox" class="wf-model-chk" value="midjourney" checked> Midjourney
+          <input type="checkbox" class="wf-model-chk" value="gemini_pro" checked> Gemini 3 Pro
         </label>
         <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);">
-          <input type="checkbox" class="wf-model-chk" value="nanogpt"> NanoGPT
+          <input type="checkbox" class="wf-model-chk" value="gemini_flash_new"> Gemini 3.1 Flash
         </label>
         <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);">
-          <input type="checkbox" class="wf-model-chk" value="stable_diffusion"> Stable Diffusion
-        </label>
-        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);">
-          <input type="checkbox" class="wf-model-chk" value="ideogram"> Ideogram
-        </label>
-        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);">
-          <input type="checkbox" class="wf-model-chk" value="flux"> Flux
+          <input type="checkbox" class="wf-model-chk" value="gpt5_image"> GPT-5 Image (premium)
         </label>
       </div>
-      <div class="hint">Select which AI image tools to generate prompts for</div>
+      <div class="hint">Select which AI image models to generate prompts for — all run via OpenRouter</div>
     </div>
 
     <div class="form-group" style="margin-bottom:12px;">
@@ -808,8 +802,8 @@ function renderCuratedAds(curatedAds, itemPushBtn) {
     html += `<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:10px;">`;
     if (ca.recommended_model) {
       const modelColors = {
-        midjourney: '#5865F2', dalle: '#10a37f', nano_banana: '#d97706', nanogpt: '#8b5cf6',
-        stable_diffusion: '#a855f7', ideogram: '#ec4899', flux: '#0ea5e9',
+        gemini_flash: '#d97706', gemini_flash_new: '#ea580c', gemini_pro: '#059669',
+        gpt5_image_mini: '#10a37f', gpt5_image: '#5865F2',
       };
       const mColor = modelColors[ca.recommended_model] || '#6b7085';
       const mLabel = ca.recommended_model.replace(/_/g, ' ').toUpperCase();
@@ -852,8 +846,8 @@ function renderCuratedAds(curatedAds, itemPushBtn) {
     const aiPrompts = ca.ai_prompts || {};
     if (Object.keys(aiPrompts).length > 0) {
       const modelColors = {
-        midjourney: '#5865F2', dalle: '#10a37f', nano_banana: '#d97706', nanogpt: '#8b5cf6',
-        stable_diffusion: '#a855f7', ideogram: '#ec4899', flux: '#0ea5e9',
+        gemini_flash: '#d97706', gemini_flash_new: '#ea580c', gemini_pro: '#059669',
+        gpt5_image_mini: '#10a37f', gpt5_image: '#5865F2',
       };
       html += `<div style="background:#f5920608;border:1px solid #f5920620;border-radius:6px;padding:10px 14px;margin-bottom:8px;">
         <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:#ea580c;margin-bottom:6px;">AI Image Prompt</div>`;
@@ -893,8 +887,10 @@ function renderModelSummary(summary, itemPushBtn) {
   if (!summary) return '';
 
   const modelColors = {
-    midjourney: '#5865F2', dalle: '#10a37f', nano_banana: '#d97706', nanogpt: '#8b5cf6',
-    stable_diffusion: '#a855f7', ideogram: '#ec4899', flux: '#0ea5e9',
+    gemini_flash: '#d97706', gemini_flash_new: '#ea580c', gemini_pro: '#059669',
+    gpt5_image_mini: '#10a37f', gpt5_image: '#5865F2',
+    // Legacy keys for backward compat
+    midjourney: '#5865F2', dalle: '#10a37f', nano_banana: '#d97706',
   };
 
   let html = `<div class="report-section" style="border-left-color:#8b5cf6;margin-bottom:16px;">
@@ -1026,17 +1022,19 @@ function renderAdConcepts(concepts) {
 
     // AI Prompts
     const allPrompts = { ...(c.ai_prompts || c.ai_image_prompts || {}) };
-    if (c.midjourney_prompt) allPrompts.midjourney = c.midjourney_prompt;
-    if (c.dalle_prompt) allPrompts.dalle = c.dalle_prompt;
-    if (c.nano_banana_prompt) allPrompts.nano_banana = c.nano_banana_prompt;
-    if (c.nanogpt_prompt) allPrompts.nanogpt = c.nanogpt_prompt;
-    if (c.stable_diffusion_prompt) allPrompts.stable_diffusion = c.stable_diffusion_prompt;
-    if (c.ideogram_prompt) allPrompts.ideogram = c.ideogram_prompt;
-    if (c.flux_prompt) allPrompts.flux = c.flux_prompt;
+    if (c.gemini_flash_prompt) allPrompts.gemini_flash = c.gemini_flash_prompt;
+    if (c.gemini_flash_new_prompt) allPrompts.gemini_flash_new = c.gemini_flash_new_prompt;
+    if (c.gemini_pro_prompt) allPrompts.gemini_pro = c.gemini_pro_prompt;
+    if (c.gpt5_image_mini_prompt) allPrompts.gpt5_image_mini = c.gpt5_image_mini_prompt;
+    if (c.gpt5_image_prompt) allPrompts.gpt5_image = c.gpt5_image_prompt;
+    // Legacy field names (backward compat for old data)
+    if (c.nano_banana_prompt) allPrompts.gemini_flash = allPrompts.gemini_flash || c.nano_banana_prompt;
+    if (c.dalle_prompt) allPrompts.gpt5_image = allPrompts.gpt5_image || c.dalle_prompt;
+    if (c.midjourney_prompt) allPrompts.gemini_pro = allPrompts.gemini_pro || c.midjourney_prompt;
     if (Object.keys(allPrompts).length > 0) {
       const modelColors = {
-        midjourney: '#5865F2', dalle: '#10a37f', nano_banana: '#d97706', nanogpt: '#8b5cf6',
-        stable_diffusion: '#a855f7', ideogram: '#ec4899', flux: '#0ea5e9',
+        gemini_flash: '#d97706', gemini_flash_new: '#ea580c', gemini_pro: '#059669',
+        gpt5_image_mini: '#10a37f', gpt5_image: '#5865F2',
       };
       html += `<div style="background:#f5920608;border:1px solid #f5920620;border-radius:6px;padding:10px 14px;margin-bottom:8px;">
         <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:#ea580c;margin-bottom:6px;">AI Image Prompts</div>`;
@@ -1116,13 +1114,15 @@ function scrollToCloneWithAd(sourceCompetitor, originalHeadline, recommendedMode
     const modelSelect = document.getElementById('clone-model');
     if (modelSelect) {
       const modelMap = {
+        'gemini_flash': 'google/gemini-2.5-flash-image',
+        'gemini_flash_new': 'google/gemini-3.1-flash-image-preview',
+        'gemini_pro': 'google/gemini-3-pro-image-preview',
+        'gpt5_image_mini': 'openai/gpt-5-image-mini',
+        'gpt5_image': 'openai/gpt-5-image',
+        // Legacy keys (backward compat for old curation data)
         'nano_banana': 'google/gemini-2.5-flash-image',
         'dalle': 'openai/gpt-5-image',
         'midjourney': 'openrouter/auto',
-        'flux': 'openrouter/auto',
-        'stable_diffusion': 'openrouter/auto',
-        'ideogram': 'openrouter/auto',
-        'nanogpt': 'openai/gpt-5-image-mini',
       };
       const mappedModel = modelMap[recommendedModel];
       if (mappedModel) {
@@ -1269,10 +1269,11 @@ function renderCloneSection() {
       <div>
         <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">OpenRouter Model</label>
         <select id="clone-model" style="width:100%;padding:8px 10px;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;">
-          <option value="google/gemini-2.5-flash-image">Nano Banana — cheapest</option>
-          <option value="google/gemini-3-pro-image-preview">Nano Banana Pro — best quality</option>
-          <option value="openai/gpt-5-image">GPT-5 Image</option>
-          <option value="openai/gpt-5-image-mini">GPT-5 Image Mini</option>
+          <option value="google/gemini-2.5-flash-image">Gemini 2.5 Flash — cheapest, ~7s</option>
+          <option value="google/gemini-3.1-flash-image-preview">Gemini 3.1 Flash — newest, ~10s</option>
+          <option value="google/gemini-3-pro-image-preview">Gemini 3 Pro — best Gemini, ~4s</option>
+          <option value="openai/gpt-5-image-mini">GPT-5 Image Mini — fast, good text, ~1s</option>
+          <option value="openai/gpt-5-image">GPT-5 Image — premium quality</option>
           <option value="openrouter/auto">Auto (best available)</option>
         </select>
       </div>

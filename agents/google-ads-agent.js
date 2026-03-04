@@ -32,6 +32,7 @@ const AGENT_META = {
   consumes: [],
   outputs: { storageKey: 'gads_analyses', dataType: 'json', schema: 'GadsAnalysis' },
   ui: { visible: true },
+  prompt_summary: 'Connects to Google Ads API for keyword ideas, campaign listing, and campaign performance analysis with spend efficiency recommendations.',
 };
 
 /**
