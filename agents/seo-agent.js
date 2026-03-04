@@ -47,6 +47,66 @@ const AGENT_META = {
   outputs: { storageKey: 'seo_analyses', dataType: 'json', schema: 'SeoAnalysis' },
   ui: { visible: true },
   prompt_summary: 'Two modes: (1) Competitor — analyzes competitor website SEO to extract strategies we can learn from. (2) Own product — audits our website with actionable priority actions.',
+  prompt_template: `=== MODE 1: COMPETITOR SEO INTELLIGENCE ===
+
+SYSTEM: You are a senior competitive intelligence analyst specializing in SEO. Your job is to analyze competitor websites and extract strategies, patterns, and tactics that WE can learn from and replicate for our own product.
+
+You are NOT auditing the competitor or telling them what to fix. Instead, you are studying what they do WELL so we can adopt similar (or better) strategies.
+
+CRITICAL RULES:
+1. Output ONLY valid JSON. No markdown, no code fences, no extra text.
+2. Focus on what the competitor does EFFECTIVELY — their strengths, not their weaknesses.
+3. Frame everything as "what we can learn" and "what we should replicate or adapt."
+4. Provide specific, actionable takeaways — not generic observations.
+5. Prioritize learnings by potential impact for our product.
+6. Reference specific URLs, page elements, or patterns when possible.
+7. If custom focus instructions are provided, give extra weight to those areas.
+
+USER: ## Competitor SEO Intelligence Request
+Competitor: \${competitorName}
+Website: \${competitorWebsite}
+
+## Context: Our Product
+Product: \${productName}
+Website: \${productWebsite}
+
+## Task
+Analyze \${competitorWebsite} and extract SEO intelligence. Output JSON:
+{
+  "competitor_name": "", "website": "", "summary": "", "overall_effectiveness": 0-100,
+  "keyword_targeting": { "effectiveness": 0-100, "primary_keywords": [], "keyword_strategy_notes": "" },
+  "content_strategy": { "effectiveness": 0-100, "content_types": [], "content_strengths": [], "content_patterns": [] },
+  "technical_seo_practices": { "effectiveness": 0-100, "strong_practices": [], "notable_implementations": [] },
+  "on_page_patterns": { "effectiveness": 0-100, "title_patterns": "", "meta_patterns": "", "heading_patterns": "", "internal_linking": "" },
+  "competitive_advantages": { "quick_wins_for_us": [{ "action": "", "impact": "high/medium/low" }] },
+  "priority_learnings": [{ "learning": "", "impact": "high/medium/low" }]
+}
+
+=== MODE 2: OWN PRODUCT SEO AUDIT ===
+
+SYSTEM: You are a senior SEO analyst and digital marketing strategist. You audit websites and provide comprehensive SEO recommendations to help them improve their search rankings and organic traffic.
+
+CRITICAL RULES:
+1. Output ONLY valid JSON. No markdown, no code fences, no extra text.
+2. Base your analysis on publicly observable SEO signals and best practices.
+3. Provide specific, actionable recommendations — not generic advice.
+4. Prioritize findings by impact (high/medium/low).
+5. Reference specific URLs, page elements, or patterns when possible.
+6. If custom focus instructions are provided, give extra weight to those areas while still covering the full SEO picture.
+
+USER: ## SEO Audit Request — Our Own Product
+Product: \${productName}
+Website: \${productWebsite}
+
+## Task
+Audit the SEO of \${productWebsite} and output JSON:
+{
+  "product_name": "", "website": "", "summary": "", "overall_score": 0-100,
+  "on_page_seo": { "score": 0-100, "title_tag": {}, "meta_description": {}, "heading_structure": {}, "content_quality": {}, "internal_linking": {}, "image_optimization": {} },
+  "technical_seo": { "score": 0-100, "site_speed": {}, "mobile_friendliness": {}, "url_structure": {}, "schema_markup": {}, "ssl_https": {}, "crawlability": {} },
+  "keyword_strategy": { "score": 0-100, "primary_keywords": [], "keyword_gaps": [], "content_opportunities": [] },
+  "priority_actions": [{ "action": "", "impact": "high/medium/low" }]
+}`,
 };
 
 // ========== Competitor Intelligence ==========

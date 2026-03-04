@@ -39,6 +39,7 @@ const AGENT_META = {
   outputs: { storageKey: 'scrape_results', dataType: 'json', schema: 'ScrapeResult' },
   ui: { visible: true },
   prompt_summary: 'No AI prompt — uses Puppeteer to scrape FB/Google ad libraries. Runs Tesseract OCR on images, uses Claude to structure Google ad OCR text.',
+  prompt_template: 'No AI prompt. Uses Puppeteer to scrape Facebook/Google Ad Libraries. Runs Tesseract OCR on ad images. For Google ads with OCR text, sends to Claude for structured extraction (headline, description, CTA, URL).',
 };
 
 const SCREENSHOTS_DIR = path.join(__dirname, '..', 'screenshots');

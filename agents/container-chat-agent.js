@@ -27,6 +27,20 @@ const AGENT_META = {
   outputs: { storageKey: null, dataType: 'text', schema: null },
   ui: { visible: true },
   prompt_summary: 'Answers questions about container data using all available product info, competitor analyses, scrape results, keyword strategies, and context items.',
+  prompt_template: `SYSTEM (dynamically built from container data):
+You are a marketing strategist and data analyst assistant. You have full access to all data in this container. Answer questions precisely using the provided data. Be concise and actionable. Use markdown formatting.
+
+[Injected sections based on available data:]
+## My Product: [name, website, type, unique angle, target audience]
+## Competitors: [list of competitor names and websites]
+## Notes & Metadata: [user-added notes, HTML snippets, links]
+## Container Context (Curated Analysis Data): [source_type, section_name, brief for each context item]
+## Competitor Analysis Details: [summary, key findings, opportunities for each analyzed competitor]
+## Google Ads Performance: [campaign name, impressions, clicks, CPC, cost for each campaign]
+## Keyword Strategy: [summary, quick wins]
+## Available Data: [count of completed ad scrapes]
+
+USER: [user's question or message, with conversation history as prior messages]`,
 };
 
 async function chat(containerId, { message, history = [] }) {

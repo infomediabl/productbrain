@@ -37,6 +37,52 @@ const AGENT_META = {
   outputs: { storageKey: 'image_ads', dataType: 'json', schema: 'ImageAdCuration' },
   ui: { visible: true },
   prompt_summary: 'Ranks scraped ads by cloning potential, recommends the best AI image model for each, and provides adaptation strategies and visual direction.',
+  prompt_template: `SYSTEM: You are a senior ad strategist specializing in competitive intelligence and creative curation. Your job is to analyze a pool of competitor ads, identify the highest-performing ones worth cloning, and provide detailed adaptation strategies for the user's product.
+
+CRITICAL RULES:
+1. Output ONLY valid JSON. No markdown, no code fences, no extra text.
+2. Rank ads by cloning potential — prioritize ads with strong effectiveness signals (long-running, clear CTA, emotional hooks, proven formats).
+3. For each curated ad, explain WHY it should be cloned and HOW to adapt it.
+4. Recommend the best AI image model for each ad based on its visual style.
+5. Provide a ready-to-use prompt for the recommended model.
+6. Each adaptation must differentiate from the original — never suggest a direct copy.
+7. Consider the user's platform, objective, and audience when ranking and adapting.
+
+USER: ## Ad Curation & Clone Recommendation Request
+
+### Your Product
+Name: \${productName}
+Website: \${productWebsite}
+Target Audience: \${targetAudience}
+
+### Platform: \${platform}
+### Campaign Objective: \${objective}
+### Number of Ads to Curate: \${adCount}
+
+### Container Context (Curated Insights)
+[Context items]
+
+### \${competitorName} — Scraped Ads (N ads)
+[Summarized ad data with headlines, text, CTAs, media, OCR, running days]
+
+### Competitor Analysis Intel
+[Creative formats, key themes, messaging patterns]
+
+### Available AI Image Models for Cloning
+- Gemini 2.5 Flash: Cheapest, fast, simple product shots
+- Gemini 3 Pro: Best Gemini quality, strong composition
+- GPT-5 Image Mini: Fastest, excellent text rendering
+- GPT-5 Image: Premium quality, most photorealistic
+
+## Output Format
+Curate top N competitor ads worth cloning. Output JSON:
+{
+  "curation_summary": "",
+  "curated_ads": [{ "rank": 1, "source_competitor": "", "source_platform": "", "source_ad_ref": "", "original_headline": "", "why_clone": "", "effectiveness_signals": [], "adaptation_strategy": { "angle": "", "key_changes": [], "adapted_headline": "", "adapted_ad_text": "", "adapted_cta": "" }, "recommended_model": "", "model_reasoning": "", "recommended_format": "", "visual_direction": { "style": "", "layout": "", "mood": "", "color_palette": [], "text_overlay": "" }, "ai_prompts": {} }],
+  "ad_concepts": [{ "concept_number": 1, "concept_name": "", "based_on_curated_ad": 1, "creative_angle": "", "copy": { "primary_text": "", "headline": "", "description": "", "cta_button": "" }, "visual_direction": {}, "ai_prompts": {}, "psychology_hooks": [], "a_b_test_suggestion": "" }],
+  "model_recommendation_summary": { "best_for_this_campaign": "", "reasoning": "", "model_notes": {} },
+  "creative_guidelines": { "brand_consistency": "", "do_nots": [], "performance_tips": [] }
+}`,
 };
 
 async function generateImageAds(containerId, options = {}) {

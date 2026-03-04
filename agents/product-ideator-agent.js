@@ -12,7 +12,7 @@ const log = require('../logger');
 const storage = require('../storage');
 const config = require('../config');
 const { parseJsonFromResponse } = require('../utils/parse-json');
-const { gatherScrapeData, gatherCompetitorAnalyses } = require('../utils/gather-data');
+const { gatherScrapeData, gatherCompetitorAnalyses, gatherContainerContext } = require('../utils/gather-data');
 
 const SRC = 'ProductIdeator';
 
@@ -30,10 +30,63 @@ const AGENT_META = {
   consumes: [
     { agent: 'scraper', dataKey: 'scrape_results', description: 'Competitor ad data' },
     { agent: 'analyzer', dataKey: 'competitor_analyses', description: 'AI competitor analyses' },
+    { agent: 'container-context', dataKey: 'container_context', description: 'Curated insights for ideation' },
   ],
   outputs: { storageKey: 'product_ideas', dataType: 'json', schema: 'ProductIdea' },
   ui: { visible: true },
   prompt_summary: 'Identifies market gaps and underserved segments from competitor data. Generates new product concepts with brand names, positioning, and competitive advantages.',
+  prompt_template: `SYSTEM: You are an expert product strategist and brand consultant. You analyze competitive landscapes and identify market opportunities to propose new product concepts.
+
+You specialize in:
+- Identifying gaps and underserved segments in existing markets
+- Creating compelling brand names and domain suggestions
+- Defining product positioning that differentiates from competitors
+- Understanding target audience needs from ad campaign data
+
+CRITICAL: Output ONLY valid JSON. No markdown, no explanations outside JSON.
+
+USER: # Competitive Landscape Analysis — New Product Ideation
+
+You are analyzing a competitive landscape to propose a NEW product that could compete in this market.
+
+## User Instructions
+\${userPrompt}
+
+## Curated Container Insights
+\${contextBrief}
+
+## Competitor Intelligence (AI-Analyzed)
+### \${competitorName}
+Website: \${competitorWebsite}
+Summary: \${analysisSummary}
+Key findings: [...]
+Messaging patterns: [...]
+Weaknesses: [...]
+Opportunities: [...]
+
+## Competitor Ad Data
+### \${competitorName} — N FB ads, N Google ads
+[Sample headlines, text, CTAs, destination URLs, EU reach data]
+
+## Task
+Based on the competitive landscape above, propose 3 distinct product concepts that could successfully compete in this market. Each should have a different strategic angle.
+
+Output JSON:
+{
+  "market_analysis": {
+    "market_type": "", "total_competitors_analyzed": N,
+    "key_market_trends": [], "underserved_segments": [], "common_weaknesses": []
+  },
+  "product_ideas": [{
+    "project_name": "CatchyName",
+    "domain_suggestions": ["catchyname.com", "catchyname.io"],
+    "site_type": "Brief description (max 15 words)",
+    "tagline": "A memorable one-liner",
+    "target_audience": "Specific audience description",
+    "unique_angle": "What makes this different",
+    "competitive_advantages": ["advantage1", "advantage2"]
+  }]
+}`,
 };
 
 /**
@@ -54,11 +107,13 @@ async function ideateProduct(containerId, { userPrompt } = {}) {
     throw new Error('No competitor data available. Scrape ads or run competitor analysis first.');
   }
 
+  const contextItems = gatherContainerContext(container);
+
   const idea = await storage.addProductIdea(containerId);
   if (!idea) throw new Error('Container not found');
 
   // Run async
-  executeIdeation(containerId, idea.id, container, mergedScrapeData, competitorAnalyses, userPrompt).catch(async (err) => {
+  executeIdeation(containerId, idea.id, container, mergedScrapeData, competitorAnalyses, userPrompt, contextItems).catch(async (err) => {
     log.error(SRC, 'Product ideation crashed', { err: err.message });
     try {
       await storage.updateProductIdea(containerId, idea.id, 'failed', { error: err.message });
@@ -68,12 +123,12 @@ async function ideateProduct(containerId, { userPrompt } = {}) {
   return idea;
 }
 
-async function executeIdeation(containerId, ideaId, container, mergedScrapeData, competitorAnalyses, userPrompt) {
+async function executeIdeation(containerId, ideaId, container, mergedScrapeData, competitorAnalyses, userPrompt, contextItems) {
   try {
     const Anthropic = require('@anthropic-ai/sdk');
     const client = new Anthropic();
 
-    const prompt = buildIdeationPrompt(container, mergedScrapeData, competitorAnalyses, userPrompt);
+    const prompt = buildIdeationPrompt(container, mergedScrapeData, competitorAnalyses, userPrompt, contextItems);
     log.info(SRC, 'Sending product ideation request to Claude', {
       promptLength: prompt.length,
       competitors: Object.keys(mergedScrapeData).length,
@@ -120,7 +175,7 @@ ${config.CONCISENESS_INSTRUCTION}`,
   }
 }
 
-function buildIdeationPrompt(container, mergedScrapeData, competitorAnalyses, userPrompt) {
+function buildIdeationPrompt(container, mergedScrapeData, competitorAnalyses, userPrompt, contextItems) {
   const parts = [];
   const competitorMap = {};
   for (const c of (container.competitors || [])) competitorMap[c.id] = c;
@@ -131,6 +186,15 @@ function buildIdeationPrompt(container, mergedScrapeData, competitorAnalyses, us
   if (userPrompt) {
     parts.push(`## User Instructions`);
     parts.push(userPrompt);
+    parts.push('');
+  }
+
+  const contextBrief = (contextItems || []).length > 0
+    ? contextItems.map(c => c.text_brief).join('\n\n')
+    : '';
+  if (contextBrief) {
+    parts.push(`## Curated Container Insights`);
+    parts.push(contextBrief);
     parts.push('');
   }
 

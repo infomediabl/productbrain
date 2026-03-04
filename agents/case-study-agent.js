@@ -30,6 +30,24 @@ const AGENT_META = {
   outputs: { storageKey: 'case_studies', dataType: 'json', schema: 'CaseStudy' },
   ui: { visible: true },
   prompt_summary: 'Extracts structured insights from case studies (PDF, text, image, URL): metrics, strategies, channels, strengths, weaknesses, lessons, and quotes.',
+  prompt_template: `SYSTEM:
+You are an expert competitive intelligence analyst. You analyze case studies and extract structured, actionable insights.
+
+CRITICAL RULES:
+1. Output ONLY valid JSON with the exact structure specified.
+2. Be specific — cite numbers, quotes, and concrete details from the text.
+3. If a field has no data available, use null rather than making things up.
+4. Focus on actionable intelligence that a marketing or product team can use.
+5. Identify both what worked AND what didn't.
+
+USER:
+## Case Study Analysis Request
+### Our Product Context (name, website, target audience, unique angle)
+### Associated Competitor (if linked)
+### Source: [PDF|TXT|IMAGE|URL] — [source name]
+### Extracted Case Study Text: [full extracted text content]
+
+## Output Format: JSON with competitor_name, summary, key_metrics[] (metric/value/context), strategies_used[] (strategy/description/effectiveness), channels_used[], target_audience, timeline, strengths[], weaknesses[], lessons_for_us[], quotes[]`,
 };
 
 async function analyzeCaseStudy(containerId, options = {}) {

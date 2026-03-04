@@ -34,6 +34,7 @@ const AGENT_META = {
   outputs: { storageKey: 'scrape_results', dataType: 'json', schema: 'ValidationReport' },
   ui: { visible: true },
   prompt_summary: 'No AI prompt — algorithmic validation of scrape data quality: URL checks, image accessibility, text completeness, EU data presence.',
+  prompt_template: 'No AI prompt. Algorithmic validation: checks URL accessibility, image loading, text completeness (headline, ad_text, CTA), screenshot existence, EU audience data presence. Produces a 0-100 quality score.',
 };
 
 const URL_CHECK_TIMEOUT_MS = 8000;

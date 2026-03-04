@@ -34,6 +34,36 @@ const AGENT_META = {
   outputs: { storageKey: 'taboola_campaigns', dataType: 'json', schema: 'TaboolaCampaign' },
   ui: { visible: true },
   prompt_summary: 'Adapts Facebook ad copy for Taboola native advertising with curiosity-driven titles under 60 chars and descriptions under 150 chars.',
+  prompt_template: `USER (single message, no system prompt):
+You are adapting Facebook ads for Taboola native advertising. Taboola titles must be curiosity-driven, teaser-style headlines under 60 characters. Descriptions should be under 150 characters and compelling.
+
+PRODUCT CONTEXT:
+Product: [product name]
+CURATED INSIGHTS: [container context briefs, if available]
+
+SOURCE FACEBOOK ADS:
+Ad 1 (id: [id]):
+  Headline: [headline]
+  Description: [description]
+  CTA: [cta]
+  URL: [url]
+[...repeated for each selected ad]
+
+For each ad, generate a Taboola-optimized version. Return JSON array:
+[
+  {
+    "source_ad_id": "<original ad id>",
+    "taboola_title": "<under 60 chars, curiosity/teaser style>",
+    "taboola_description": "<under 150 chars, compelling>",
+    "destination_url": "<landing page URL from original ad>"
+  }
+]
+
+Rules:
+- Titles: Use curiosity gaps, numbers, or surprising angles. No clickbait that can't be delivered.
+- Keep the core value proposition but reframe for native ad context.
+- If the original URL is empty, use a placeholder "#".
+- Return ONLY the JSON array.`,
 };
 
 async function previewCopy(containerId, options = {}) {

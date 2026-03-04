@@ -12,6 +12,7 @@ const log = require('../logger');
 const storage = require('../storage');
 const config = require('../config');
 const { parseJsonFromResponse } = require('../utils/parse-json');
+const { gatherContainerContext } = require('../utils/gather-data');
 
 const SRC = 'PromptAgent';
 
@@ -28,10 +29,55 @@ const AGENT_META = {
   ],
   consumes: [
     { agent: 'proposal', dataKey: 'proposals', description: 'Completed proposal with creative briefs' },
+    { agent: 'container-context', dataKey: 'container_context', description: 'Curated insights for prompt refinement' },
   ],
   outputs: { storageKey: 'generated_prompts', dataType: 'json', schema: 'GeneratedPrompts' },
   ui: { visible: false },
   prompt_summary: 'Converts creative briefs into AI image prompts for Nano Banana, ChatGPT/DALL-E, and Midjourney with scene composition, lighting, style, and copy overlays.',
+  prompt_template: `SYSTEM: You are an expert AI image prompt engineer. You take creative briefs for ads and generate highly detailed, production-ready prompts for AI image generation tools.
+
+Each prompt you generate must be IMMEDIATELY usable in tools like:
+- Nano Banana (direct descriptive prompts)
+- ChatGPT/DALL-E (descriptive prompts with style guidance)
+- Midjourney (structured with parameters)
+
+CRITICAL RULES:
+1. Output ONLY valid JSON.
+2. Each brief gets 3 prompt variants: nano_banana, chatgpt, midjourney.
+3. Prompts must be HIGHLY SPECIFIC — no vague descriptions.
+4. Include: scene composition, camera angle, lighting, color palette, style, text overlays, mood, aspect ratio, background details.
+5. For ad copy overlays, specify EXACT text, font style, placement, and size.
+6. Consider the ad format (feed, story, reel, banner) for proper aspect ratio.
+
+USER: ## Product Context
+\${userContext}
+
+## Curated Container Insights
+\${contextBrief}
+
+## Creative Briefs to Generate Prompts For
+### Brief \${number}: \${title}
+Source Type: \${sourceType}
+Ad Format: \${adFormat}
+Headline: \${headline}
+Ad Text: \${adText}
+CTA: \${cta}
+Base Image Prompt (from proposal): \${imagePrompt}
+Strategy: \${whyThisAd}
+Target: \${targetDemographics}
+
+## Task
+Generate detailed image prompts for each creative brief. Output JSON:
+{
+  "prompts": [{
+    "brief_number": 1, "brief_title": "",
+    "aspect_ratio": "1:1 / 9:16 / 16:9",
+    "nano_banana": { "prompt": "Complete prompt — scene, lighting, colors, style, camera, background, text overlay, mood, people. Min 5 sentences." },
+    "chatgpt": { "prompt": "Complete prompt for ChatGPT/DALL-E. Prefix with 'Generate an image:' and include style guidance." },
+    "midjourney": { "prompt": "Structured Midjourney prompt with --ar --style --v --q parameters." },
+    "copy_overlay": { "headline": "", "subtext": "", "cta_text": "", "placement_guide": "" }
+  }]
+}`,
 };
 
 /**
@@ -54,8 +100,10 @@ async function generatePrompts(containerId, proposalId) {
   const promptRecord = await storage.addGeneratedPrompt(containerId, proposalId);
   if (!promptRecord) throw new Error('Failed to create prompt record');
 
+  const contextItems = gatherContainerContext(container);
+
   // Run async
-  executePromptGeneration(containerId, promptRecord.id, proposal, jsonData).catch(async (err) => {
+  executePromptGeneration(containerId, promptRecord.id, proposal, jsonData, contextItems).catch(async (err) => {
     log.error(SRC, 'Prompt generation crashed', { err: err.message });
     try {
       await storage.updateGeneratedPrompt(containerId, promptRecord.id, 'failed', { error: err.message });
@@ -65,12 +113,15 @@ async function generatePrompts(containerId, proposalId) {
   return promptRecord;
 }
 
-async function executePromptGeneration(containerId, promptRecordId, proposal, jsonData) {
+async function executePromptGeneration(containerId, promptRecordId, proposal, jsonData, contextItems) {
   try {
     const Anthropic = require('@anthropic-ai/sdk');
     const client = new Anthropic();
 
-    const prompt = buildPromptGenerationPrompt(jsonData, proposal.result?.user_context || '');
+    const contextBrief = (contextItems || []).length > 0
+      ? contextItems.map(c => c.text_brief).join('\n\n')
+      : '';
+    const prompt = buildPromptGenerationPrompt(jsonData, proposal.result?.user_context || '', contextBrief);
     log.info(SRC, 'Sending prompt generation request to Claude', {
       briefCount: jsonData.creative_briefs.length,
       promptLength: prompt.length,
@@ -122,12 +173,17 @@ CRITICAL RULES:
   }
 }
 
-function buildPromptGenerationPrompt(jsonData, userContext) {
+function buildPromptGenerationPrompt(jsonData, userContext, contextBrief) {
   const parts = [];
 
   if (userContext) {
     parts.push(`## Product Context`);
     parts.push(userContext);
+  }
+
+  if (contextBrief) {
+    parts.push(`\n## Curated Container Insights`);
+    parts.push(contextBrief);
   }
 
   parts.push(`\n## Creative Briefs to Generate Prompts For`);

@@ -32,6 +32,32 @@ const AGENT_META = {
   outputs: { storageKey: 'quizzes', dataType: 'html', schema: 'Quiz' },
   ui: { visible: true },
   prompt_summary: 'Creates interactive HTML quizzes with question navigation, scoring, and image prompt cards. Runs a QA validation pass for correctness.',
+  prompt_template: `SYSTEM:
+You are an expert quiz designer and web developer. You create engaging, interactive quizzes with clean modern HTML, CSS, and JavaScript.
+
+CRITICAL RULES:
+1. Output ONLY valid JSON with the structure specified.
+2. The HTML must be complete, self-contained (inline CSS and JS), and mobile-responsive.
+3. Quiz logic must be fully functional: question navigation, answer selection, score calculation.
+4. Design should be modern, visually appealing, and professional.
+5. Each question should be educational and relevant to the topic.
+6. The end page must show the score and include the redirect button if a URL is provided.
+7. All interactive elements must work without any external dependencies.
+8. For image types, do NOT use gray placeholder boxes or invisible alt text. Instead, render each image prompt as a styled "Image Prompt" card in the HTML — a visible box with a heading, the full DALL-E/Midjourney prompt text, and a "Copy Prompt" button that copies the text to the clipboard using navigator.clipboard.writeText().
+9. For video types, render video descriptions as styled "Video Description" prompt cards in the same fashion (visible, copyable).
+
+USER:
+## Quiz Generation Request
+### Product Context (from container)
+### Container Context (Curated Insights)
+### Quiz Configuration: Topic, Quiz Type, Number of Questions, Difficulty
+### Custom Instructions (if provided)
+### End Page Configuration (redirect URL or score summary)
+
+## Output Format: JSON with title, description, questions[], end_page, full_html (complete self-contained quiz page with inline CSS/JS)
+
+QA VALIDATION PASS (second call):
+Checks: correct_answer matches option IDs, 4 unique options per question, non-empty explanations, working JS in full_html, image prompt cards for image types. Returns {"status":"pass"} or corrected JSON.`,
 };
 
 async function generateQuiz(containerId, options = {}) {

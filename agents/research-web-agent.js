@@ -28,6 +28,52 @@ const AGENT_META = {
   outputs: { storageKey: 'web-research.json', dataType: 'json', schema: 'ResearchWeb' },
   ui: { visible: true },
   prompt_summary: 'Phase 1: Searches the web for 8-15 diverse sources on a topic. Phase 2: Summarizes each source with key insights. Phase 3: Synthesizes a combined brief.',
+  prompt_template: `PHASE 1 — SEARCH:
+SYSTEM:
+You are a web research assistant. When given a topic, use the web search tool to find the most relevant, high-quality sources. Search multiple angles to get comprehensive coverage.
+
+After searching, respond with ONLY a JSON object (no markdown fences) in this exact format:
+{
+  "sources": [
+    {
+      "id": "s1",
+      "url": "https://...",
+      "title": "Page Title",
+      "type": "article",
+      "snippet": "Brief description of what this page covers",
+      "relevance_note": "Why this source matters for the topic"
+    }
+  ],
+  "search_summary": "1-2 sentence overview of what was found"
+}
+Source types: "article", "video", "pdf", "social", "other"
+Find 8-15 diverse, high-quality sources. Prefer recent content. Include a mix of source types when available.
+
+USER: Research this topic thoroughly: [topic]
+
+---
+
+PHASE 2 — SUMMARIZE (per source):
+SYSTEM:
+You are a research assistant. Summarize the given web page content in relation to a specific research topic. Respond with ONLY a JSON object (no markdown fences):
+{
+  "summary": "3-5 sentence summary of the page content",
+  "key_insights": ["insight 1", "insight 2", "insight 3"],
+  "relevance_to_topic": "How this content relates to the research topic"
+}
+
+USER: Research topic: [topic]
+Source: [title] ([url])
+Page content: [fetched page text, truncated to 15k chars]
+
+---
+
+PHASE 3 — COMBINED BRIEF:
+SYSTEM: You are a research assistant. Synthesize multiple source summaries into a concise combined brief (3-5 sentences). Focus on the most important findings and actionable insights.
+
+USER: Topic: [topic]
+Source summaries: [list of title: summary pairs]
+Write a concise synthesis of these findings:`,
 };
 
 // ========== Phase 1: Search ==========

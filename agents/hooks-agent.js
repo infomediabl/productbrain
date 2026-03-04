@@ -23,12 +23,51 @@ const AGENT_META = {
   model: 'AI_MODEL',
   inputs: [{ name: 'containerId', type: 'string', required: true, from: null }],
   consumes: [
-    { agent: 'scraper', key: 'scrape_results' },
-    { agent: 'analyzer', key: 'competitor_analyses' },
+    { agent: 'scraper', dataKey: 'scrape_results', description: 'Scraped ads for hook inspiration' },
+    { agent: 'container-context', dataKey: 'container_context', description: 'Curated insights for hook alignment' },
   ],
   outputs: { storageKey: 'hooks_results', dataType: 'json', schema: 'HooksResult' },
   ui: { visible: true },
   prompt_summary: 'Analyzes scraped ads + context to generate hooks/angles. Output: hooks with angle name, hook text, emotion, target segment, visual suggestions.',
+  prompt_template: `USER (single message, no system prompt):
+You are an expert advertising strategist. Analyze these scraped competitor ads and generate creative hooks/angles for new ad creation.
+
+## Product Info
+Product: [product name]
+Website: [website]
+Description: [description]
+
+## Context
+[container context briefs, if available]
+
+## Scraped Ads ([total] total, showing [up to 30])
+Ad #1 ([competitor name], [source])
+  Headline: [headline]
+  Text: [ad text, up to 200 chars]
+  CTA: [cta]
+[...repeated for each ad]
+
+## Task
+Generate 8-12 advertising hooks/angles based on patterns in the competitor ads, adapted for our product. Each hook should be a fresh angle that could work as an ad headline or opening line.
+
+Return JSON:
+{
+  "hooks": [
+    {
+      "id": 1,
+      "angle_name": "Short name for this angle (e.g. 'Social Proof', 'Fear of Missing Out')",
+      "hook_text": "The actual hook/headline text, ready to use in an ad",
+      "emotion": "Primary emotion targeted (curiosity, fear, desire, urgency, trust, etc.)",
+      "angle_type": "Type: social_proof | scarcity | curiosity | transformation | pain_point | authority | comparison | storytelling",
+      "target_segment": "Who this hook appeals to most",
+      "inspired_by": "Which competitor ad(s) inspired this (by number)",
+      "rationale": "Why this hook works — 1-2 sentences",
+      "adapted_for_product": "How this is specifically adapted for our product",
+      "suggested_visuals": "Brief visual direction for an ad using this hook"
+    }
+  ],
+  "angle_summary": "2-3 sentence overview of the dominant patterns found and the creative strategy"
+}`,
 };
 
 async function generateHooks(containerId, options = {}) {
@@ -125,26 +164,17 @@ Return JSON:
   "angle_summary": "2-3 sentence overview of the dominant patterns found and the creative strategy"
 }`;
 
-      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${config.OPENROUTER_API_KEY}`,
-        },
-        body: JSON.stringify({
-          model: config.AI_MODEL,
-          messages: [{ role: 'user', content: prompt }],
-          temperature: 0.7,
-        }),
+      const Anthropic = require('@anthropic-ai/sdk');
+      const client = new Anthropic();
+
+      const response = await client.messages.create({
+        model: config.AI_MODEL,
+        max_tokens: config.DEFAULT_MAX_TOKENS || 4096,
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.7,
       });
 
-      if (!response.ok) {
-        const errText = await response.text();
-        throw new Error(`AI API error: ${response.status} ${errText.substring(0, 200)}`);
-      }
-
-      const data = await response.json();
-      const rawContent = data.choices?.[0]?.message?.content || '';
+      const rawContent = response.content?.[0]?.text || '';
       const parsed = parseJsonFromResponse(rawContent);
 
       if (!parsed || !parsed.hooks) {

@@ -33,6 +33,35 @@ const AGENT_META = {
   outputs: { storageKey: 'gads_analyses', dataType: 'json', schema: 'GadsAnalysis' },
   ui: { visible: true },
   prompt_summary: 'Connects to Google Ads API for keyword ideas, campaign listing, and campaign performance analysis with spend efficiency recommendations.',
+  prompt_template: `SYSTEM: You are an expert Google Ads strategist and PPC analyst. Analyze campaign data and provide actionable, data-driven recommendations. Focus on spend efficiency, keyword performance, and growth opportunities. Be specific and practical in your recommendations.
+
+CRITICAL: Output ONLY valid JSON matching the structure specified.
+
+USER: Analyze the following Google Ads campaigns and provide actionable insights:
+
+Campaign: \${campaignName} (ID: \${campaignId})
+  Status: \${status}
+  Channel: \${channelType}
+  Budget: \${budget}/day
+  Impressions: \${impressions}
+  Clicks: \${clicks}
+  Cost: \${cost}
+  Bidding: \${biddingStrategy}
+  Keywords:
+  - "\${keyword}" (\${matchType}) imp:\${impressions} clicks:\${clicks} cost:\${cost} conv:\${conversions}
+
+## Output Format
+Return a JSON object with this structure:
+{
+  "summary": "Overall assessment of the campaigns (2-3 sentences)",
+  "campaigns_analyzed": N,
+  "findings": [{
+    "campaign_name": "", "campaign_id": "",
+    "status_assessment": "good | needs_attention | critical",
+    "recommendations": ["specific actionable recommendation"]
+  }],
+  "action_items": [{ "priority": "high | medium | low", "action": "specific action to take" }]
+}`,
 };
 
 /**

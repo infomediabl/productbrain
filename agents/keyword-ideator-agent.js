@@ -36,6 +36,60 @@ const AGENT_META = {
   outputs: { storageKey: 'keyword_strategies', dataType: 'json', schema: 'KeywordStrategy' },
   ui: { visible: true },
   prompt_summary: 'Builds keyword strategy with clusters, quick wins, competitor gaps, and ad recommendations. Uses real CPC/volume data from Google Ads when available.',
+  prompt_template: `SYSTEM: You are a senior digital marketing strategist and keyword research expert. You analyze competitor data, SEO insights, and ad intelligence to create comprehensive keyword strategies.
+
+CRITICAL RULES:
+1. Output ONLY valid JSON. No markdown, no code fences, no extra text.
+2. Every recommendation must be backed by competitor data or market logic.
+3. Group keywords by search intent (informational, navigational, commercial, transactional).
+4. Prioritize by opportunity score (search volume x relevance x competition gap).
+5. Include long-tail variations that competitors are missing.
+6. Consider the full funnel: awareness > consideration > decision > retention.
+7. When Google Ads keyword data or Keyword Planner data is available, use actual CPC ranges and search volumes — do NOT estimate when real data exists.
+
+USER: ## My Product
+Name: \${productName}
+Website: \${productWebsite}
+Target Audience: \${targetAudience}
+
+## Container Context (Curated Insights)
+[Curated context items]
+
+## Competitor Intelligence
+[Competitor messaging patterns]
+
+## SEO Intelligence
+[Primary keywords, keyword gaps, content opportunities, quick wins, learnings per competitor]
+
+## Google Ads Performance (KNOWN data)
+[Campaign metrics: impressions, clicks, CPC, cost]
+
+## Your Keyword Performance (KNOWN data — from Google Ads)
+[Keyword-level bidding data with match types, impressions, clicks, CPC, conversions]
+
+## Google Keyword Planner Data (search volume + bid estimates)
+[Keyword suggestions with avg monthly searches, competition, CPC ranges]
+
+## Your SEO Position
+[Primary keywords, gaps, content opportunities, priority actions]
+
+## Proven Competitor Ads (Running 30+ Days)
+[Long-running competitor ads indicating profitable keywords]
+
+## Ad Copy Patterns (from competitor ads)
+[Headlines, text, CTAs, destination URLs per competitor]
+
+## Task
+Generate a comprehensive keyword strategy. Output JSON:
+{
+  "strategy_summary": "",
+  "total_keywords": 0,
+  "keyword_clusters": [{ "cluster_name": "", "intent": "", "funnel_stage": "", "priority": "", "opportunity_score": 0-100, "rationale": "", "primary_keyword": "", "keywords": [{ "keyword": "", "intent": "", "competition": "", "bid_recommendation": "" }] }],
+  "quick_wins": [{ "keyword": "", "why": "", "action": "" }],
+  "competitor_gaps": [{ "gap": "", "keywords": [], "opportunity_size": "" }],
+  "ad_keyword_recommendations": [{ "theme": "", "keywords": [] }],
+  "auction_keywords": [{ "keyword": "", "match_type": "", "source": "", "estimated_cpc": "", "rationale": "", "priority": "" }]
+}`,
 };
 
 async function generateKeywordStrategy(containerId, options = {}) {

@@ -66,6 +66,14 @@ async function showAgentInfo(agentId) {
       html += row('Prompt Summary', agent.prompt_summary);
     }
 
+    if (agent.prompt_template) {
+      html += '<tr><td colspan="2" style="padding:8px 0 0;">'
+        + '<details><summary style="cursor:pointer;font-size:13px;font-weight:600;color:var(--primary);">Show Full Prompt Template</summary>'
+        + '<pre style="white-space:pre-wrap;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:10px;margin-top:6px;font-size:11px;max-height:400px;overflow-y:auto;">'
+        + esc(agent.prompt_template)
+        + '</pre></details></td></tr>';
+    }
+
     html += '</table>';
     body.innerHTML = html;
   } catch (err) {
