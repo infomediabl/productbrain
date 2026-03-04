@@ -335,17 +335,39 @@ async function executeLaunch(containerId, campaignId, container, preview, edited
 function gatherSourceAds(container, adIds) {
   const sourceAds = [];
   for (const scrape of (container.scrape_results || [])) {
-    if (!scrape.result?.ads) continue;
-    for (const ad of scrape.result.ads) {
-      if (adIds.includes(ad.id)) {
+    if (scrape.status !== 'completed' || !scrape.scraped_data) continue;
+    const sd = scrape.scraped_data;
+
+    // Build ad list with composite IDs matching frontend: scrapeId:group:source:index
+    const groups = [];
+    if (sd.my_product) {
+      for (const src of ['facebook', 'google']) {
+        const ads = sd.my_product[src] || [];
+        for (let i = 0; i < ads.length; i++) {
+          groups.push({ ad: ads[i], compositeId: scrape.id + ':my_product:' + src + ':' + i });
+        }
+      }
+    }
+    for (const [compId, compData] of Object.entries(sd.competitors || {})) {
+      for (const src of ['facebook', 'google']) {
+        const ads = compData[src] || [];
+        for (let i = 0; i < ads.length; i++) {
+          groups.push({ ad: ads[i], compositeId: scrape.id + ':' + compId + ':' + src + ':' + i });
+        }
+      }
+    }
+
+    for (const { ad, compositeId } of groups) {
+      const adId = ad.id || compositeId;
+      if (adIds.includes(adId)) {
         sourceAds.push({
-          id: ad.id,
+          id: adId,
           headline: ad.ocr_structured?.headline || ad.headline || ad.title || '',
-          description: ad.ocr_structured?.description || ad.description || ad.body || '',
-          cta: ad.ocr_structured?.cta || ad.cta || '',
-          url: ad.ocr_structured?.url || ad.link_url || ad.url || '',
-          image_url: ad.image_url || '',
-          screenshot_path: ad.screenshot_path || '',
+          description: ad.ocr_structured?.description || ad.ad_text || ad.description || ad.body || '',
+          cta: ad.ocr_structured?.cta || ad.cta_text || ad.cta || '',
+          url: ad.ocr_structured?.url || ad.link_url || ad.destination_url || ad.url || '',
+          image_url: ad.media_url || ad.image_url || '',
+          screenshot_path: ad.local_media_path || ad.screenshot_path || '',
         });
       }
     }

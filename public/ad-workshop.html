@@ -88,7 +88,7 @@
       </div>
       <div class="form-group" style="margin-bottom:12px;">
         <label style="font-size:13px;font-weight:600;">Format</label>
-        <select id="clone-format" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;">
+        <select id="clone-format" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;" onchange="updatePromptPreview()">
           <option value="1:1">1:1 Square (1080x1080)</option>
           <option value="9:16">9:16 Vertical Story (1080x1920)</option>
           <option value="16:9">16:9 Horizontal Banner (1200x628)</option>
@@ -96,9 +96,13 @@
       </div>
       <div class="form-group" style="margin-bottom:16px;">
         <label style="font-size:13px;font-weight:600;">Custom Instructions <span class="text-dim" style="font-weight:400;">(optional)</span></label>
-        <textarea id="clone-instructions" rows="3" placeholder="e.g. Use blue color scheme, add urgency..." style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;font-family:inherit;resize:vertical;"></textarea>
+        <textarea id="clone-instructions" rows="3" placeholder="e.g. Use blue color scheme, add urgency..." style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;font-family:inherit;resize:vertical;" oninput="updatePromptPreview()"></textarea>
       </div>
-      <div id="clone-result-area" style="display:none;margin-bottom:16px;"></div>
+      <details style="margin-bottom:12px;font-size:12px;">
+        <summary style="cursor:pointer;color:var(--text-dim);font-weight:600;" onclick="setTimeout(updatePromptPreview,0)">Prompt Preview</summary>
+        <pre id="prompt-preview" style="white-space:pre-wrap;background:var(--surface);border-radius:6px;padding:8px;margin-top:4px;font-size:11px;max-height:200px;overflow-y:auto;border:1px solid var(--border);"></pre>
+      </details>
+      <div id="clone-result-area" style="display:none;margin-bottom:16px;max-height:500px;overflow-y:auto;"></div>
       <div style="display:flex;gap:8px;justify-content:flex-end;">
         <button class="btn btn-ghost btn-sm" onclick="closeCloneModal()">Close</button>
         <button class="btn btn-primary btn-sm" id="clone-submit-btn" onclick="submitClone()">Generate Image</button>

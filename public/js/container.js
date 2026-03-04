@@ -8,8 +8,8 @@
  *   Calls renderEntries(), renderIdeatorSection(), renderCaseStudies(), renderMetadata(),
  *   renderScrapes(), renderCompetitorAnalyses(), renderOwnProductSeo(), renderSeoAnalyses(),
  *   checkGadsStatus(), renderKeywordStrategies(), renderTestPlans(), renderLandingPages(),
- *   renderQuizzes(), renderImageAds(), renderSpinoffIdeas(), renderProposals(), renderPrompts(),
- *   loadContainerContext().
+ *   renderQuizzes(), renderImageAds(), renderTaboolaCampaigns(), renderSpinoffIdeas(),
+ *   renderProposals(), renderPrompts(), loadContainerContext().
  *
  * Reads containerId from URL query param, fetches the container object, and orchestrates
  * rendering across all container.html sub-modules. Defines the shared esc() HTML-escape utility.
@@ -41,6 +41,7 @@ async function loadContainer() {
   renderLandingPages();
   renderQuizzes();
   renderImageAds();
+  renderTaboolaCampaigns();
   renderSpinoffIdeas();
   renderProposals();
   renderPrompts();

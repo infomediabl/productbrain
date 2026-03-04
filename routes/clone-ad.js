@@ -105,53 +105,115 @@ CTA: [adapted call to action]`;
       return res.status(502).json({ error: 'No response from OpenRouter' });
     }
 
-    // Extract image (base64 data URL)
+    // Log full response structure for debugging
+    log.info(SRC, 'OpenRouter response structure', {
+      hasImages: !!(choice.images?.length),
+      contentType: typeof choice.content,
+      contentIsArray: Array.isArray(choice.content),
+      contentLength: Array.isArray(choice.content) ? choice.content.length : (typeof choice.content === 'string' ? choice.content.length : 0),
+      contentPartTypes: Array.isArray(choice.content) ? choice.content.map(p => p.type) : [],
+    });
+
+    // Extract image from all possible response formats
     let imagePath = null;
+    let base64Raw = null;
+
+    // Format 1: choice.images array
     const images = choice.images || [];
-    // Also check content array format
+
+    // Format 2: content array with image_url or image parts
     const contentParts = Array.isArray(choice.content) ? choice.content : [];
     for (const part of contentParts) {
       if (part.type === 'image_url' && part.image_url?.url) {
         images.push(part);
+      } else if (part.type === 'image' && part.image_url?.url) {
+        images.push(part);
+      } else if (part.type === 'image_url' && part.url) {
+        images.push({ image_url: { url: part.url } });
+      } else if (part.b64_json) {
+        base64Raw = part.b64_json;
       }
     }
 
-    if (images.length > 0) {
-      const imgData = images[0].image_url?.url || images[0].url || '';
+    // Try to extract and save image
+    if (images.length > 0 || base64Raw) {
+      let imgData = '';
+      if (images.length > 0) {
+        imgData = images[0].image_url?.url || images[0].url || images[0].b64_json || '';
+      }
+      if (!imgData && base64Raw) {
+        imgData = 'data:image/png;base64,' + base64Raw;
+      }
+
+      log.info(SRC, 'Image data found', { prefix: imgData.substring(0, 60), length: imgData.length });
+
+      // Determine save directory and filename
+      let targetDir, urlPrefix;
+      if (save_dir === 'clonedAd') {
+        targetDir = path.join(__dirname, '..', 'clonedAd');
+        urlPrefix = '/clonedAd';
+      } else {
+        targetDir = path.join(__dirname, '..', 'screenshots');
+        urlPrefix = '/screenshots';
+      }
+      if (!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, { recursive: true });
+
+      let filename;
+      if (save_filename) {
+        const sanitized = save_filename.replace(/[^a-zA-Z0-9_-]/g, '');
+        filename = `${sanitized || 'clone'}`;
+      } else {
+        filename = `clone_${Date.now()}`;
+      }
+
       if (imgData.startsWith('data:image/')) {
-        const match = imgData.match(/^data:image\/(png|jpeg|jpg|webp);base64,(.+)$/);
+        // data:image/png;base64,xxxx format — use flexible regex (no $ anchor, trim whitespace)
+        const match = imgData.match(/^data:image\/(png|jpeg|jpg|webp|gif);base64,\s*(.+)/s);
         if (match) {
           const ext = match[1] === 'jpeg' ? 'jpg' : match[1];
-          const buffer = Buffer.from(match[2], 'base64');
-
-          // Determine save directory and filename
-          let targetDir, urlPrefix;
-          if (save_dir === 'clonedAd') {
-            targetDir = path.join(__dirname, '..', 'clonedAd');
-            urlPrefix = '/clonedAd';
-          } else {
-            targetDir = path.join(__dirname, '..', 'screenshots');
-            urlPrefix = '/screenshots';
+          const buffer = Buffer.from(match[2].trim(), 'base64');
+          const fullFilename = `${filename}.${ext}`;
+          fs.writeFileSync(path.join(targetDir, fullFilename), buffer);
+          imagePath = `${urlPrefix}/${fullFilename}`;
+          log.info(SRC, 'Image saved (data URL)', { filename: fullFilename });
+        } else {
+          log.warn(SRC, 'data:image prefix found but regex failed', { prefix: imgData.substring(0, 80) });
+        }
+      } else if (imgData.startsWith('http')) {
+        // Direct URL — return as image_url for frontend to display
+        imagePath = imgData;
+        log.info(SRC, 'Image URL returned directly', { url: imgData.substring(0, 100) });
+      } else if (imgData.length > 100) {
+        // Raw base64 without data: prefix — assume PNG
+        try {
+          const buffer = Buffer.from(imgData.trim(), 'base64');
+          if (buffer.length > 100) {
+            const fullFilename = `${filename}.png`;
+            fs.writeFileSync(path.join(targetDir, fullFilename), buffer);
+            imagePath = `${urlPrefix}/${fullFilename}`;
+            log.info(SRC, 'Image saved (raw base64)', { filename: fullFilename, size: buffer.length });
           }
-          if (!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, { recursive: true });
-
-          let filename;
-          if (save_filename) {
-            const sanitized = save_filename.replace(/[^a-zA-Z0-9_-]/g, '');
-            filename = `${sanitized || 'clone'}.${ext}`;
-          } else {
-            filename = `clone_${Date.now()}.${ext}`;
-          }
-
-          fs.writeFileSync(path.join(targetDir, filename), buffer);
-          imagePath = `${urlPrefix}/${filename}`;
-          log.info(SRC, 'Image saved', { filename, dir: urlPrefix });
+        } catch (e) {
+          log.warn(SRC, 'Raw base64 decode failed', { err: e.message });
         }
       }
+    } else {
+      log.warn(SRC, 'No image found in response', {
+        choiceKeys: Object.keys(choice),
+        contentSample: typeof choice.content === 'string' ? choice.content.substring(0, 200) : JSON.stringify(choice.content)?.substring(0, 200),
+      });
     }
 
-    // Extract adapted copy from text response
-    const textContent = typeof choice.content === 'string' ? choice.content : '';
+    // Extract text content from either string or array format
+    let textContent = '';
+    if (typeof choice.content === 'string') {
+      textContent = choice.content;
+    } else if (Array.isArray(choice.content)) {
+      textContent = choice.content
+        .filter(p => p.type === 'text' && p.text)
+        .map(p => p.text)
+        .join('\n');
+    }
     const adaptedCopy = parseAdaptedCopy(textContent);
 
     res.json({
@@ -159,6 +221,7 @@ CTA: [adapted call to action]`;
       adapted_copy: adaptedCopy,
       ai_text: textContent.substring(0, 500),
       model_used: model,
+      prompt_sent: prompt,
     });
   } catch (err) {
     log.error(SRC, 'Clone ad error', { err: err.message });

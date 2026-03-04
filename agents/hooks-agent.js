@@ -152,6 +152,17 @@ Return JSON:
         throw new Error('Failed to parse hooks from AI response');
       }
 
+      // Attach metadata about what was used as input
+      parsed._meta = {
+        total_ads_scanned: allAds.length,
+        ads_in_prompt: Math.min(allAds.length, 30),
+        context_items_used: contextItems.length,
+        uses_container_context: contextItems.length > 0,
+        product_name: container.my_product?.name || null,
+        model_used: config.AI_MODEL,
+        prompt_sent: prompt,
+      };
+
       storage.updateHooksResult(containerId, hookRecord.id, 'completed', parsed);
       log.info(SRC, `Generated ${parsed.hooks.length} hooks`, { containerId });
     } catch (err) {

@@ -74,22 +74,52 @@ function renderTaboolaAdSelector() {
   const selectorEl = document.getElementById('taboola-ad-selector');
   if (!selectorEl) return;
 
-  // Gather all ads from scrape_results
+  // Gather all ads from scrape_results (nested under scraped_data.competitors/my_product)
+  // Ads may not have an id field, so we generate a composite key: scrapeId:group:source:index
   const allAds = [];
   const scrapes = container.scrape_results || [];
   for (const scrape of scrapes) {
-    if (scrape.status !== 'completed' || !scrape.result?.ads) continue;
-    const compName = scrape.competitor_name || 'Unknown';
-    for (const ad of scrape.result.ads) {
-      allAds.push({
-        id: ad.id,
-        competitor: compName,
-        headline: ad.ocr_structured?.headline || ad.headline || ad.title || '(no headline)',
-        description: ad.ocr_structured?.description || ad.description || '',
-        image_url: ad.image_url || '',
-        screenshot_path: ad.screenshot_path || '',
-        is_new: ad.is_new,
-      });
+    if (scrape.status !== 'completed' || !scrape.scraped_data) continue;
+    const sd = scrape.scraped_data;
+
+    // My product ads
+    for (const source of ['facebook', 'google']) {
+      const ads = sd.my_product?.[source] || [];
+      for (let i = 0; i < ads.length; i++) {
+        const ad = ads[i];
+        allAds.push({
+          id: ad.id || (scrape.id + ':my_product:' + source + ':' + i),
+          competitor: container.my_product?.name || 'My Product',
+          source,
+          headline: ad.ocr_structured?.headline || ad.headline || ad.title || '(no headline)',
+          description: ad.ocr_structured?.description || ad.ad_text || ad.description || '',
+          image_url: ad.media_url || ad.image_url || '',
+          screenshot_path: ad.local_media_path || ad.screenshot_path || '',
+          is_new: ad.is_new,
+        });
+      }
+    }
+
+    // Competitor ads
+    for (const [compId, compData] of Object.entries(sd.competitors || {})) {
+      const comp = container.competitors?.find(c => c.id === compId || c.name === compId);
+      const compName = comp?.name || compId;
+      for (const source of ['facebook', 'google']) {
+        const ads = compData[source] || [];
+        for (let i = 0; i < ads.length; i++) {
+          const ad = ads[i];
+          allAds.push({
+            id: ad.id || (scrape.id + ':' + compId + ':' + source + ':' + i),
+            competitor: compName,
+            source,
+            headline: ad.ocr_structured?.headline || ad.headline || ad.title || '(no headline)',
+            description: ad.ocr_structured?.description || ad.ad_text || ad.description || '',
+            image_url: ad.media_url || ad.image_url || '',
+            screenshot_path: ad.local_media_path || ad.screenshot_path || '',
+            is_new: ad.is_new,
+          });
+        }
+      }
     }
   }
 

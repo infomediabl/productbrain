@@ -224,12 +224,18 @@
       const titleLen = (copy.taboola_title || '').length;
       const descLen = (copy.taboola_description || '').length;
 
+      const imgSrc = source.screenshot_path || source.image_url || '';
+      const imgTag = imgSrc
+        ? `<img src="/${esc(imgSrc.replace(/^\//, ''))}" style="width:100%;max-height:120px;object-fit:contain;border-radius:6px;border:1px solid var(--border);" onerror="this.style.display='none'">`
+        : '';
+
       html += `
         <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;">
           <div style="display:grid;grid-template-columns:1fr 1fr;min-height:0;">
             <!-- Original FB Ad -->
             <div style="padding:14px 16px;background:var(--surface);border-right:1px solid var(--border);">
               <div style="font-size:11px;font-weight:600;text-transform:uppercase;color:#1877f2;margin-bottom:10px;">Original FB Ad</div>
+              ${imgTag ? `<div style="margin-bottom:10px;">${imgTag}</div>` : ''}
               <div style="margin-bottom:8px;">
                 <div class="text-dim" style="font-size:11px;">Headline</div>
                 <div style="font-size:14px;font-weight:500;">${esc(source.headline || '(none)')}</div>
@@ -251,6 +257,7 @@
             <!-- Taboola Rewrite -->
             <div style="padding:14px 16px;">
               <div style="font-size:11px;font-weight:600;text-transform:uppercase;color:#0066ff;margin-bottom:10px;">Taboola Rewrite</div>
+              ${imgTag ? `<div style="margin-bottom:10px;">${imgTag}</div>` : ''}
               <div style="margin-bottom:8px;">
                 <div class="text-dim" style="font-size:11px;">Title <span style="font-weight:400;">(${titleLen}/60 chars)</span></div>
                 ${editable

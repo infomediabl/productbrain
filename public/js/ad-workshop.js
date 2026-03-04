@@ -155,9 +155,25 @@ function openCloneModal(adIndex, hookText) {
 
   const infoEl = document.getElementById('clone-modal-info');
   if (currentCloneAd) {
-    infoEl.innerHTML = '<div style="font-size:13px;"><strong>Cloning:</strong> ' + esc(currentCloneAd.headline || currentCloneAd.ad_text?.substring(0, 60) || 'Ad') + ' <span class="text-dim">(' + esc(currentCloneAd._competitor) + ')</span></div>';
+    const ad = currentCloneAd;
+    const imgSrc = ad.local_media_path || ad.screenshot_path || ad.media_url || '';
+    const imgTag = imgSrc
+      ? '<img src="/' + esc(imgSrc.replace(/^\//, '')) + '" style="width:80px;height:80px;object-fit:cover;border-radius:6px;border:1px solid var(--border);" onerror="this.style.display=\'none\'">'
+      : '<div style="width:80px;height:80px;background:var(--surface2);border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--text-dim);font-size:10px;">No image</div>';
+    const sourceBadge = ad._source === 'facebook'
+      ? '<span class="badge" style="background:#1877f220;color:#1877f2;font-size:10px;">FB</span>'
+      : '<span class="badge" style="background:#34a85320;color:#34a853;font-size:10px;">Google</span>';
+
+    infoEl.innerHTML = '<div style="display:flex;gap:12px;padding:12px;background:var(--surface);border-radius:8px;border:1px solid var(--border);">'
+      + '<div style="flex-shrink:0;">' + imgTag + '</div>'
+      + '<div style="flex:1;font-size:12px;overflow:hidden;">'
+      + '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;"><strong>' + esc(ad._competitor) + '</strong> ' + sourceBadge + '</div>'
+      + (ad.headline ? '<div style="margin-bottom:2px;"><span class="text-dim">Headline:</span> ' + esc(ad.headline) + '</div>' : '')
+      + (ad.ad_text ? '<div style="margin-bottom:2px;"><span class="text-dim">Text:</span> ' + esc(ad.ad_text.length > 120 ? ad.ad_text.substring(0, 120) + '...' : ad.ad_text) + '</div>' : '')
+      + (ad.cta_text ? '<div><span class="text-dim">CTA:</span> ' + esc(ad.cta_text) + '</div>' : '')
+      + '</div></div>';
   } else if (hookText) {
-    infoEl.innerHTML = '<div style="font-size:13px;"><strong>Hook:</strong> ' + esc(hookText) + '</div>';
+    infoEl.innerHTML = '<div style="padding:12px;background:var(--surface);border-radius:8px;border:1px solid var(--border);font-size:13px;"><strong>Hook:</strong> ' + esc(hookText) + '</div>';
   }
 
   if (hookText) {
@@ -170,6 +186,7 @@ function openCloneModal(adIndex, hookText) {
   document.getElementById('clone-submit-btn').disabled = false;
   document.getElementById('clone-submit-btn').textContent = 'Generate Image';
   document.getElementById('clone-modal').style.display = 'flex';
+  updatePromptPreview();
 }
 
 function openCloneModalForHook(hookText) {
@@ -178,13 +195,14 @@ function openCloneModalForHook(hookText) {
   currentHookText = hookText;
 
   const infoEl = document.getElementById('clone-modal-info');
-  infoEl.innerHTML = '<div style="font-size:13px;"><strong>Hook:</strong> ' + esc(hookText) + '</div>';
+  infoEl.innerHTML = '<div style="padding:12px;background:var(--surface);border-radius:8px;border:1px solid var(--border);font-size:13px;"><strong>Hook:</strong> ' + esc(hookText) + '</div>';
   document.getElementById('clone-instructions').value = 'Use this hook as the headline: ' + hookText;
 
   document.getElementById('clone-result-area').style.display = 'none';
   document.getElementById('clone-submit-btn').disabled = false;
   document.getElementById('clone-submit-btn').textContent = 'Generate Image';
   document.getElementById('clone-modal').style.display = 'flex';
+  updatePromptPreview();
 }
 
 function closeCloneModal() {
@@ -224,19 +242,82 @@ async function submitClone() {
 
     if (!res.ok) throw new Error(data.error || 'Clone failed');
 
+    let html = '';
+
+    // Image display — handle local paths and HTTP URLs
     if (data.image_path) {
-      resultArea.innerHTML = '<div style="text-align:center;"><img src="/' + esc(data.image_path) + '" style="max-width:100%;max-height:400px;border-radius:8px;border:1px solid var(--border);" alt="Generated ad"><div class="text-dim" style="font-size:11px;margin-top:8px;">Saved to: ' + esc(data.image_path) + '</div></div>';
-    } else if (data.image_url) {
-      resultArea.innerHTML = '<div style="text-align:center;"><img src="' + esc(data.image_url) + '" style="max-width:100%;max-height:400px;border-radius:8px;border:1px solid var(--border);" alt="Generated ad"></div>';
+      const imgSrc = data.image_path.startsWith('http') ? data.image_path : '/' + data.image_path.replace(/^\//, '');
+      html += '<div style="text-align:center;margin-bottom:12px;">'
+        + '<img src="' + esc(imgSrc) + '" style="max-width:100%;max-height:400px;border-radius:8px;border:1px solid var(--border);" alt="Generated ad" onerror="this.parentElement.innerHTML=\'<div class=text-dim>Image failed to load</div>\'">'
+        + (data.image_path.startsWith('http') ? '' : '<div class="text-dim" style="font-size:11px;margin-top:4px;">Saved: ' + esc(data.image_path) + '</div>')
+        + '</div>';
     } else {
-      resultArea.innerHTML = '<div class="text-dim" style="text-align:center;">Image generated but no preview available.</div>';
+      html += '<div class="text-dim" style="text-align:center;margin-bottom:12px;">No image in response.</div>';
     }
+
+    // Adapted copy
+    if (data.adapted_copy && (data.adapted_copy.headline || data.adapted_copy.ad_text || data.adapted_copy.cta)) {
+      html += '<div style="background:var(--surface);border-radius:8px;padding:10px 12px;margin-bottom:8px;font-size:12px;">'
+        + '<div style="font-weight:600;margin-bottom:4px;">Adapted Copy</div>';
+      if (data.adapted_copy.headline) html += '<div><span class="text-dim">Headline:</span> ' + esc(data.adapted_copy.headline) + '</div>';
+      if (data.adapted_copy.ad_text) html += '<div><span class="text-dim">Text:</span> ' + esc(data.adapted_copy.ad_text) + '</div>';
+      if (data.adapted_copy.cta) html += '<div><span class="text-dim">CTA:</span> ' + esc(data.adapted_copy.cta) + '</div>';
+      html += '</div>';
+    }
+
+    // AI text response
+    if (data.ai_text) {
+      html += '<details style="margin-bottom:8px;font-size:12px;"><summary style="cursor:pointer;color:var(--text-dim);">AI Response Text</summary>'
+        + '<pre style="white-space:pre-wrap;background:var(--surface);border-radius:6px;padding:8px;margin-top:4px;font-size:11px;max-height:200px;overflow-y:auto;">' + esc(data.ai_text) + '</pre></details>';
+    }
+
+    // Prompt sent
+    if (data.prompt_sent) {
+      html += '<details style="font-size:12px;"><summary style="cursor:pointer;color:var(--text-dim);">Prompt Sent to AI</summary>'
+        + '<pre style="white-space:pre-wrap;background:var(--surface);border-radius:6px;padding:8px;margin-top:4px;font-size:11px;max-height:200px;overflow-y:auto;">' + esc(data.prompt_sent) + '</pre></details>';
+    }
+
+    // Model used
+    html += '<div class="text-dim" style="font-size:11px;margin-top:8px;">Model: ' + esc(data.model_used || model) + '</div>';
+
+    resultArea.innerHTML = html;
   } catch (err) {
     resultArea.innerHTML = '<div style="color:var(--error);padding:8px;">Error: ' + esc(err.message) + '</div>';
   }
 
   btn.disabled = false;
   btn.textContent = 'Generate Another';
+}
+
+// Build prompt preview from current modal state
+function updatePromptPreview() {
+  const previewEl = document.getElementById('prompt-preview');
+  if (!previewEl) return;
+
+  const format = document.getElementById('clone-format').value;
+  const formatMap = { '1:1': '1080x1080 square feed', '9:16': '1080x1920 vertical story', '16:9': '1200x628 horizontal banner' };
+  const formatDesc = formatMap[format] || format || '1:1 square';
+  const customInstructions = document.getElementById('clone-instructions').value;
+
+  const headline = currentHookText || currentCloneAd?.headline || '';
+  const adText = currentCloneAd?.ad_text || '';
+  const cta = currentCloneAd?.cta_text || '';
+  const comp = currentCloneAd?._competitor || 'competitor';
+  const productCtx = container?.my_product ? (container.my_product.name + ' — ' + (container.my_product.description || '')) : 'No product context provided';
+
+  let prompt = 'You are an expert ad creative director. Clone and adapt this competitor ad for a different product.\n\n'
+    + 'ORIGINAL AD (from ' + comp + '):\n'
+    + '- Headline: ' + (headline || 'N/A') + '\n'
+    + '- Ad Text: ' + (adText || 'N/A') + '\n'
+    + '- CTA: ' + (cta || 'N/A') + '\n\n'
+    + 'OUR PRODUCT:\n' + productCtx + '\n\n'
+    + 'TARGET:\n- Network: facebook\n- Image Format: ' + formatDesc + '\n\n';
+  if (customInstructions) prompt += 'ADDITIONAL CONTEXT:\n' + customInstructions + '\n\n';
+  prompt += 'INSTRUCTIONS:\n1. Generate a visually compelling ad image adapted for our product in ' + formatDesc + ' format.\n'
+    + '2. Capture the same creative strategy and visual appeal as the original ad but be completely original.\n'
+    + '3. Include any text overlays (headline, CTA).\n4. Also provide adapted ad copy as text.';
+
+  previewEl.textContent = prompt;
 }
 
 // Hooks tab
@@ -291,16 +372,41 @@ function pollHooksResult(hookId) {
 
 function renderHooksTable(result) {
   const section = document.getElementById('hooks-table-section');
-  const container = document.getElementById('hooks-table-container');
+  const hooksContainer = document.getElementById('hooks-table-container');
   if (!result || !result.hooks || result.hooks.length === 0) {
-    container.innerHTML = '<div class="text-dim" style="padding:16px;text-align:center;">No hooks generated.</div>';
+    hooksContainer.innerHTML = '<div class="text-dim" style="padding:16px;text-align:center;">No hooks generated.</div>';
     section.style.display = '';
     return;
   }
 
+  // Show input/output meta info
+  let statusHtml = '';
   if (result.angle_summary) {
-    document.getElementById('hooks-status').innerHTML = '<div style="background:var(--surface);border-radius:8px;padding:12px;margin-bottom:16px;font-size:13px;"><strong>Strategy:</strong> ' + esc(result.angle_summary) + '</div>';
+    statusHtml += '<div style="background:var(--surface);border-radius:8px;padding:12px;margin-bottom:12px;font-size:13px;"><strong>Strategy:</strong> ' + esc(result.angle_summary) + '</div>';
   }
+
+  const meta = result._meta;
+  if (meta) {
+    statusHtml += '<div style="background:var(--surface);border-radius:8px;padding:12px;margin-bottom:12px;font-size:12px;border:1px solid var(--border);">';
+    statusHtml += '<div style="font-weight:600;margin-bottom:6px;">Generation Details</div>';
+    statusHtml += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px;">';
+    statusHtml += '<div><span class="text-dim">Ads scanned:</span> ' + (meta.total_ads_scanned || 0) + '</div>';
+    statusHtml += '<div><span class="text-dim">Ads in prompt:</span> ' + (meta.ads_in_prompt || 0) + '</div>';
+    statusHtml += '<div><span class="text-dim">Context items:</span> ' + (meta.context_items_used || 0) + (meta.uses_container_context ? ' (yes)' : ' (none)') + '</div>';
+    statusHtml += '</div>';
+    statusHtml += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">';
+    if (meta.product_name) statusHtml += '<div><span class="text-dim">Product:</span> ' + esc(meta.product_name) + '</div>';
+    if (meta.model_used) statusHtml += '<div><span class="text-dim">Model:</span> ' + esc(meta.model_used) + '</div>';
+    statusHtml += '<div><span class="text-dim">Hooks output:</span> ' + (result.hooks?.length || 0) + '</div>';
+    statusHtml += '</div>';
+    if (meta.prompt_sent) {
+      statusHtml += '<details style="margin-top:8px;"><summary style="cursor:pointer;color:var(--text-dim);font-size:12px;">Prompt Sent to AI</summary>';
+      statusHtml += '<pre style="white-space:pre-wrap;background:var(--bg);border-radius:6px;padding:8px;margin-top:4px;font-size:11px;max-height:250px;overflow-y:auto;border:1px solid var(--border);">' + esc(meta.prompt_sent) + '</pre></details>';
+    }
+    statusHtml += '</div>';
+  }
+
+  document.getElementById('hooks-status').innerHTML = statusHtml;
 
   let html = '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:13px;">';
   html += '<thead><tr style="border-bottom:2px solid var(--border);text-align:left;">';
@@ -333,7 +439,7 @@ function renderHooksTable(result) {
   }
 
   html += '</tbody></table></div>';
-  container.innerHTML = html;
+  hooksContainer.innerHTML = html;
   section.style.display = '';
 }
 
@@ -387,9 +493,14 @@ async function cloneSelectedHooks() {
       const data = await res.json();
 
       if (data.image_path) {
-        div.innerHTML = '<div style="padding:16px;"><strong>' + esc(hookText) + '</strong><div style="margin-top:8px;"><img src="/' + esc(data.image_path) + '" style="max-width:300px;border-radius:8px;" alt="Generated ad"></div></div>';
+        const imgSrc = data.image_path.startsWith('http') ? data.image_path : '/' + data.image_path.replace(/^\//, '');
+        let resultHtml = '<div style="padding:16px;"><strong>' + esc(hookText) + '</strong><div style="margin-top:8px;"><img src="' + esc(imgSrc) + '" style="max-width:300px;border-radius:8px;" alt="Generated ad" onerror="this.style.display=\'none\'"></div>';
+        if (data.adapted_copy?.headline) resultHtml += '<div style="font-size:12px;margin-top:6px;"><span class="text-dim">Headline:</span> ' + esc(data.adapted_copy.headline) + '</div>';
+        if (data.adapted_copy?.ad_text) resultHtml += '<div style="font-size:12px;"><span class="text-dim">Text:</span> ' + esc(data.adapted_copy.ad_text) + '</div>';
+        resultHtml += '</div>';
+        div.innerHTML = resultHtml;
       } else {
-        div.innerHTML = '<div style="padding:16px;"><strong>' + esc(hookText) + '</strong><div style="color:var(--error);margin-top:4px;">Failed: ' + esc(data.error || 'Unknown') + '</div></div>';
+        div.innerHTML = '<div style="padding:16px;"><strong>' + esc(hookText) + '</strong><div style="color:var(--error);margin-top:4px;">Failed: ' + esc(data.error || 'No image generated') + '</div></div>';
       }
     } catch (err) {
       div.innerHTML = '<div style="padding:16px;"><strong>' + esc(hookText) + '</strong><div style="color:var(--error);margin-top:4px;">Error: ' + esc(err.message) + '</div></div>';

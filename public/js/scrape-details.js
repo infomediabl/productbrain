@@ -429,14 +429,16 @@ async function submitClone() {
     const data = await res.json();
     const resultEl = document.getElementById('clone-result');
     resultEl.style.display = 'block';
+    const cloneImgSrc = data.image_path ? (data.image_path.startsWith('http') ? data.image_path : data.image_path) : '';
     resultEl.innerHTML = `
-      ${data.image_path ? `<img src="${esc(data.image_path)}" alt="Cloned ad" onclick="openLightbox('${esc(data.image_path)}')">` : '<div class="text-dim" style="font-size:12px;">No image generated</div>'}
+      ${cloneImgSrc ? `<img src="${esc(cloneImgSrc)}" alt="Cloned ad" onclick="openLightbox('${esc(cloneImgSrc)}')" onerror="this.style.display='none'">` : '<div class="text-dim" style="font-size:12px;">No image generated</div>'}
       <div class="adapted-copy">
         ${data.adapted_copy?.headline ? `<div><strong>Headline:</strong> ${esc(data.adapted_copy.headline)}</div>` : ''}
         ${data.adapted_copy?.ad_text ? `<div><strong>Ad Text:</strong> ${esc(data.adapted_copy.ad_text)}</div>` : ''}
         ${data.adapted_copy?.cta ? `<div><strong>CTA:</strong> ${esc(data.adapted_copy.cta)}</div>` : ''}
       </div>
-      ${data.image_path ? `<div style="margin-top:8px;font-size:11px;color:var(--text-dim);">Saved: ${esc(data.image_path)}</div>` : ''}
+      ${data.prompt_sent ? `<details style="margin-top:8px;font-size:11px;"><summary style="cursor:pointer;color:var(--text-dim);">Prompt Sent</summary><pre style="white-space:pre-wrap;background:var(--surface);border-radius:6px;padding:8px;margin-top:4px;font-size:11px;max-height:200px;overflow-y:auto;">${esc(data.prompt_sent)}</pre></details>` : ''}
+      ${cloneImgSrc && !cloneImgSrc.startsWith('http') ? `<div style="margin-top:8px;font-size:11px;color:var(--text-dim);">Saved: ${esc(data.image_path)}</div>` : ''}
     `;
 
     btn.innerHTML = 'Done';
