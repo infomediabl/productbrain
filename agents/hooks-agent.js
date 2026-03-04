@@ -10,7 +10,7 @@ const log = require('../logger');
 const storage = require('../storage');
 const config = require('../config');
 const { parseJsonFromResponse } = require('../utils/parse-json');
-const { gatherContainerContext, gatherScrapeData } = require('../utils/gather-data');
+const { gatherContainerContext } = require('../utils/gather-data');
 
 const SRC = 'HooksAgent';
 
@@ -41,8 +41,7 @@ async function generateHooks(containerId, options = {}) {
   // Fire and forget
   (async () => {
     try {
-      // Gather data
-      const scrapeData = gatherScrapeData(container);
+      // Gather context data
       const contextItems = gatherContainerContext(container);
 
       // Collect all ads across scrapes
