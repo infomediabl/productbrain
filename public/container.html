@@ -378,6 +378,18 @@
         <div id="quiz-list"></div>
       </div>
 
+      <!-- Content Validator -->
+      <div class="card agent-card" style="margin-bottom:24px;" id="validator-section">
+        <div class="agent-header">
+          <span class="agent-badge" style="background:#8b5cf620;color:#8b5cf6;">AG-022</span>
+          <h3>Content Validator</h3>
+          <span style="cursor:pointer;font-size:14px;opacity:0.6;" onclick="showAgentInfo('content-validator')" title="Agent Info">&#8505;</span>
+          <span class="agent-help">?<span class="agent-help-bubble">Validate ads, hooks, angles, landing pages, and video transcripts against your product context. Get a brutally honest AI audit with score, strengths, weaknesses, and recommendations.</span></span>
+          <span class="text-dim" style="font-size:12px;">Validate marketing assets against your product context</span>
+          <a class="btn btn-primary btn-sm" id="validator-link" href="/content-validator.html" style="margin-left:auto;">Open Validator</a>
+        </div>
+      </div>
+
       <!-- Taboola Campaign Cloner -->
       <div class="card agent-card" style="margin-bottom:24px;" id="taboola-section">
         <div class="agent-header">
@@ -386,16 +398,7 @@
           <span style="cursor:pointer;font-size:14px;opacity:0.6;" onclick="showAgentInfo('taboola')" title="Agent Info">&#8505;</span>
           <span class="agent-help">?<span class="agent-help-bubble">Clone top-performing FB ads into live Taboola campaigns. AI generates Taboola-optimized copy, then creates the campaign and uploads items via the Backstage API.</span></span>
           <span class="text-dim" style="font-size:12px;">Clone FB ads to Taboola with AI-optimized copy</span>
-        </div>
-        <div id="taboola-body">
-          <div style="padding-top:12px;">
-            <h4 style="font-size:13px;font-weight:600;margin-bottom:8px;">Previous Campaigns</h4>
-            <div id="taboola-list"></div>
-          </div>
-          <div style="padding-top:16px;border-top:1px solid var(--border);margin-top:12px;">
-            <h4 style="font-size:13px;font-weight:600;margin-bottom:8px;">Launch New Campaign</h4>
-            <div id="taboola-ad-selector"></div>
-          </div>
+          <a class="btn btn-primary btn-sm" id="taboola-link" href="/taboola-workshop.html" style="margin-left:auto;">Open Taboola</a>
         </div>
       </div>
 
@@ -937,7 +940,7 @@
   <script src="/js/quiz.js"></script>
   <script src="/js/case-study.js"></script>
   <script src="/js/image-ads.js"></script>
-  <script src="/js/taboola.js"></script>
+  <!-- taboola.js removed — Taboola UI moved to standalone taboola-workshop.html -->
   <script src="/js/spinoff-ideas.js"></script>
   <script src="/js/proposal.js"></script>
   <script src="/js/prompts.js"></script>

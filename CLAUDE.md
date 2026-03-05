@@ -37,15 +37,18 @@ Each page is fully independent with its own JS file.
 - `public/taboola-campaign.html` + `public/js/taboola-campaign-report.js`
 - `public/spinoff-ideas.html` + `public/js/spinoff-ideas-report.js`
 - `public/ad-workshop.html` + `public/js/ad-workshop.js`
+- `public/taboola-workshop.html` + `public/js/taboola-workshop.js`
+- `public/content-validator.html` + `public/js/content-validator.js`
 
 ---
 
 ## Architecture Overview
 
 ```
+mcp-server.js (MCP stdio server — exposes agents as tools for external clients)
 server.js
   ├── routes/*.js (26 route files, each handles one API path)
-  │     └── agents/*.js (21 agents, each called by one route)
+  │     └── agents/*.js (22 agents, each called by one route)
   │           ├── config.js (AI model settings)
   │           ├── storage.js (JSON file persistence)
   │           ├── utils/parse-json.js (extract JSON from Claude responses)
@@ -68,6 +71,7 @@ server.js
 | `logger.js` | info/warn/error/debug + getLogPath() | All files |
 | `storage.js` | JSON file CRUD for all entities | All routes, some agents |
 | `server.js` | Express app, mounts 23 route groups | Entry point |
+| `mcp-server.js` | MCP server, exposes all 22 agents as tools | MCP clients (Claude Code, Claude Desktop, Cursor) |
 
 ### Routes → Agent Mapping
 | Route File | Mounts At | Code | Calls Agent |
@@ -100,6 +104,7 @@ server.js
 | `routes/agent-info.js` | `/api/agent-info` | | None (reads agents/registry.js) |
 | `routes/folder-scraper.js` | `/api/containers/:id/folder-scrape` | AG-021 | folder-scraper-agent.importFromFolder() |
 | `routes/hooks.js` | `/api/containers/:id/hooks` | AG-020 | hooks-agent.generateHooks() |
+| `routes/content-validator.js` | `/api/containers/:id/content-validator` | AG-022 | content-validator-agent.validateContent() |
 
 ### Agent Dependencies
 All agents require: `config.js`, `logger.js`, `storage.js`, `utils/parse-json.js`
@@ -124,6 +129,7 @@ Additional dependencies per agent:
 | AG-019 | spinoff-ideas-agent | gather-data.gatherScrapeData, gatherCompetitorAnalyses, gatherContainerContext |
 | AG-020 | hooks-agent | gather-data.gatherContainerContext, gatherScrapeData |
 | AG-021 | folder-scraper-agent | fs (reads data/uploads/) |
+| AG-022 | content-validator-agent | gather-data.gatherContainerContext |
 | | clone-ad (route only) | config.OPENROUTER_API_KEY |
 
 ### Utils
@@ -159,13 +165,12 @@ Additional dependencies per agent:
 14. `quiz.js` — Uses `container`, `containerId`, `esc()`
 15. `case-study.js` — Uses `container`, `containerId`, `esc()`
 16. `image-ads.js` — Uses `container`, `containerId`, `esc()`
-17. `taboola.js` — Uses `container`, `containerId`, `esc()`
-18. `spinoff-ideas.js` — Uses `container`, `containerId`, `esc()`
-19. `proposal.js` — Uses `container`, `containerId`, `esc()`
-20. `prompts.js` — Uses `container`, `containerId`, `esc()`
-21. `settings.js` — Uses `container`, `containerId`, `esc()`
-22. `gads-analysis.js` — Uses `container`, `containerId`, `esc()`
-23. `agent-info.js` — Self-contained (agent info modal)
+17. `spinoff-ideas.js` — Uses `container`, `containerId`, `esc()`
+18. `proposal.js` — Uses `container`, `containerId`, `esc()`
+19. `prompts.js` — Uses `container`, `containerId`, `esc()`
+20. `settings.js` — Uses `container`, `containerId`, `esc()`
+21. `gads-analysis.js` — Uses `container`, `containerId`, `esc()`
+22. `agent-info.js` — Self-contained (agent info modal)
 
 ### Standalone Pages (no shared globals)
 | HTML | JS | API Used |
@@ -187,6 +192,8 @@ Additional dependencies per agent:
 | `taboola-campaign.html` | `taboola-campaign-report.js` | GET /api/containers/:id/taboola-campaign/:campaignId |
 | `spinoff-ideas.html` | `spinoff-ideas-report.js` | GET /api/containers/:id/spinoff-ideas/:ideaId, POST /api/containers/:id/context |
 | `ad-workshop.html` | `ad-workshop.js` | GET /api/containers/:id, GET /api/containers/:id/clone-ad/models, POST /api/containers/:id/clone-ad, POST /api/containers/:id/hooks, GET /api/containers/:id/hooks/:id |
+| `taboola-workshop.html` | `taboola-workshop.js` | GET /api/containers/:id, POST /api/containers/:id/taboola-campaign, GET /api/containers/:id/taboola-campaign/:campaignId |
+| `content-validator.html` | `content-validator.js` | GET /api/containers/:id, GET /api/containers/:id/context, POST /api/containers/:id/content-validator, GET /api/containers/:id/content-validator/:id, DELETE /api/containers/:id/content-validator/:id |
 
 ---
 
@@ -213,6 +220,7 @@ All data stored in `data/<container-id>.json`. Key fields:
 - `taboola_campaigns[]` — Taboola campaign clone results {id, created_at, status, source_ad_ids[], result: {campaign_name, taboola_campaign_id, campaign_url, items[], daily_cap, cpc_bid, country_targeting, platform_targeting}}
 - `spinoff_ideas[]` — Spin-off product idea results {id, created_at, status, result: {full_text, json_data: {landscape_summary, spinoff_ideas[]}, generated_at}}
 - `hooks_results[]` — Hooks/angles generation results {id, created_at, status, result: {hooks: [{id, angle_name, hook_text, emotion, angle_type, target_segment, inspired_by, rationale, adapted_for_product, suggested_visuals}], angle_summary}}
+- `validations[]` — Content validation results {id, created_at, status, meta: {validate_type, comment}, result: {verdict, score, summary, strengths[], weaknesses[], recommendations[], user_perspective_notes}}
 - `container_context[]` — Curated insights (content + text_brief)
 - `settings{}` — FB Pixel, GA4, custom code, user context, `auto_scrape_enabled` (bool), `taboola` ({client_id, client_secret, account_id})
 
@@ -226,7 +234,7 @@ Context items flow: Push (UI/push-all) → `context-formatter.formatBrief()` →
 
 Each item has: `{ id, source_type, source_id, section_name, content (JSON), text_brief (string), pushed_at }`
 
-Source types: `competitor_analysis`, `seo_analysis`, `gads_analysis`, `keyword_strategy`, `manual`
+Source types: `competitor_analysis`, `seo_analysis`, `gads_analysis`, `keyword_strategy`, `manual`, `content_validation`
 
 ---
 
@@ -242,8 +250,8 @@ Source types: `competitor_analysis`, `seo_analysis`, `gads_analysis`, `keyword_s
 
 ## Agent Naming Convention
 
-Every agent has a unique code (`ag0001`–`ag0019`), stored in `AGENT_META.code`.
-Dashboard badges display the formatted version: `AG-001` through `AG-019`.
+Every agent has a unique code (`ag0001`–`ag0022`), stored in `AGENT_META.code`.
+Dashboard badges display the formatted version: `AG-001` through `AG-022`.
 When adding a new agent, assign the next sequential code.
 
 | Code | ID | Display Name | Category |
@@ -269,6 +277,7 @@ When adding a new agent, assign the next sequential code.
 | ag0019 | spinoff-ideas | SpinOff Ideas | generation |
 | ag0020 | hooks | Hooks Generator | generation |
 | ag0021 | folder-scraper | Folder Ad Importer | collection |
+| ag0022 | content-validator | Content Validator | validation |
 
 ---
 
@@ -462,3 +471,162 @@ After completing any task, ask yourself:
 4. Did I change what users see or can do?
 
 If **any answer is yes**, update `CLAUDE.md` and/or `public/guide.html` before considering the task complete. This is not optional — treat it as part of the definition of done.
+
+---
+
+## Testing
+
+### Commands
+
+```bash
+npm test                              # Run all tests
+npm test -- tests/agents/hooks-agent.test.js   # Run a single agent test
+npx jest --config tests/jest.config.js --verbose  # Verbose output
+npx jest --config tests/jest.config.js --coverage # Coverage report
+```
+
+### Directory Structure
+
+```
+tests/
+  jest.config.js           — Jest configuration (moduleNameMapper for puppeteer/tesseract/google-ads-api)
+  setup.js                 — Global setup: mocks logger, suppresses console output
+  fixtures/
+    container.js           — Factory functions: makeContainer, makeContainerWithAds, makeContainerWithAnalyses, etc.
+    anthropic-responses.js — AI response shape factories: makeAnthropicResponse, makeJsonResponse
+  helpers/
+    mock-puppeteer.js      — Puppeteer stub (mapped via moduleNameMapper)
+    mock-tesseract.js      — Tesseract.js stub (mapped via moduleNameMapper)
+    mock-google-ads.js     — google-ads-api stub (mapped via moduleNameMapper)
+    mock-anthropic.js      — setupAnthropicMock() helper for per-test AI mocking
+    agent-meta-validator.js — validateAgentMeta() assertion helper
+    async-agent-runner.js  — waitForAsync() to flush fire-and-forget promises
+  agents/
+    registry.test.js       — Tests all 22 agents registered, unique IDs/codes, getAgent, getDependencyGraph
+    <agent-name>.test.js   — One test file per agent (21 files)
+```
+
+### Test Pattern (standard AI agents)
+
+Each agent test file follows this structure:
+1. `jest.mock('../../storage')` + `jest.mock('@anthropic-ai/sdk')` + other deps
+2. `beforeEach`: clearAllMocks, set up storage mocks with `mockResolvedValue`, configure Anthropic mock
+3. **AGENT_META** — validates required fields via `validateAgentMeta()`
+4. **Input validation** — missing container/params throw expected errors
+5. **Record creation** — `storage.add*()` called, record returned immediately
+6. **Success path** — AI resolves → `storage.update*()` called with 'completed' (uses `waitForAsync()`)
+7. **Error path** — AI rejects → `storage.update*()` called with 'failed'
+
+### Mocking Strategy
+
+| Dependency | Approach | Reason |
+|---|---|---|
+| `storage.js` | `jest.mock('../../storage')` | All 48 CRUD functions mocked |
+| `@anthropic-ai/sdk` | `jest.mock(...)` + `mockImplementation` | No real API calls |
+| `logger.js` | Global mock in `setup.js` | Suppress file writes |
+| `puppeteer` | `moduleNameMapper` in jest.config.js | No browser needed |
+| `tesseract.js` | `moduleNameMapper` in jest.config.js | No OCR engine needed |
+| `google-ads-api` | `moduleNameMapper` in jest.config.js | No Google API needed |
+| `utils/parse-json.js` | NOT mocked | Pure function, tested with real impl |
+| `utils/gather-data.js` | `jest.mock(...)` per test file | Returns fixture data |
+| `config.js` | NOT mocked | Static constants |
+
+### Key Gotchas
+
+- All `storage.add*()` / `storage.create*()` functions return Promises — mock with `.mockResolvedValue()`, not `.mockReturnValue()`
+- `storage.addHooksResult()` is the exception — hooks-agent does NOT await it
+- `gatherContainerContext()` and other gather-data functions are synchronous — mock with `.mockReturnValue()`
+- Fire-and-forget agents need `await waitForAsync()` before asserting on storage.update calls
+- `updateCompetitorAnalysis` / `updateSeoAnalysis` take competitorId as 2nd arg (5 total args)
+- Prompt agent reads proposals from `container.proposals[]`, not via `storage.getProposal()`
+
+---
+
+## MCP Server
+
+`mcp-server.js` exposes all 22 agents as MCP tools via stdio transport. Any MCP-compatible client (Claude Code, Claude Desktop, Cursor) can call these tools.
+
+### Running
+
+```bash
+npm run mcp                    # Start MCP server (stdio)
+node mcp-server.js             # Same thing
+```
+
+### Configuration
+
+Add to your MCP client config (e.g. `~/.claude/settings.json` for Claude Code):
+
+```json
+{
+  "mcpServers": {
+    "product-analyzer": {
+      "command": "node",
+      "args": ["C:/Users/PC/Desktop/AI/mcp-server.js"],
+      "env": { "ANTHROPIC_API_KEY": "sk-ant-..." }
+    }
+  }
+}
+```
+
+See `mcp-config.example.json` for a template.
+
+### Environment Variables
+
+- `ANTHROPIC_API_KEY` — Required for all AI agents
+- `OPENROUTER_API_KEY` — Required for clone-ad features
+- `GOOGLE_ADS_*` — Required for Google Ads tools (AG-009)
+- `TABOOLA_*` — Required for Taboola tools (AG-018)
+
+### Tool List (29 tools)
+
+#### Utility Tools (3)
+
+| Tool | Description |
+|------|-------------|
+| `list_containers` | List all product containers |
+| `get_container` | Get full container data by ID |
+| `get_result` | Get a specific result by container ID, storage key, and result ID |
+
+#### Agent Tools (22)
+
+| Tool | Agent | Key Params |
+|------|-------|------------|
+| `run_hooks` | AG-020 Hooks Generator | containerId |
+| `run_image_ads` | AG-010 Image Ad Curator | containerId |
+| `run_quiz` | AG-011 Quiz Generator | containerId |
+| `run_landing_page` | AG-012 Landing Page Generator | containerId |
+| `run_test_plan` | AG-013 RPS Test Ideator | containerId |
+| `run_keyword_strategy` | AG-008 Keyword Strategist | containerId |
+| `run_spinoff_ideas` | AG-019 SpinOff Ideas | containerId |
+| `run_product_ideas` | AG-007 Product Ideator | containerId, userPrompt? |
+| `run_competitor_analysis` | AG-003 Scraped Ads Analyzer | containerId, competitorId |
+| `run_seo_competitor` | AG-004 SEO Analyzer (competitor) | containerId, competitorId |
+| `run_seo_own` | AG-004 SEO Analyzer (own product) | containerId |
+| `run_proposal` | AG-005 Magic AI Proposal | containerId, competitorIds[], userContext?, userPrompt? |
+| `run_prompts` | AG-006 Prompt Generator | containerId, proposalId |
+| `run_case_study` | AG-014 Case Study Analyzer | containerId, source_type, content?, url? |
+| `run_scrape_validate` | AG-002 Scrape Validator | containerId, scrapeId |
+| `run_taboola_preview` | AG-018 Taboola Preview | containerId, ad_ids? |
+| `run_taboola_clone` | AG-018 Taboola Clone | containerId, ad_ids? |
+| `run_folder_import` | AG-021 Folder Ad Importer | containerId |
+| `chat` | AG-015 Container Chat | containerId, message, history? |
+| `run_desire_spring` | AG-016 DesireSpring | idea_text |
+| `run_web_research` | AG-017 ResearchWeb | topic |
+| `run_content_validator` | AG-022 Content Validator | containerId, validate_type, content, comment? |
+
+#### Google Ads Tools (4)
+
+| Tool | Description |
+|------|-------------|
+| `gads_is_configured` | Check if Google Ads API is configured |
+| `gads_list_accounts` | List accessible Google Ads accounts |
+| `gads_list_campaigns` | List campaigns for an account |
+| `gads_keyword_ideas` | Generate keyword ideas via Keyword Planner |
+
+### How It Works
+
+- **Fire-and-forget agents** (most): The tool calls the agent, which returns `{ id, status: 'generating' }`. The MCP tool then polls storage every 2s until status is `completed` or `failed` (max 120s timeout).
+- **Sync agents** (`chat`): Returns the result directly.
+- **No-wait agents** (`run_scrape_validate`, `run_folder_import`): Returns immediately after triggering.
+- **Non-container agents** (`run_desire_spring`, `run_web_research`): Use their own storage files, not container storage.

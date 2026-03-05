@@ -1,42 +1,6 @@
-Now considering you understand what is app used. Check app and propose what could be improved. 
+1. Lets go on github with this app 
+this is github repo
+https://github.com/infomediabl/productbrain.git
 
-Goal of this app is: 
-a) If we have already our product (example Brajti)
-- based on our product and competition and analysis find opportunities, 
-gaps, avoid mistakes from competition. 
-
-
-b) If we don't have our product - find fast opportunities that we test
-if product is viable, so we do fast MVP test, with narrowing geos, angles, keywords
-to get proper test with minimal investment 
-
-Let me try to explain - this "product-fit" system - based on what we learned in past.
-
-Explanation:
-- "undefined variable" or lets call it "UNKNOWNS" - represent any data we don't know, we don't have data to prove
-it or anything other we can not say for sure
-
-- "defined variable" or lets call it "KNOWNS"  - represent any data we can confirm based on data from our product, 
-competition or metadata. 
-
-Now in analysis - used method should be that if something should be tested it should 
-be done on such way that number of "UNKNOWNS" is reduced so its like max 1 or 2, 
-so when we make test we can see if in that test we can figure that 
-
-
-For example in case of a) if we HAVE product. 
-This usually means we already made some tests - Google ads connector, so you 
-can see tested countries, CPC, etc. So data we have are "defined variable". 
-Since there is an a lot of data, geos, campaign types, we want to see if there are
-some gaps, opportunities, mistakes etc based on methods 
-
-For example in case of b) if we DO NOT HAVE product.
-This means we want to get fast MVP test of "product-market" fit, which will 
-enable us that based on competition, meta-data and analysis, and reducing "UNKOWNS" 
-help us run test campaign fast: search, display, fb, whatever and define what 
-we need to figure out with that test: CPC, CR, %lead etc
-
-
-When making this system, write it a separate context file so it can be reviews just as context. 
-
+let me know what you need to submit 
 

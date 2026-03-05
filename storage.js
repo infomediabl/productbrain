@@ -72,6 +72,7 @@ function ensureFields(container) {
   if (!container.taboola_campaigns) container.taboola_campaigns = [];
   if (!container.spinoff_ideas) container.spinoff_ideas = [];
   if (!container.hooks_results) container.hooks_results = [];
+  if (!container.validations) container.validations = [];
   // my_product can be null (no existing product) — don't default it
   return container;
 }
@@ -1414,6 +1415,64 @@ function getHooksResult(containerId, hookId) {
   return container.hooks_results.find(h => h.id === hookId) || null;
 }
 
+// ========== Content Validator CRUD ==========
+
+function addValidation(containerId, meta = {}) {
+  return enqueueWrite(containerId, () => {
+    const container = readContainerFile(containerId);
+    if (!container) return null;
+    ensureFields(container);
+    const record = {
+      id: uuidv4(),
+      created_at: new Date().toISOString(),
+      status: 'generating',
+      meta: {
+        validate_type: meta.validate_type || 'hook',
+        comment: meta.comment || '',
+      },
+      result: null,
+    };
+    container.validations.push(record);
+    container.updated_at = new Date().toISOString();
+    writeContainerFile(container);
+    return record;
+  });
+}
+
+function updateValidation(containerId, validationId, status, result) {
+  return enqueueWrite(containerId, () => {
+    const container = readContainerFile(containerId);
+    if (!container) return null;
+    ensureFields(container);
+    const record = container.validations.find(v => v.id === validationId);
+    if (!record) return null;
+    record.status = status;
+    if (result !== undefined) record.result = result;
+    writeContainerFile(container);
+    return record;
+  });
+}
+
+function getValidation(containerId, validationId) {
+  const container = readContainerFile(containerId);
+  if (!container) return null;
+  ensureFields(container);
+  return container.validations.find(v => v.id === validationId) || null;
+}
+
+function deleteValidation(containerId, validationId) {
+  return enqueueWrite(containerId, () => {
+    const container = readContainerFile(containerId);
+    if (!container || !container.validations) return false;
+    const idx = container.validations.findIndex(v => v.id === validationId);
+    if (idx === -1) return false;
+    container.validations.splice(idx, 1);
+    container.updated_at = new Date().toISOString();
+    writeContainerFile(container);
+    return true;
+  });
+}
+
 module.exports = {
   // Container
   listContainers, readContainer, createContainer, updateContainer, deleteContainer,
@@ -1465,4 +1524,6 @@ module.exports = {
   addSpinoffIdea, updateSpinoffIdea, getSpinoffIdea,
   // Hooks Results
   addHooksResult, updateHooksResult, getHooksResult,
+  // Content Validator
+  addValidation, updateValidation, getValidation, deleteValidation,
 };

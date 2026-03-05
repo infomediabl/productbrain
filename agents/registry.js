@@ -36,6 +36,7 @@ register(require('./taboola-agent'));
 register(require('./spinoff-ideas-agent'));
 register(require('./folder-scraper-agent'));
 register(require('./hooks-agent'));
+register(require('./content-validator-agent'));
 
 /**
  * Get an agent by its AGENT_META.id.

@@ -8,7 +8,7 @@
  *   Calls renderEntries(), renderIdeatorSection(), renderCaseStudies(), renderMetadata(),
  *   renderScrapes(), renderCompetitorAnalyses(), renderOwnProductSeo(), renderSeoAnalyses(),
  *   checkGadsStatus(), renderKeywordStrategies(), renderTestPlans(), renderLandingPages(),
- *   renderQuizzes(), renderImageAds(), renderTaboolaCampaigns(), renderSpinoffIdeas(),
+ *   renderQuizzes(), renderImageAds(), renderSpinoffIdeas(),
  *   renderProposals(), renderPrompts(), loadContainerContext().
  *
  * Reads containerId from URL query param, fetches the container object, and orchestrates
@@ -41,7 +41,6 @@ async function loadContainer() {
   renderLandingPages();
   renderQuizzes();
   renderImageAds();
-  renderTaboolaCampaigns();
   renderSpinoffIdeas();
   renderProposals();
   renderPrompts();
@@ -55,6 +54,10 @@ function renderHeader() {
   if (chatLink) chatLink.href = `/chat.html?cid=${container.id}`;
   const workshopLink = document.getElementById('workshop-link');
   if (workshopLink) workshopLink.href = `/ad-workshop.html?cid=${container.id}`;
+  const taboolaLink = document.getElementById('taboola-link');
+  if (taboolaLink) taboolaLink.href = `/taboola-workshop.html?cid=${container.id}`;
+  const validatorLink = document.getElementById('validator-link');
+  if (validatorLink) validatorLink.href = `/content-validator.html?cid=${container.id}`;
 }
 
 function esc(str) {

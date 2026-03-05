@@ -1,0 +1,45 @@
+List of tasks
+
+1. New subagent - Validator
+Make it as other subagents, proper mcp, proper documented, with expoanation of input, output, prompt
+Goal of this validator is to audit my page, ad or hook versus container and container context especially
+
+1a. Put validator menu link on top of right menu above 'Products and competitors'. It open new page 
+
+1b. When open Validator page, on top of page is 'Container context' same as on dashboard, with option to collapse
+its same container context and here it serve just as overview. 
+
+1c. Add text area 'Validation comment' -> this give additional explanation to prompt.
+
+- Then goes input: give option to select what will be validated 
+landing page screenshot
+image ad 
+video transcribe
+hook
+angle
+
+1d. input to prompt is 
+
+a) 'container context' from dasboard
+b) 'container notes'  from dasboard
+c) 'validation comment'
+d) validate type: landing page, image ad, video transcribe, hook, angle 
+
+Then prompt should be like this 
+Now here’s everything I know and curated about product: a,b,c,d. 
+Make brutal honest validation, how does given input (a,b,c,d) validate and make sense to be used for this product.
+In this validation, think from user perspective
+a) landing page screenshot - will user land on page, properly engaged, will he be engaged to stay on page, use app etc 
+b) image / video -> will user stop scroll on this add, will click on it etc
+c) hook / angle -> does it target proper audience, pain etc
+
+HEre is really important than when validate is done, beside analysis to have prompt log. 
+
+
+2. User data feed subagent  - comming soon
+Make it as other subagents, proper mcp, proper documented, with explanation of input, output, prompt
+It should be able to read CSV. It should work in separate page, 
+import csv
+then it make nice table display of like 50 rows, of table as exampl
+then there should be analysis of that csv made - with option to push data from 
+analysis into context container 

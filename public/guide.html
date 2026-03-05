@@ -231,6 +231,7 @@
               <div class="feature-item"><strong>AG-019</strong><span>SpinOff Ideas</span></div>
               <div class="feature-item"><strong>AG-020</strong><span>Hooks Generator / Ad Workshop</span></div>
               <div class="feature-item"><strong>AG-021</strong><span>Folder Ad Importer</span></div>
+              <div class="feature-item"><strong>AG-022</strong><span>Content Validator</span></div>
             </div>
           </div>
 
@@ -571,6 +572,30 @@
               <p><strong>Tab 2 — Make New Ad:</strong> Uses the Hooks Generator (AG-020) to analyze your scraped ads and generate 8-12 advertising hooks/angles. Each hook includes the angle name, hook text, emotion, target segment, rationale, and visual suggestions. You can clone individual hooks or select multiple hooks and batch-clone them.</p>
               <div class="tip-box">
                 <strong>Tip:</strong> Run a scrape and competitor analysis first to give the Hooks Generator more data to work with. The more ads in your container, the better the generated hooks.
+              </div>
+            </div>
+          </div>
+
+          <!-- Content Validator -->
+          <h2 id="content-validator">AG-022 Content Validator</h2>
+          <div class="guide-section">
+            <button class="guide-collapse-toggle" data-target="content-validator-details" aria-expanded="true">
+              <span class="collapse-icon">&#9660;</span> AG-022 Content Validator
+            </button>
+            <div id="content-validator-details">
+              <p>A standalone validation page that provides a <strong>brutally honest AI audit</strong> of your marketing assets against your product's curated context and notes. Supports five content types:</p>
+              <ul style="padding-left:20px;margin:8px 0;line-height:1.8;">
+                <li><strong>Hook</strong> — Evaluates audience targeting, pain point accuracy, emotional resonance, scroll-stopping potential</li>
+                <li><strong>Angle</strong> — Evaluates strategic fit, differentiation, emotional leverage, scalability across formats</li>
+                <li><strong>Image Ad</strong> — Evaluates scroll-stopping power, click likelihood, message clarity, brand alignment</li>
+                <li><strong>Landing Page</strong> — Evaluates engagement, retention, CTA clarity, visual flow, conversion likelihood</li>
+                <li><strong>Video Transcript</strong> — Evaluates hook strength, retention arc, message clarity, CTA placement</li>
+              </ul>
+              <p>Each validation returns a <strong>verdict</strong> (pass / needs_work / fail), a <strong>score</strong> (1-10), specific strengths and weaknesses, actionable recommendations, and a user perspective note describing how a real customer would perceive the asset.</p>
+              <p>The page includes a collapsible Container Context panel (read-only) so you can see what context the AI will use. Add an optional comment to focus the AI on specific aspects.</p>
+              <p>After validation, click <strong>"View Report"</strong> to open a dedicated report page with per-section <strong>Push to Context</strong> buttons (summary, strengths, weaknesses, recommendations, user perspective) and a <strong>Push All</strong> button — same pattern as Case Study and SpinOff Ideas reports. The AI prompt is product-first and uses a <strong>different evaluation lens per content type</strong> (e.g., "You just clicked an ad and landed on this page..." for landing pages).</p>
+              <div class="tip-box">
+                <strong>Tip:</strong> Push competitor analyses, SEO data, and keyword strategies to Container Context before validating — the more context, the more specific and useful the feedback. Use the validation comment to ask about specific concerns (e.g., "Does this hook work for Gen Z?").
               </div>
             </div>
           </div>

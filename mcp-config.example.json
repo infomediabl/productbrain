@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "product-analyzer": {
+      "command": "node",
+      "args": ["C:/Users/PC/Desktop/AI/mcp-server.js"],
+      "env": {
+        "ANTHROPIC_API_KEY": "sk-ant-..."
+      }
+    }
+  }
+}

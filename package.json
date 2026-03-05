@@ -4,10 +4,14 @@
   "description": "Competition analysis tool with ad scraping, metadata, and AI-powered proposals",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "jest --config tests/jest.config.js --forceExit",
+    "test:agent": "jest --config tests/jest.config.js --forceExit",
+    "mcp": "node mcp-server.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
+    "@modelcontextprotocol/sdk": "^1.27.1",
     "dotenv": "^16.4.7",
     "express": "^4.21.0",
     "google-ads-api": "^23.0.0",
@@ -16,6 +20,10 @@
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2",
     "tesseract.js": "^7.0.0",
-    "uuid": "^10.0.0"
+    "uuid": "^10.0.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "jest": "^30.2.0"
   }
 }

@@ -8,7 +8,7 @@
  * container_context has a `content` (JSON) and a `text_brief` (string).
  * Agents consume text_brief, not raw JSON.
  *
- * Handles: competitor_analysis, seo_analysis, gads_analysis, keyword_strategy, web_research, case_study, spinoff_ideas
+ * Handles: competitor_analysis, seo_analysis, gads_analysis, keyword_strategy, web_research, case_study, spinoff_ideas, content_validation
  */
 
 // ========== Main entry ==========
@@ -25,6 +25,7 @@ function formatBrief(sourceType, content, sectionName) {
     case 'web_research':        return formatWebResearch(content);
     case 'case_study':          return formatCaseStudy(content, sectionName);
     case 'spinoff_ideas':       return formatSpinoffIdeas(content, sectionName);
+    case 'content_validation':  return formatContentValidation(content, sectionName);
     default:                    return formatGeneric(content);
   }
 }
@@ -483,6 +484,47 @@ function formatSpinoffIdeas(c, sectionName) {
       parts.push(t);
     }
     return parts.join('\n');
+  }
+
+  return formatGeneric(c);
+}
+
+// ========== Content Validation ==========
+
+function formatContentValidation(c, sectionName) {
+  // Per-item: summary only
+  if (c.summary && Object.keys(c).length <= 2) {
+    return `Validation summary: ${c.summary}`;
+  }
+
+  // Per-item: strengths array
+  if (Array.isArray(c.strengths) && Object.keys(c).length <= 1) {
+    return c.strengths.map(s => `+ ${s}`).join('\n');
+  }
+
+  // Per-item: weaknesses array
+  if (Array.isArray(c.weaknesses) && Object.keys(c).length <= 1) {
+    return c.weaknesses.map(w => `- ${w}`).join('\n');
+  }
+
+  // Per-item: recommendations array
+  if (Array.isArray(c.recommendations) && Object.keys(c).length <= 1) {
+    return c.recommendations.map(r => `Recommendation: ${r}`).join('\n');
+  }
+
+  // Per-item: user perspective
+  if (c.user_perspective_notes && Object.keys(c).length <= 1) {
+    return `User perspective: ${c.user_perspective_notes}`;
+  }
+
+  // Full validation result (push-all)
+  if (c.verdict && c.summary) {
+    const parts = [`Validation: ${c.verdict.toUpperCase()} (${c.score || '?'}/10). ${c.summary}`];
+    if (c.strengths?.length) parts.push('Strengths: ' + c.strengths.join('; '));
+    if (c.weaknesses?.length) parts.push('Weaknesses: ' + c.weaknesses.join('; '));
+    if (c.recommendations?.length) parts.push('Recommendations: ' + c.recommendations.join('; '));
+    if (c.user_perspective_notes) parts.push(`User perspective: ${c.user_perspective_notes}`);
+    return parts.join('. ');
   }
 
   return formatGeneric(c);
