@@ -26,6 +26,21 @@ app.use('/screenshots', express.static(path.join(__dirname, 'screenshots')));
 app.use('/clonedAd', express.static(path.join(__dirname, 'clonedAd')));
 app.use('/data/uploads', express.static(path.join(__dirname, 'data', 'uploads')));
 
+// Postgres: hydrate /tmp/data from DB on cold start (Vercel serverless)
+const { hydrateFromDb, waitForDbSyncs } = require('./storage');
+app.use(async (req, res, next) => {
+  try { await hydrateFromDb(); } catch (e) { console.error('Hydration error:', e.message); }
+
+  // Intercept res.end to wait for pending DB syncs before response completes
+  if (process.env.POSTGRES_URL) {
+    const originalEnd = res.end.bind(res);
+    res.end = function (...args) {
+      waitForDbSyncs().finally(() => originalEnd(...args));
+    };
+  }
+  next();
+});
+
 // Routes
 const containersRouter = require('./routes/containers');
 const metadataRouter = require('./routes/metadata');

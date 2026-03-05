@@ -17,9 +17,93 @@ const { v4: uuidv4 } = require('uuid');
 
 const IS_VERCEL = !!process.env.VERCEL;
 const DATA_DIR = IS_VERCEL ? '/tmp/data' : path.join(__dirname, 'data');
+const USE_POSTGRES = !!process.env.POSTGRES_URL;
 
 // Ensure data directory exists
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+
+// ========== Vercel Postgres Sync Layer ==========
+let sql = null;
+let dbReady = false;
+let hydrated = false;
+const pendingDbSyncs = [];
+
+if (USE_POSTGRES) {
+  try {
+    const { neon } = require('@neondatabase/serverless');
+    sql = neon(process.env.POSTGRES_URL);
+  } catch (e) {
+    console.warn('Storage: @neondatabase/serverless not available, falling back to file-only');
+  }
+}
+
+async function ensureSchema() {
+  if (!sql || dbReady) return;
+  await sql`CREATE TABLE IF NOT EXISTS containers (id TEXT PRIMARY KEY, data JSONB NOT NULL, updated_at TIMESTAMPTZ DEFAULT NOW())`;
+  await sql`CREATE TABLE IF NOT EXISTS global_data (key TEXT PRIMARY KEY, data JSONB NOT NULL, updated_at TIMESTAMPTZ DEFAULT NOW())`;
+  dbReady = true;
+}
+
+async function hydrateFromDb() {
+  if (!sql || hydrated) return;
+  try {
+    await ensureSchema();
+    // Hydrate container files
+    const containerRows = await sql`SELECT id, data FROM containers`;
+    for (const row of containerRows) {
+      const filePath = path.join(DATA_DIR, `${row.id}.json`);
+      fs.writeFileSync(filePath, JSON.stringify(row.data, null, 2), 'utf8');
+    }
+    // Hydrate global data files
+    const globalRows = await sql`SELECT key, data FROM global_data`;
+    for (const row of globalRows) {
+      const filePath = path.join(DATA_DIR, `${row.key}.json`);
+      fs.writeFileSync(filePath, JSON.stringify(row.data, null, 2), 'utf8');
+    }
+    hydrated = true;
+    console.log(`Storage: Hydrated ${containerRows.length} containers + ${globalRows.length} global files from Postgres`);
+  } catch (err) {
+    console.error('Storage: Hydration from Postgres failed:', err.message);
+  }
+}
+
+function syncContainerToDb(id, data) {
+  if (!sql) return;
+  const p = sql`INSERT INTO containers (id, data, updated_at) VALUES (${id}, ${JSON.stringify(data)}, NOW()) ON CONFLICT (id) DO UPDATE SET data = ${JSON.stringify(data)}, updated_at = NOW()`
+    .catch(err => console.error('Storage: Postgres sync failed for container', id, err.message));
+  pendingDbSyncs.push(p);
+  p.finally(() => {
+    const idx = pendingDbSyncs.indexOf(p);
+    if (idx !== -1) pendingDbSyncs.splice(idx, 1);
+  });
+}
+
+function deleteContainerFromDb(id) {
+  if (!sql) return;
+  const p = sql`DELETE FROM containers WHERE id = ${id}`
+    .catch(err => console.error('Storage: Postgres delete failed for container', id, err.message));
+  pendingDbSyncs.push(p);
+  p.finally(() => {
+    const idx = pendingDbSyncs.indexOf(p);
+    if (idx !== -1) pendingDbSyncs.splice(idx, 1);
+  });
+}
+
+function syncGlobalToDb(key, data) {
+  if (!sql) return;
+  const p = sql`INSERT INTO global_data (key, data, updated_at) VALUES (${key}, ${JSON.stringify(data)}, NOW()) ON CONFLICT (key) DO UPDATE SET data = ${JSON.stringify(data)}, updated_at = NOW()`
+    .catch(err => console.error('Storage: Postgres sync failed for global', key, err.message));
+  pendingDbSyncs.push(p);
+  p.finally(() => {
+    const idx = pendingDbSyncs.indexOf(p);
+    if (idx !== -1) pendingDbSyncs.splice(idx, 1);
+  });
+}
+
+async function waitForDbSyncs() {
+  if (pendingDbSyncs.length === 0) return;
+  await Promise.allSettled([...pendingDbSyncs]);
+}
 
 // Per-container write queue to prevent JSON corruption
 const writeQueues = new Map();
@@ -48,6 +132,7 @@ function readContainerFile(id) {
 function writeContainerFile(container) {
   const filePath = getContainerPath(container.id);
   fs.writeFileSync(filePath, JSON.stringify(container, null, 2), 'utf8');
+  syncContainerToDb(container.id, container);
 }
 
 // Ensure container has all new fields (migration helper)
@@ -191,6 +276,7 @@ function updateContainer(id, updates) {
 
 function deleteContainer(id) {
   const filePath = getContainerPath(id);
+  deleteContainerFromDb(id);
   if (fs.existsSync(filePath)) {
     fs.unlinkSync(filePath);
     return true;
@@ -1241,6 +1327,7 @@ function readResearchWebFile() {
 
 function writeResearchWebFile(data) {
   fs.writeFileSync(RESEARCH_WEB_PATH, JSON.stringify(data, null, 2), 'utf8');
+  syncGlobalToDb('web-research', data);
 }
 
 function addResearchWeb(topic) {
@@ -1527,4 +1614,6 @@ module.exports = {
   addHooksResult, updateHooksResult, getHooksResult,
   // Content Validator
   addValidation, updateValidation, getValidation, deleteValidation,
+  // Postgres sync
+  hydrateFromDb, waitForDbSyncs, syncGlobalToDb,
 };

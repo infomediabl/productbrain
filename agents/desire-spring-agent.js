@@ -58,8 +58,9 @@ Write step-by-step instructions for this feature idea:
 [user's idea text]`,
 };
 
-const DATA_PATH = path.join(__dirname, '..', 'data', 'desire-spring.json');
-const DATA_DIR = path.dirname(DATA_PATH);
+const IS_VERCEL = !!process.env.VERCEL;
+const DATA_DIR = IS_VERCEL ? '/tmp/data' : path.join(__dirname, '..', 'data');
+const DATA_PATH = path.join(DATA_DIR, 'desire-spring.json');
 const INSTRUCTIONS_DIR = path.join(__dirname, '..', 'instructions');
 
 // ========== Self-contained CRUD ==========
@@ -79,6 +80,11 @@ function readData() {
 function writeData(data) {
   if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
   fs.writeFileSync(DATA_PATH, JSON.stringify(data, null, 2), 'utf8');
+  // Sync to Postgres when available
+  try {
+    const { syncGlobalToDb } = require('../storage');
+    syncGlobalToDb('desire-spring', data);
+  } catch (e) { /* storage not ready yet */ }
 }
 
 function addIdea(ideaText) {
@@ -224,6 +230,10 @@ ${claudeMd}`,
 // ========== Save to instructions/ ==========
 
 function saveInstructions(ideaId, filename, content) {
+  if (IS_VERCEL) {
+    throw new Error('Cannot save instructions to filesystem on Vercel (read-only). Use the local dev environment.');
+  }
+
   // Path-traversal protection
   const safeName = path.basename(filename);
   if (safeName !== filename || filename.includes('..')) {
