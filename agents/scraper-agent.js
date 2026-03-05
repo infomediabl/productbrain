@@ -42,7 +42,8 @@ const AGENT_META = {
   prompt_template: 'No AI prompt. Uses Puppeteer to scrape Facebook/Google Ad Libraries. Runs Tesseract OCR on ad images. For Google ads with OCR text, sends to Claude for structured extraction (headline, description, CTA, URL).',
 };
 
-const SCREENSHOTS_DIR = path.join(__dirname, '..', 'screenshots');
+const IS_VERCEL = !!process.env.VERCEL;
+const SCREENSHOTS_DIR = IS_VERCEL ? '/tmp/screenshots' : path.join(__dirname, '..', 'screenshots');
 const SCRAPE_TIMEOUT_MS = 25 * 60 * 1000; // 25 minutes — generous for slower scraping
 
 let isScrapingActive = false;
