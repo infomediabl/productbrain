@@ -227,7 +227,7 @@ try {
   console.warn('Changelog update failed:', err.message);
 }
 
-app.listen(PORT, () => {
+if (!process.env.VERCEL) app.listen(PORT, () => {
   console.log(`Product Analyzer running at http://localhost:${PORT}`);
   console.log(`  Agent 1: Scraper       — POST /api/containers/:id/scrape`);
   console.log(`  Agent 1b: Validator    — POST /api/containers/:id/validate-scrape/:scrapeId`);
