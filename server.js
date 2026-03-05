@@ -257,3 +257,5 @@ app.listen(PORT, () => {
   console.log(`  Content Validator (AG-022)— POST /api/containers/:id/content-validator`);
   console.log(`  Auto-Scrape            — every 6h for enabled containers`);
 });
+
+module.exports = app;
