@@ -8,7 +8,8 @@
 const fs = require('fs');
 const path = require('path');
 
-const LOG_DIR = path.join(__dirname, 'data');
+const IS_VERCEL = !!process.env.VERCEL;
+const LOG_DIR = IS_VERCEL ? '/tmp' : path.join(__dirname, 'data');
 const LOG_FILE = path.join(LOG_DIR, 'scraper.log');
 
 function log(level, source, message, data) {
@@ -16,7 +17,7 @@ function log(level, source, message, data) {
   const entry = { ts, level, source, message };
   if (data !== undefined) entry.data = data;
   const line = JSON.stringify(entry);
-  fs.appendFileSync(LOG_FILE, line + '\n');
+  try { fs.appendFileSync(LOG_FILE, line + '\n'); } catch {}
   if (level === 'error') {
     console.error(`[${source}] ${message}`, data || '');
   } else {

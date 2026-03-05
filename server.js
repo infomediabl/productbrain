@@ -175,56 +175,58 @@ app.get('/api/changelog', (req, res) => {
   res.json(getChangelog());
 });
 
-// ========== Auto-Scrape Scheduler (6h interval) ==========
-const { runAutoScrape, isScraping } = require('./agents/scraper-agent');
-const { listAutoScrapeContainers, getScrapeResult } = require('./storage');
+// ========== Auto-Scrape Scheduler & Changelog (skip on Vercel) ==========
+if (!process.env.VERCEL) {
+  const { runAutoScrape, isScraping } = require('./agents/scraper-agent');
+  const { listAutoScrapeContainers, getScrapeResult } = require('./storage');
 
-async function runAutoScrapeAll() {
-  const containers = listAutoScrapeContainers();
-  if (containers.length === 0) return;
-  if (isScraping()) {
-    log.info('AutoScrape', 'Skipping auto-scrape cycle — a scrape is already running');
-    return;
-  }
-
-  log.info('AutoScrape', `Starting auto-scrape cycle for ${containers.length} containers`);
-
-  for (const c of containers) {
+  async function runAutoScrapeAll() {
+    const containers = listAutoScrapeContainers();
+    if (containers.length === 0) return;
     if (isScraping()) {
-      log.info('AutoScrape', 'Skipping remaining containers — a scrape started externally');
-      break;
+      log.info('AutoScrape', 'Skipping auto-scrape cycle — a scrape is already running');
+      return;
     }
-    try {
-      log.info('AutoScrape', `Auto-scraping container: ${c.name}`, { containerId: c.id });
-      const result = await runAutoScrape(c.id);
-      if (!result) continue;
 
-      // Poll for completion (max 30 min)
-      const maxWait = 30 * 60 * 1000;
-      const pollInterval = 30 * 1000;
-      const start = Date.now();
-      while (Date.now() - start < maxWait) {
-        await new Promise(r => setTimeout(r, pollInterval));
-        const current = getScrapeResult(c.id, result.id);
-        if (!current || current.status === 'completed' || current.status === 'failed' || current.status === 'timed_out') {
-          break;
-        }
+    log.info('AutoScrape', `Starting auto-scrape cycle for ${containers.length} containers`);
+
+    for (const c of containers) {
+      if (isScraping()) {
+        log.info('AutoScrape', 'Skipping remaining containers — a scrape started externally');
+        break;
       }
-    } catch (err) {
-      log.error('AutoScrape', `Auto-scrape failed for ${c.name}`, { err: err.message });
+      try {
+        log.info('AutoScrape', `Auto-scraping container: ${c.name}`, { containerId: c.id });
+        const result = await runAutoScrape(c.id);
+        if (!result) continue;
+
+        // Poll for completion (max 30 min)
+        const maxWait = 30 * 60 * 1000;
+        const pollInterval = 30 * 1000;
+        const start = Date.now();
+        while (Date.now() - start < maxWait) {
+          await new Promise(r => setTimeout(r, pollInterval));
+          const current = getScrapeResult(c.id, result.id);
+          if (!current || current.status === 'completed' || current.status === 'failed' || current.status === 'timed_out') {
+            break;
+          }
+        }
+      } catch (err) {
+        log.error('AutoScrape', `Auto-scrape failed for ${c.name}`, { err: err.message });
+      }
     }
+    log.info('AutoScrape', 'Auto-scrape cycle complete');
   }
-  log.info('AutoScrape', 'Auto-scrape cycle complete');
-}
 
-setInterval(runAutoScrapeAll, 6 * 60 * 60 * 1000);
+  setInterval(runAutoScrapeAll, 6 * 60 * 60 * 1000);
 
-// Update changelog on startup
-try {
-  const newCount = updateChangelog();
-  console.log(`Changelog updated: ${newCount} new commit(s) recorded`);
-} catch (err) {
-  console.warn('Changelog update failed:', err.message);
+  // Update changelog on startup
+  try {
+    const newCount = updateChangelog();
+    console.log(`Changelog updated: ${newCount} new commit(s) recorded`);
+  } catch (err) {
+    console.warn('Changelog update failed:', err.message);
+  }
 }
 
 if (!process.env.VERCEL) app.listen(PORT, () => {
