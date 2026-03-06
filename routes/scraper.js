@@ -60,6 +60,10 @@ router.post('/', async (req, res) => {
     sort_by: req.body.sort_by || 'impressions',
   };
 
+  if (process.env.VERCEL) {
+    return res.status(503).json({ error: 'Ad scraping is not available on Vercel. Puppeteer requires a full server environment.' });
+  }
+
   try {
     const scrapeResult = await runScrape(req.params.id, entriesToScrape, scrapeOptions);
     res.status(202).json({ scrape_id: scrapeResult.id, status: 'pending' });

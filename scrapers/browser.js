@@ -20,6 +20,9 @@ function randomUserAgent() {
 }
 
 async function getBrowser() {
+  if (!puppeteer) {
+    throw new Error('Puppeteer is not available in this environment (serverless/Vercel). Ad scraping requires a full Node.js server.');
+  }
   if (browserInstance && browserInstance.connected) {
     return browserInstance;
   }
