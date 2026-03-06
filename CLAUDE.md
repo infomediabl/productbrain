@@ -1,4 +1,4 @@
-# Product Analyzer — Project Guide
+# ProductBrain — Project Guide
 
 ## Multi-Session Work Zones
 
@@ -39,6 +39,7 @@ Each page is fully independent with its own JS file.
 - `public/ad-workshop.html` + `public/js/ad-workshop.js`
 - `public/taboola-workshop.html` + `public/js/taboola-workshop.js`
 - `public/content-validator.html` + `public/js/content-validator.js`
+- `public/data-feed.html` + `public/js/data-feed-page.js`
 
 ---
 
@@ -47,8 +48,8 @@ Each page is fully independent with its own JS file.
 ```
 mcp-server.js (MCP stdio server — exposes agents as tools for external clients)
 server.js
-  ├── routes/*.js (26 route files, each handles one API path)
-  │     └── agents/*.js (22 agents, each called by one route)
+  ├── routes/*.js (28 route files, each handles one API path)
+  │     └── agents/*.js (24 agents, each called by one route)
   │           ├── config.js (AI model settings)
   │           ├── storage.js (JSON file persistence)
   │           ├── utils/parse-json.js (extract JSON from Claude responses)
@@ -57,8 +58,8 @@ server.js
   │           ├── utils/summarize-ads.js (format ads for prompts)
   │           ├── utils/inject-tracking.js (FB/GA code injection)
   │           └── utils/taboola-auth.js (Taboola OAuth 2.0 token cache)
-  ├── public/*.html (15 pages)
-  │     └── public/js/*.js (48 frontend scripts)
+  ├── public/*.html (25 pages)
+  │     └── public/js/*.js (50 frontend scripts)
   └── public/css/style.css
 ```
 
@@ -70,8 +71,8 @@ server.js
 | `config.js` | AI_MODEL, API keys, constants | All agents |
 | `logger.js` | info/warn/error/debug + getLogPath() | All files |
 | `storage.js` | JSON file CRUD for all entities | All routes, some agents |
-| `server.js` | Express app, mounts 23 route groups | Entry point |
-| `mcp-server.js` | MCP server, exposes all 22 agents as tools | MCP clients (Claude Code, Claude Desktop, Cursor) |
+| `server.js` | Express app, mounts 25 route groups | Entry point |
+| `mcp-server.js` | MCP server, exposes all 24 agents as tools | MCP clients (Claude Code, Claude Desktop, Cursor) |
 
 ### Routes → Agent Mapping
 | Route File | Mounts At | Code | Calls Agent |
@@ -105,6 +106,8 @@ server.js
 | `routes/folder-scraper.js` | `/api/containers/:id/folder-scrape` | AG-021 | folder-scraper-agent.importFromFolder() |
 | `routes/hooks.js` | `/api/containers/:id/hooks` | AG-020 | hooks-agent.generateHooks() |
 | `routes/content-validator.js` | `/api/containers/:id/content-validator` | AG-022 | content-validator-agent.validateContent() |
+| `routes/project-overview.js` | `/api/containers/:id/project-overview` | AG-023 | project-overview-agent.generateOverview() |
+| `routes/data-feed.js` | `/api/containers/:id/data-feed` | AG-024 | data-feed-agent.analyzeDataFeed() |
 
 ### Agent Dependencies
 All agents require: `config.js`, `logger.js`, `storage.js`, `utils/parse-json.js`
@@ -130,6 +133,8 @@ Additional dependencies per agent:
 | AG-020 | hooks-agent | gather-data.gatherContainerContext, gatherScrapeData |
 | AG-021 | folder-scraper-agent | fs (reads data/uploads/) |
 | AG-022 | content-validator-agent | gather-data.gatherContainerContext |
+| AG-023 | project-overview-agent | gather-data.gatherContainerContext |
+| AG-024 | data-feed-agent | gather-data.gatherContainerContext |
 | | clone-ad (route only) | config.OPENROUTER_API_KEY |
 
 ### Utils
@@ -149,7 +154,8 @@ Additional dependencies per agent:
 
 ### container.html Script Load Order (order matters — later scripts use earlier globals)
 1. `container.js` — Defines: `containerId`, `container`, `loadContainer()`, `renderHeader()`, `esc()`
-2. `entries.js` — Defines: `renderEntries()`, `getEntryAdStats()`, uses `container`, `esc()`
+2. `project-overview.js` — Uses `container`, `containerId`, `esc()`
+3. `entries.js` — Defines: `renderEntries()`, `getEntryAdStats()`, uses `container`, `esc()`
 3. `container-context.js` — Defines: `loadContainerContext()`, `toggleContextPanel()`, uses `containerId`, `esc()`
 4. `metadata.js` — Uses `container`, `containerId`, `esc()`
 5. `scraper.js` — Uses `container`, `containerId`, `esc()`
@@ -165,7 +171,8 @@ Additional dependencies per agent:
 14. `quiz.js` — Uses `container`, `containerId`, `esc()`
 15. `case-study.js` — Uses `container`, `containerId`, `esc()`
 16. `image-ads.js` — Uses `container`, `containerId`, `esc()`
-17. `spinoff-ideas.js` — Uses `container`, `containerId`, `esc()`
+17. `data-feed.js` — Uses `container`, `containerId`, `esc()`
+18. `spinoff-ideas.js` — Uses `container`, `containerId`, `esc()`
 18. `proposal.js` — Uses `container`, `containerId`, `esc()`
 19. `prompts.js` — Uses `container`, `containerId`, `esc()`
 20. `settings.js` — Uses `container`, `containerId`, `esc()`
@@ -194,6 +201,7 @@ Additional dependencies per agent:
 | `ad-workshop.html` | `ad-workshop.js` | GET /api/containers/:id, GET /api/containers/:id/clone-ad/models, POST /api/containers/:id/clone-ad, POST /api/containers/:id/hooks, GET /api/containers/:id/hooks/:id |
 | `taboola-workshop.html` | `taboola-workshop.js` | GET /api/containers/:id, POST /api/containers/:id/taboola-campaign, GET /api/containers/:id/taboola-campaign/:campaignId |
 | `content-validator.html` | `content-validator.js` | GET /api/containers/:id, GET /api/containers/:id/context, POST /api/containers/:id/content-validator, GET /api/containers/:id/content-validator/:id, DELETE /api/containers/:id/content-validator/:id |
+| `data-feed.html` | `data-feed-page.js` | POST /api/containers/:id/data-feed, GET /api/containers/:id/data-feeds/:id, DELETE /api/containers/:id/data-feeds/:id, POST /api/containers/:id/context |
 
 ---
 
@@ -221,6 +229,8 @@ All data stored in `data/<container-id>.json`. Key fields:
 - `spinoff_ideas[]` — Spin-off product idea results {id, created_at, status, result: {full_text, json_data: {landscape_summary, spinoff_ideas[]}, generated_at}}
 - `hooks_results[]` — Hooks/angles generation results {id, created_at, status, result: {hooks: [{id, angle_name, hook_text, emotion, angle_type, target_segment, inspired_by, rationale, adapted_for_product, suggested_visuals}], angle_summary}}
 - `validations[]` — Content validation results {id, created_at, status, meta: {validate_type, comment}, result: {verdict, score, summary, strengths[], weaknesses[], recommendations[], user_perspective_notes}}
+- `project_overview` — Single object: `{ id, created_at, status, result: { text } }`
+- `data_feeds[]` — Data feed results: `{ id, created_at, status, filename, row_count, columns[], preview_rows[], result: { summary, insights[], key_metrics[] } }`
 - `container_context[]` — Curated insights (content + text_brief)
 - `settings{}` — FB Pixel, GA4, custom code, user context, `auto_scrape_enabled` (bool), `taboola` ({client_id, client_secret, account_id})
 
@@ -234,7 +244,7 @@ Context items flow: Push (UI/push-all) → `context-formatter.formatBrief()` →
 
 Each item has: `{ id, source_type, source_id, section_name, content (JSON), text_brief (string), pushed_at }`
 
-Source types: `competitor_analysis`, `seo_analysis`, `gads_analysis`, `keyword_strategy`, `manual`, `content_validation`
+Source types: `competitor_analysis`, `seo_analysis`, `gads_analysis`, `keyword_strategy`, `manual`, `content_validation`, `data_feed`
 
 ---
 
@@ -278,6 +288,8 @@ When adding a new agent, assign the next sequential code.
 | ag0020 | hooks | Hooks Generator | generation |
 | ag0021 | folder-scraper | Folder Ad Importer | collection |
 | ag0022 | content-validator | Content Validator | validation |
+| ag0023 | project-overview | Project Overview | generation |
+| ag0024 | data-feed | User Data Feed | analysis |
 
 ---
 
@@ -578,7 +590,7 @@ See `mcp-config.example.json` for a template.
 - `GOOGLE_ADS_*` — Required for Google Ads tools (AG-009)
 - `TABOOLA_*` — Required for Taboola tools (AG-018)
 
-### Tool List (29 tools)
+### Tool List (31 tools)
 
 #### Utility Tools (3)
 
@@ -614,6 +626,8 @@ See `mcp-config.example.json` for a template.
 | `run_desire_spring` | AG-016 DesireSpring | idea_text |
 | `run_web_research` | AG-017 ResearchWeb | topic |
 | `run_content_validator` | AG-022 Content Validator | containerId, validate_type, content, comment? |
+| `run_project_overview` | AG-023 Project Overview | containerId |
+| `run_data_feed` | AG-024 User Data Feed | containerId, csv_text, filename? |
 
 #### Google Ads Tools (4)
 

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Guide - Product Analyzer</title>
+  <title>Guide - ProductBrain</title>
   <link rel="stylesheet" href="/css/style.css">
   <style>
     .guide-layout {
@@ -174,7 +174,7 @@
 <body>
   <header>
     <div class="container">
-      <h1><a href="/" style="color:inherit;text-decoration:none;"><span>Product</span> Analyzer</a></h1>
+      <h1><a href="/" style="color:inherit;text-decoration:none;"><span>Product</span>Brain</a></h1>
       <nav>
         <a href="/">Dashboard</a>
         <a href="/guide.html">Guide</a>
@@ -201,14 +201,14 @@
           <!-- 1. Overview -->
           <h2 id="overview">Overview</h2>
           <div class="guide-section">
-            <p>Product Analyzer is a competitive intelligence and AI-powered marketing platform. It helps you collect competitor data, analyze advertising strategies, and generate marketing assets — all organized inside containers.</p>
+            <p>ProductBrain is a competitive intelligence and AI-powered marketing platform. It helps you collect competitor data, analyze advertising strategies, and generate marketing assets — all organized inside containers.</p>
             <p>The platform follows a four-phase workflow: <strong>Collect</strong> data, <strong>Analyze</strong> it with AI, <strong>Propose</strong> a strategy via Magic AI Proposal, then <strong>Generate</strong> marketing assets informed by the proposal and competitive insights.</p>
           </div>
 
           <!-- Agent Registry -->
           <h2 id="agent-registry">Agent Registry</h2>
           <div class="guide-section">
-            <p>Each feature in Product Analyzer is powered by a named agent with a unique code.</p>
+            <p>Each feature in ProductBrain is powered by a named agent with a unique code.</p>
             <div class="feature-grid">
               <div class="feature-item"><strong>AG-001</strong><span>Ad Scraper</span></div>
               <div class="feature-item"><strong>AG-002</strong><span>Scrape Validator</span></div>
@@ -232,6 +232,8 @@
               <div class="feature-item"><strong>AG-020</strong><span>Hooks Generator / Ad Workshop</span></div>
               <div class="feature-item"><strong>AG-021</strong><span>Folder Ad Importer</span></div>
               <div class="feature-item"><strong>AG-022</strong><span>Content Validator</span></div>
+              <div class="feature-item"><strong>AG-023</strong><span>Project Overview</span></div>
+              <div class="feature-item"><strong>AG-024</strong><span>User Data Feed</span></div>
             </div>
           </div>
 
@@ -600,6 +602,43 @@
             </div>
           </div>
 
+          <!-- Project Overview -->
+          <h2 id="project-overview">AG-023 Project Overview</h2>
+          <div class="guide-section">
+            <button class="guide-collapse-toggle" data-target="project-overview-details" aria-expanded="true">
+              <span class="collapse-icon">&#9660;</span> AG-023 Project Overview
+            </button>
+            <div id="project-overview-details">
+              <p>Displays an <strong>AI-generated 5-10 sentence overview</strong> at the top of every container dashboard. Uses your product info, competitors list, notes, context items, and data summary (scrapes, analyses, proposals) to produce a concise project status.</p>
+              <p>Click <strong>Generate Overview</strong> or <strong>Refresh</strong> to (re)generate. The overview updates in-place with the latest information about your project.</p>
+              <div class="tip-box">
+                <strong>Tip:</strong> Generate an overview after pushing context items — it gives you a quick snapshot of where your project stands and what data has been collected.
+              </div>
+            </div>
+          </div>
+
+          <!-- User Data Feed -->
+          <h2 id="data-feed">AG-024 User Data Feed</h2>
+          <div class="guide-section">
+            <button class="guide-collapse-toggle" data-target="data-feed-details" aria-expanded="true">
+              <span class="collapse-icon">&#9660;</span> AG-024 User Data Feed
+            </button>
+            <div id="data-feed-details">
+              <p>Upload <strong>CSV files</strong> (sales data, CRM exports, analytics, survey results) and AI will analyze them for patterns, insights, and key metrics relevant to your marketing strategy.</p>
+              <p>The standalone page provides:</p>
+              <ul style="padding-left:20px;margin:8px 0;line-height:1.8;">
+                <li><strong>Drag &amp; drop upload</strong> — Drop a CSV file or click to browse</li>
+                <li><strong>Table preview</strong> — See the first 50 rows with column headers in a scrollable table</li>
+                <li><strong>AI analysis</strong> — Summary, actionable insights, and key metrics with interpretations</li>
+                <li><strong>Push to Context</strong> — Push individual insights or all sections to Container Context</li>
+                <li><strong>Feed history</strong> — View and manage all uploaded feeds</li>
+              </ul>
+              <div class="tip-box">
+                <strong>Tip:</strong> Upload Google Analytics exports, ad platform reports, or CRM data to enrich your AI proposals and keyword strategies with first-party data.
+              </div>
+            </div>
+          </div>
+
           <!-- 8. Container Chat -->
           <h2 id="container-chat">AG-015 Container Chat</h2>
           <div class="guide-section">
@@ -641,7 +680,7 @@
               <span class="collapse-icon">&#9660;</span> AG-016 DesireSpring
             </button>
             <div id="desire-spring-details">
-              <p><strong>DesireSpring</strong> is a standalone tool accessible from the top navigation bar. It captures feature ideas for the Product Analyzer app itself and generates structured implementation instructions.</p>
+              <p><strong>DesireSpring</strong> is a standalone tool accessible from the top navigation bar. It captures feature ideas for the ProductBrain app itself and generates structured implementation instructions.</p>
               <p>The workflow:</p>
               <ul style="padding-left:20px;margin:8px 0;line-height:1.8;">
                 <li><strong>Write an idea</strong> — Describe a feature you want to add to the app (e.g., "Add Semrush data integration").</li>

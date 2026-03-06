@@ -33,7 +33,7 @@ async function init() {
     const res = await fetch(`/api/containers/${containerId}`);
     if (!res.ok) throw new Error('Container not found');
     container = await res.json();
-    document.title = `Taboola — ${container.name} - Product Analyzer`;
+    document.title = `Taboola — ${container.name} - ProductBrain`;
     document.getElementById('page-title').textContent = `Taboola Campaign Cloner — ${container.name}`;
     renderCampaigns();
     renderAdSelector();

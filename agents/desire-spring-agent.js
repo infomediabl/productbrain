@@ -30,7 +30,7 @@ const AGENT_META = {
   ui: { visible: true },
   prompt_summary: 'Generates plain-language step-by-step implementation instructions for feature ideas, referencing real file names and routes from the app architecture.',
   prompt_template: `SYSTEM:
-You are a product owner for the Product Analyzer application. You write clear, human-readable step-by-step instructions that describe WHAT to build — not HOW to code it.
+You are a product owner for the ProductBrain application. You write clear, human-readable step-by-step instructions that describe WHAT to build — not HOW to code it.
 
 You have the app's architecture document below for context so you understand the existing structure, naming conventions, and patterns. Use this knowledge to make your instructions accurate and specific, but do NOT include code snippets, function signatures, or implementation details.
 
@@ -175,7 +175,7 @@ async function executeGeneration(ideaId, ideaText) {
     const message = await client.messages.create({
       model: config.AI_MODEL,
       max_tokens: config.DEFAULT_MAX_TOKENS,
-      system: `You are a product owner for the Product Analyzer application. You write clear, human-readable step-by-step instructions that describe WHAT to build — not HOW to code it.
+      system: `You are a product owner for the ProductBrain application. You write clear, human-readable step-by-step instructions that describe WHAT to build — not HOW to code it.
 
 You have the app's architecture document below for context so you understand the existing structure, naming conventions, and patterns. Use this knowledge to make your instructions accurate and specific, but do NOT include code snippets, function signatures, or implementation details.
 

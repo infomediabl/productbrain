@@ -36,7 +36,7 @@ function toggleMyProduct() {
 if (editId) {
   formTitle.textContent = 'Edit Container';
   submitBtn.textContent = 'Update Container';
-  document.title = 'Edit Container - Product Analyzer';
+  document.title = 'Edit Container - ProductBrain';
   loadContainer(editId);
 } else {
   addCompetitor();

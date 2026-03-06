@@ -71,6 +71,8 @@ const agentInfoRouter = require('./routes/agent-info');                     // A
 const folderScraperRouter = require('./routes/folder-scraper');               // Folder Ad Importer
 const hooksRouter = require('./routes/hooks');                                 // Hooks Generator (AG-020)
 const contentValidatorRouter = require('./routes/content-validator');           // Content Validator (AG-022)
+const projectOverviewRouter = require('./routes/project-overview');             // Project Overview (AG-023)
+const dataFeedRouter = require('./routes/data-feed');                           // User Data Feed (AG-024)
 
 app.use('/api/containers', containersRouter);
 app.use('/api/containers/:id/metadata', metadataRouter);
@@ -155,6 +157,13 @@ app.use('/api/containers/:id/hooks', hooksRouter);
 // Content Validator (AG-022)
 app.use('/api/containers/:id/content-validator', contentValidatorRouter);
 app.use('/api/containers/:id/validations', contentValidatorRouter);  // alias
+
+// Project Overview (AG-023)
+app.use('/api/containers/:id/project-overview', projectOverviewRouter);
+
+// User Data Feed (AG-024)
+app.use('/api/containers/:id/data-feed', dataFeedRouter);
+app.use('/api/containers/:id/data-feeds', dataFeedRouter);  // alias
 
 // Clone Ad (OpenRouter)
 app.use('/api/containers/:id/clone-ad', cloneAdRouter);
@@ -245,7 +254,7 @@ if (!process.env.VERCEL) {
 }
 
 if (!process.env.VERCEL) app.listen(PORT, () => {
-  console.log(`Product Analyzer running at http://localhost:${PORT}`);
+  console.log(`ProductBrain running at http://localhost:${PORT}`);
   console.log(`  Agent 1: Scraper       — POST /api/containers/:id/scrape`);
   console.log(`  Agent 1b: Validator    — POST /api/containers/:id/validate-scrape/:scrapeId`);
   console.log(`  Ideator: NewProduct   — POST /api/containers/:id/ideate-product`);
@@ -272,6 +281,8 @@ if (!process.env.VERCEL) app.listen(PORT, () => {
   console.log(`  Folder Ad Importer     — POST /api/containers/:id/folder-scrape`);
   console.log(`  Hooks Generator (AG-020)— POST /api/containers/:id/hooks`);
   console.log(`  Content Validator (AG-022)— POST /api/containers/:id/content-validator`);
+  console.log(`  Project Overview (AG-023) — POST /api/containers/:id/project-overview`);
+  console.log(`  User Data Feed (AG-024)  — POST /api/containers/:id/data-feed`);
   console.log(`  Auto-Scrape            — every 6h for enabled containers`);
 });
 

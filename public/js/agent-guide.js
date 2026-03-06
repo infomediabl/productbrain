@@ -15,7 +15,8 @@
     'scraper', 'scrape-validator', 'analyzer', 'seo', 'proposal',
     'prompt-generator', 'product-ideator', 'keyword-ideator', 'google-ads',
     'image-ads', 'quiz', 'landing-page', 'test-planner', 'case-study',
-    'container-chat', 'desire-spring', 'research-web'
+    'container-chat', 'desire-spring', 'research-web',
+    'project-overview', 'data-feed'
   ];
 
   // ── Category styling ──
@@ -628,7 +629,7 @@
 
     'desire-spring': {
       code: 'AG-016', name: 'DesireSpring', category: 'generation',
-      overview: '<p>DesireSpring is a meta-tool — it helps you build <strong>Product Analyzer itself</strong>. It captures feature ideas for the app and generates structured implementation instructions that reference real files, routes, and architectural patterns from the codebase.</p>' +
+      overview: '<p>DesireSpring is a meta-tool — it helps you build <strong>ProductBrain itself</strong>. It captures feature ideas for the app and generates structured implementation instructions that reference real files, routes, and architectural patterns from the codebase.</p>' +
         '<p>The agent reads the project\'s CLAUDE.md architecture document to understand the app\'s structure, then produces step-by-step instructions that can be saved as text files for future implementation sessions.</p>',
       howItWorks: [
         'Takes a plain-language feature idea description (e.g., "Add Semrush data integration")',
@@ -705,6 +706,60 @@
         'Push the combined brief to Container Context for the most efficient downstream impact',
         'Research sessions persist globally — you can revisit them anytime from the sidebar',
         'YouTube and PDF sources are skipped during page fetching — the source list will note this'
+      ]
+    },
+
+    'project-overview': {
+      code: 'AG-023', name: 'Project Overview', category: 'generation',
+      overview: '<p>Generates a concise 5-10 sentence overview of your marketing project. Displayed at the top of every container dashboard, it provides a quick snapshot of what the project is about, what data has been collected, and where analysis stands.</p>',
+      howItWorks: [
+        'Reads your product info, competitors list, notes, and curated context items',
+        'Counts completed scrapes, competitor analyses, proposals, keyword strategies, and SEO analyses',
+        'Sends all data to Claude (fast model) for concise summarization',
+        'Stores the overview text as a single object (not an array) — each generation replaces the previous one'
+      ],
+      prerequisites: ['A container with at least basic product info or competitor data'],
+      outputs: '<p>A single <strong>project_overview</strong> object with a <code>text</code> field containing the 5-10 sentence overview.</p>',
+      downstream: ['Displayed on the container dashboard only — not consumed by other agents'],
+      uiGuide: '<p>Appears at the very top of the container dashboard. Click <strong>Generate Overview</strong> for the first generation, or <strong>Refresh</strong> to regenerate with updated data.</p>',
+      tips: [
+        'Generate after pushing context items for a more comprehensive overview',
+        'Refresh after completing new analyses or adding competitors to keep it current'
+      ]
+    },
+
+    'data-feed': {
+      code: 'AG-024', name: 'User Data Feed', category: 'analysis',
+      overview: '<p>Upload CSV files containing your own data — sales reports, CRM exports, analytics data, survey results — and AI will analyze them for patterns, insights, and key metrics relevant to your marketing strategy.</p>' +
+        '<p>Results can be pushed to Container Context, making your first-party data available to all downstream agents (Proposals, Keyword Strategy, Chat, etc.).</p>',
+      howItWorks: [
+        'Accepts a CSV file upload via drag-and-drop or file picker',
+        'Parses CSV into columns and rows, stores the first 50 rows as a preview',
+        'Sends column names, sample data, and product context to Claude for analysis',
+        'AI produces a summary, actionable insights, and key metrics with interpretations',
+        'Results stored in <code>data_feeds[]</code> with full preview data for the table view'
+      ],
+      prerequisites: ['A container with basic product info (helps AI contextualize the data)'],
+      outputs: '<p>Creates a <strong>data_feeds</strong> record containing:</p>' +
+        '<ul><li><strong>Table preview</strong> — first 50 rows with column headers</li>' +
+        '<li><strong>Summary</strong> — 2-3 sentence overview of the data</li>' +
+        '<li><strong>Insights</strong> — 4-8 actionable insights referencing actual column names and values</li>' +
+        '<li><strong>Key metrics</strong> — 3-6 metrics with labels, values, and interpretations</li></ul>',
+      downstream: [
+        '<strong>Container Context</strong> — push insights and metrics to context for downstream agents',
+        'Through context: any downstream agent (Proposal, Keyword Strategist, Chat, etc.)'
+      ],
+      uiGuide: '<p>Click <strong>"Open Data Feed"</strong> on the dashboard to access the standalone page:</p>' +
+        '<ul><li><strong>Upload area</strong> — drag-and-drop or click to browse for CSV files</li>' +
+        '<li><strong>Table preview</strong> — scrollable table showing first 50 rows</li>' +
+        '<li><strong>AI analysis</strong> — summary, metrics cards, and numbered insights</li>' +
+        '<li><strong>Push buttons</strong> — push individual insights or all sections to Container Context</li>' +
+        '<li><strong>Feed history</strong> — view and manage all uploaded feeds</li></ul>',
+      tips: [
+        'Upload Google Analytics or ad platform exports for AI-powered campaign insights',
+        'CSV should have a header row — the AI uses column names to understand the data',
+        'Push the summary and key metrics to Context before generating proposals for data-informed strategies',
+        'You can upload multiple CSV files — each gets its own analysis'
       ]
     }
   };
@@ -857,7 +912,7 @@
     html += '<div style="height:60px;"></div>';
 
     content.innerHTML = html;
-    document.title = g.code + ' ' + g.name + ' — Agent Guide — Product Analyzer';
+    document.title = g.code + ' ' + g.name + ' — Agent Guide — ProductBrain';
     window.scrollTo(0, 0);
   }
 
@@ -894,7 +949,7 @@
 
     html += '<div style="height:60px;"></div>';
     content.innerHTML = html;
-    document.title = 'Agent Guide — Product Analyzer';
+    document.title = 'Agent Guide — ProductBrain';
   }
 
   // ── Init ──

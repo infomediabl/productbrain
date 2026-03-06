@@ -507,7 +507,7 @@ async function init() {
     return;
   }
 
-  document.title = `Scrape Details - Product Analyzer`;
+  document.title = `Scrape Details - ProductBrain`;
   document.getElementById('back-link').href = `/container.html?id=${containerId}`;
 
   try {

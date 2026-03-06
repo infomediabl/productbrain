@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * MCP Server — Exposes all 22 Product Analyzer agents as MCP tools.
+ * MCP Server — Exposes all ProductBrain agents as MCP tools.
  *
  * Transport: stdio (standard for local MCP servers)
  * Tools: ~28 (21 agent tools + google-ads sub-tools + 3 utility tools)
@@ -116,6 +116,29 @@ const TOOL_MAP = [
     },
     paramsToArgs: p => [p.containerId, { validate_type: p.validate_type, content: p.content, comment: p.comment }],
     getResult: (rec, p) => storage.getValidation(p.containerId, rec.id),
+  },
+
+  {
+    name: 'run_project_overview',
+    description: 'Generate an AI project overview for a container dashboard (AG-023)',
+    agentFile: './agents/project-overview-agent',
+    fn: 'generateOverview',
+    params: { containerId: z.string().describe('Container ID') },
+    paramsToArgs: p => [p.containerId],
+    getResult: (rec, p) => storage.getProjectOverview(p.containerId),
+  },
+  {
+    name: 'run_data_feed',
+    description: 'Analyze uploaded CSV data for insights and key metrics (AG-024)',
+    agentFile: './agents/data-feed-agent',
+    fn: 'analyzeDataFeed',
+    params: {
+      containerId: z.string().describe('Container ID'),
+      csv_text: z.string().describe('Raw CSV text content'),
+      filename: z.string().optional().describe('Original filename'),
+    },
+    paramsToArgs: p => [p.containerId, { csv_text: p.csv_text, filename: p.filename }],
+    getResult: (rec, p) => storage.getDataFeed(p.containerId, rec.id),
   },
 
   // --- Agents with extra params ---

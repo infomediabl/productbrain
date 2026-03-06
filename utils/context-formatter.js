@@ -26,6 +26,7 @@ function formatBrief(sourceType, content, sectionName) {
     case 'case_study':          return formatCaseStudy(content, sectionName);
     case 'spinoff_ideas':       return formatSpinoffIdeas(content, sectionName);
     case 'content_validation':  return formatContentValidation(content, sectionName);
+    case 'data_feed':           return formatDataFeed(content, sectionName);
     default:                    return formatGeneric(content);
   }
 }
@@ -527,6 +528,24 @@ function formatContentValidation(c, sectionName) {
     return parts.join('. ');
   }
 
+  return formatGeneric(c);
+}
+
+// ========== Data Feed ==========
+
+function formatDataFeed(c, sectionName) {
+  if (c.summary && Object.keys(c).length <= 2) {
+    return `Data feed summary: ${c.summary}`;
+  }
+  if (c.insight) {
+    return `Data insight: ${c.insight}`;
+  }
+  if (Array.isArray(c.insights)) {
+    return c.insights.map(i => `- ${i}`).join('\n');
+  }
+  if (Array.isArray(c.key_metrics)) {
+    return c.key_metrics.map(m => `${m.label}: ${m.value}${m.interpretation ? ` — ${m.interpretation}` : ''}`).join('\n');
+  }
   return formatGeneric(c);
 }
 

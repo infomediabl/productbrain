@@ -159,6 +159,8 @@ function ensureFields(container) {
   if (!container.spinoff_ideas) container.spinoff_ideas = [];
   if (!container.hooks_results) container.hooks_results = [];
   if (!container.validations) container.validations = [];
+  if (!container.data_feeds) container.data_feeds = [];
+  // project_overview is a single object, not array — don't default it
   // my_product can be null (no existing product) — don't default it
   return container;
 }
@@ -1561,6 +1563,103 @@ function deleteValidation(containerId, validationId) {
   });
 }
 
+// ========== Project Overview CRUD ==========
+
+function setProjectOverview(containerId) {
+  return enqueueWrite(containerId, () => {
+    const container = readContainerFile(containerId);
+    if (!container) return null;
+    ensureFields(container);
+    const overview = {
+      id: uuidv4(),
+      created_at: new Date().toISOString(),
+      status: 'generating',
+      result: null,
+    };
+    container.project_overview = overview;
+    container.updated_at = new Date().toISOString();
+    writeContainerFile(container);
+    return overview;
+  });
+}
+
+function updateProjectOverview(containerId, overviewId, status, result) {
+  return enqueueWrite(containerId, () => {
+    const container = readContainerFile(containerId);
+    if (!container) return null;
+    ensureFields(container);
+    if (!container.project_overview || container.project_overview.id !== overviewId) return null;
+    container.project_overview.status = status;
+    if (result !== undefined) container.project_overview.result = result;
+    writeContainerFile(container);
+    return container.project_overview;
+  });
+}
+
+function getProjectOverview(containerId) {
+  const container = readContainerFile(containerId);
+  if (!container) return null;
+  return container.project_overview || null;
+}
+
+// ========== User Data Feed CRUD ==========
+
+function addDataFeed(containerId, meta = {}) {
+  return enqueueWrite(containerId, () => {
+    const container = readContainerFile(containerId);
+    if (!container) return null;
+    ensureFields(container);
+    const feed = {
+      id: uuidv4(),
+      created_at: new Date().toISOString(),
+      status: 'analyzing',
+      filename: meta.filename || 'upload.csv',
+      row_count: meta.row_count || 0,
+      columns: meta.columns || [],
+      preview_rows: meta.preview_rows || [],
+      result: null,
+    };
+    container.data_feeds.push(feed);
+    container.updated_at = new Date().toISOString();
+    writeContainerFile(container);
+    return feed;
+  });
+}
+
+function updateDataFeed(containerId, feedId, status, result) {
+  return enqueueWrite(containerId, () => {
+    const container = readContainerFile(containerId);
+    if (!container) return null;
+    ensureFields(container);
+    const feed = container.data_feeds.find(f => f.id === feedId);
+    if (!feed) return null;
+    feed.status = status;
+    if (result !== undefined) feed.result = result;
+    writeContainerFile(container);
+    return feed;
+  });
+}
+
+function getDataFeed(containerId, feedId) {
+  const container = readContainerFile(containerId);
+  if (!container) return null;
+  ensureFields(container);
+  return container.data_feeds.find(f => f.id === feedId) || null;
+}
+
+function deleteDataFeed(containerId, feedId) {
+  return enqueueWrite(containerId, () => {
+    const container = readContainerFile(containerId);
+    if (!container || !container.data_feeds) return false;
+    const idx = container.data_feeds.findIndex(f => f.id === feedId);
+    if (idx === -1) return false;
+    container.data_feeds.splice(idx, 1);
+    container.updated_at = new Date().toISOString();
+    writeContainerFile(container);
+    return true;
+  });
+}
+
 module.exports = {
   // Container
   listContainers, readContainer, createContainer, updateContainer, deleteContainer,
@@ -1614,6 +1713,10 @@ module.exports = {
   addHooksResult, updateHooksResult, getHooksResult,
   // Content Validator
   addValidation, updateValidation, getValidation, deleteValidation,
+  // Project Overview
+  setProjectOverview, updateProjectOverview, getProjectOverview,
+  // User Data Feed
+  addDataFeed, updateDataFeed, getDataFeed, deleteDataFeed,
   // Postgres sync
   hydrateFromDb, waitForDbSyncs, syncGlobalToDb,
 };

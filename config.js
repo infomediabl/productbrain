@@ -30,7 +30,7 @@ module.exports = {
    * Injected into agent prompts so every AI response is grounded in purpose.
    * Reference via: config.APP_CONTEXT
    */
-  APP_CONTEXT: `You are working inside Product Analyzer — a competitive intelligence and ad strategy platform for digital marketers and media buyers.
+  APP_CONTEXT: `You are working inside ProductBrain — a competitive intelligence and ad strategy platform for digital marketers and media buyers.
 
 The core mission is to curate, analyze, and synthesize information about a user's own products alongside their competitors, so the user can make smarter advertising decisions faster.
 

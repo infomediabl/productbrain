@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Container - Product Analyzer</title>
+  <title>Container - ProductBrain</title>
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
   <header>
     <div class="container">
-      <h1><a href="/" style="color:inherit;text-decoration:none;"><span>Product</span> Analyzer</a></h1>
+      <h1><a href="/" style="color:inherit;text-decoration:none;"><span>Product</span>Brain</a></h1>
       <nav>
         <a href="/">Dashboard</a>
         <a href="/guide.html">Guide</a>
@@ -63,6 +63,17 @@
 
       <!-- Main content column -->
       <div class="container-main">
+
+      <!-- Project Overview -->
+      <div class="card" style="margin-bottom:24px;" id="overview-section">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <span class="agent-badge" style="background:#10b98120;color:#10b981;">AG-023</span>
+          <h3>Project Overview</h3>
+          <span style="cursor:pointer;font-size:14px;opacity:0.6;" onclick="showAgentInfo('project-overview')" title="Agent Info">&#8505;</span>
+          <span class="agent-help">?<span class="agent-help-bubble">AI-generated overview of your project based on product info, competitors, notes, and context. Click Refresh to regenerate.</span></span>
+        </div>
+        <div id="overview-content"></div>
+      </div>
 
       <!-- ===== SEGMENT 1: METADATA ===== -->
       <div class="segment-header">
@@ -126,52 +137,6 @@
         <div id="casestudy-list"></div>
       </div>
 
-      <!-- ===== SEGMENT 2: ANALYZER ===== -->
-      <div class="segment-header">
-        <span class="segment-icon">&#128269;</span>
-        <span class="segment-label">ANALYZER</span>
-      </div>
-
-      <!-- Scraped Ads Analyzer -->
-      <div class="card agent-card" style="margin-bottom:24px;" id="agent2-section">
-        <div class="agent-header">
-          <span class="agent-badge agent-badge-2">AG-003</span>
-          <h3>Scraped Ads Analyzer</h3>
-          <span style="cursor:pointer;font-size:14px;opacity:0.6;" onclick="showAgentInfo('analyzer')" title="Agent Info">&#8505;</span>
-          <span class="agent-help">?<span class="agent-help-bubble">Takes the scraped ad data for a competitor and sends it to Claude AI for deep analysis. Identifies messaging patterns, value propositions, target audiences, emotional triggers, and ad strategies. Produces a structured report you can use to inform your own marketing.</span></span>
-          <span class="text-dim" style="font-size:12px;">Click a competitor to run AI analysis</span>
-        </div>
-        <div id="competitor-analysis-list"></div>
-      </div>
-
-      <!-- Ad Scraper (Scrape All Ads button removed) -->
-      <div class="card agent-card" style="margin-bottom:24px;" id="agent1-section">
-        <div class="agent-header">
-          <span class="agent-badge agent-badge-1">AG-001</span>
-          <h3>Ad Scraper</h3>
-          <span style="cursor:pointer;font-size:14px;opacity:0.6;" onclick="showAgentInfo('scraper')" title="Agent Info">&#8505;</span>
-          <span class="agent-help">?<span class="agent-help-bubble">Visits the Facebook Ad Library and Google Ads Transparency Center for each competitor (and your product). Scrapes ad creatives, headlines, and landing page URLs. Runs OCR on ad images to extract text content for deeper analysis.</span></span>
-          <span class="text-dim" style="font-size:12px;">Scrapes ads with OCR text extraction</span>
-        </div>
-        <div id="scrapes-list"></div>
-      </div>
-
-      <!-- Folder Ad Importer -->
-      <div class="card agent-card" style="margin-bottom:24px;" id="folder-scraper-section">
-        <div class="agent-header">
-          <span class="agent-badge" style="background:#78716c20;color:#78716c;">FOLDER</span>
-          <h3>Folder Ad Importer</h3>
-          <span style="cursor:pointer;font-size:14px;opacity:0.6;" onclick="showAgentInfo('folder-scraper')" title="Agent Info">&#8505;</span>
-          <span class="agent-help">?<span class="agent-help-bubble">Import ad images from a local folder. Place images in <code>data/uploads/&lt;container-id&gt;/</code> and optionally add an <code>ads.csv</code> with columns: filename, title, description, cta, url, competitor_name.</span></span>
-          <span class="text-dim" style="font-size:12px;">Import ads from local image files</span>
-          <div style="margin-left:auto;display:flex;gap:6px;">
-            <button class="btn btn-ghost btn-sm" onclick="checkFolderStatus()">Check Folder</button>
-            <button class="btn btn-primary btn-sm" id="folder-import-btn" onclick="startFolderImport()" disabled>Import Ads</button>
-          </div>
-        </div>
-        <div id="folder-status" style="padding:8px 0;"></div>
-      </div>
-
       <!-- SEO Analysis -->
       <div class="card agent-card" style="margin-bottom:24px;" id="seo-section">
         <div class="agent-header">
@@ -231,17 +196,17 @@
         </div>
       </div>
 
-      <!-- User Data Feed (placeholder) -->
-      <div class="card agent-card user-data-feed-placeholder" style="margin-bottom:24px;" id="userfeed-section">
+      <!-- User Data Feed -->
+      <div class="card agent-card" style="margin-bottom:24px;" id="userfeed-section">
         <div class="agent-header">
-          <span class="agent-badge" style="background:#6b708515;color:#6b7085;">Data Feed</span>
-          <h3 style="color:var(--text-dim);">User Data Feed</h3>
-          <span class="agent-help">?<span class="agent-help-bubble">Coming soon. Connect your own data feeds (CSV, API, Google Sheets) to enrich analysis with first-party data like sales, CRM, or analytics metrics.</span></span>
-          <span class="text-dim" style="font-size:12px;">Connect your own data sources</span>
+          <span class="agent-badge" style="background:#6366f120;color:#6366f1;">AG-024</span>
+          <h3>User Data Feed</h3>
+          <span style="cursor:pointer;font-size:14px;opacity:0.6;" onclick="showAgentInfo('data-feed')" title="Agent Info">&#8505;</span>
+          <span class="agent-help">?<span class="agent-help-bubble">Upload CSV files with your own data (sales, analytics, CRM) and AI will analyze it for patterns, insights, and key metrics. Push findings to Container Context.</span></span>
+          <span class="text-dim" style="font-size:12px;">Upload CSV data for AI analysis</span>
+          <a class="btn btn-primary btn-sm" id="datafeed-link" href="/data-feed.html" style="margin-left:auto;">Open Data Feed</a>
         </div>
-        <div style="padding:16px 0;text-align:center;color:var(--text-dim);font-size:13px;">
-          Coming soon &mdash; connect CSV, API, or Google Sheets data feeds.
-        </div>
+        <div id="datafeed-list"></div>
       </div>
 
       <!-- ===== SEGMENT 4: IDEATOR ===== -->
@@ -412,6 +377,52 @@
           <span class="text-dim" style="font-size:12px;">Creates detailed prompts from proposals</span>
         </div>
         <div id="prompts-list"></div>
+      </div>
+
+      <!-- ===== SEGMENT 2: ANALYZER ===== -->
+      <div class="segment-header">
+        <span class="segment-icon">&#128269;</span>
+        <span class="segment-label">ANALYZER</span>
+      </div>
+
+      <!-- Scraped Ads Analyzer -->
+      <div class="card agent-card" style="margin-bottom:24px;" id="agent2-section">
+        <div class="agent-header">
+          <span class="agent-badge agent-badge-2">AG-003</span>
+          <h3>Scraped Ads Analyzer</h3>
+          <span style="cursor:pointer;font-size:14px;opacity:0.6;" onclick="showAgentInfo('analyzer')" title="Agent Info">&#8505;</span>
+          <span class="agent-help">?<span class="agent-help-bubble">Takes the scraped ad data for a competitor and sends it to Claude AI for deep analysis. Identifies messaging patterns, value propositions, target audiences, emotional triggers, and ad strategies. Produces a structured report you can use to inform your own marketing.</span></span>
+          <span class="text-dim" style="font-size:12px;">Click a competitor to run AI analysis</span>
+        </div>
+        <div id="competitor-analysis-list"></div>
+      </div>
+
+      <!-- Ad Scraper (Scrape All Ads button removed) -->
+      <div class="card agent-card" style="margin-bottom:24px;" id="agent1-section">
+        <div class="agent-header">
+          <span class="agent-badge agent-badge-1">AG-001</span>
+          <h3>Ad Scraper</h3>
+          <span style="cursor:pointer;font-size:14px;opacity:0.6;" onclick="showAgentInfo('scraper')" title="Agent Info">&#8505;</span>
+          <span class="agent-help">?<span class="agent-help-bubble">Visits the Facebook Ad Library and Google Ads Transparency Center for each competitor (and your product). Scrapes ad creatives, headlines, and landing page URLs. Runs OCR on ad images to extract text content for deeper analysis.</span></span>
+          <span class="text-dim" style="font-size:12px;">Scrapes ads with OCR text extraction</span>
+        </div>
+        <div id="scrapes-list"></div>
+      </div>
+
+      <!-- Folder Ad Importer -->
+      <div class="card agent-card" style="margin-bottom:24px;" id="folder-scraper-section">
+        <div class="agent-header">
+          <span class="agent-badge" style="background:#78716c20;color:#78716c;">FOLDER</span>
+          <h3>Folder Ad Importer</h3>
+          <span style="cursor:pointer;font-size:14px;opacity:0.6;" onclick="showAgentInfo('folder-scraper')" title="Agent Info">&#8505;</span>
+          <span class="agent-help">?<span class="agent-help-bubble">Import ad images from a local folder. Place images in <code>data/uploads/&lt;container-id&gt;/</code> and optionally add an <code>ads.csv</code> with columns: filename, title, description, cta, url, competitor_name.</span></span>
+          <span class="text-dim" style="font-size:12px;">Import ads from local image files</span>
+          <div style="margin-left:auto;display:flex;gap:6px;">
+            <button class="btn btn-ghost btn-sm" onclick="checkFolderStatus()">Check Folder</button>
+            <button class="btn btn-primary btn-sm" id="folder-import-btn" onclick="startFolderImport()" disabled>Import Ads</button>
+          </div>
+        </div>
+        <div id="folder-status" style="padding:8px 0;"></div>
       </div>
 
       <!-- ===== SEGMENT: OBSOLETE TOOLS ===== -->
@@ -924,6 +935,7 @@
   </div>
 
   <script src="/js/container.js"></script>
+  <script src="/js/project-overview.js"></script>
   <script src="/js/entries.js"></script>
   <script src="/js/container-context.js"></script>
   <script src="/js/metadata.js"></script>
@@ -940,6 +952,7 @@
   <script src="/js/quiz.js"></script>
   <script src="/js/case-study.js"></script>
   <script src="/js/image-ads.js"></script>
+  <script src="/js/data-feed.js"></script>
   <!-- taboola.js removed — Taboola UI moved to standalone taboola-workshop.html -->
   <script src="/js/spinoff-ideas.js"></script>
   <script src="/js/proposal.js"></script>

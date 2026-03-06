@@ -25,8 +25,9 @@ async function loadContainer() {
   const res = await fetch(`/api/containers/${containerId}`);
   if (!res.ok) { alert('Container not found'); window.location.href = '/'; return; }
   container = await res.json();
-  document.title = `${container.name} - Product Analyzer`;
+  document.title = `${container.name} - ProductBrain`;
   renderHeader();
+  renderProjectOverview();
   renderEntries();
   renderIdeatorSection();
   renderCaseStudies();
@@ -44,6 +45,7 @@ async function loadContainer() {
   renderSpinoffIdeas();
   renderProposals();
   renderPrompts();
+  renderDataFeeds();
   loadContainerContext();
 }
 
@@ -58,6 +60,8 @@ function renderHeader() {
   if (taboolaLink) taboolaLink.href = `/taboola-workshop.html?cid=${container.id}`;
   const validatorLink = document.getElementById('validator-link');
   if (validatorLink) validatorLink.href = `/content-validator.html?cid=${container.id}`;
+  const datafeedLink = document.getElementById('datafeed-link');
+  if (datafeedLink) datafeedLink.href = `/data-feed.html?cid=${container.id}`;
 }
 
 function esc(str) {

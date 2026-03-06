@@ -74,7 +74,7 @@ function showNewForm() {
   const panel = document.getElementById('main-panel');
   panel.innerHTML = `<div class="ds-form">
     <h3>New Feature Idea</h3>
-    <textarea id="idea-input" placeholder="Describe the feature you want to add to Product Analyzer...&#10;&#10;Example: Add a Semrush integration that pulls organic keyword rankings for competitor domains and stores them alongside existing scrape data."></textarea>
+    <textarea id="idea-input" placeholder="Describe the feature you want to add to ProductBrain...&#10;&#10;Example: Add a Semrush integration that pulls organic keyword rankings for competitor domains and stores them alongside existing scrape data."></textarea>
     <div class="ds-form-actions">
       <button class="btn-sm" onclick="cancelForm()">Cancel</button>
       <button class="btn-sm btn-primary" onclick="submitIdea()">Generate Instructions</button>
