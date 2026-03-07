@@ -146,6 +146,7 @@ CRITICAL RULES:
       difficulty: options.difficulty || 'medium',
       topic: options.topic || '',
       generated_at: new Date().toISOString(),
+      prompt_sent: prompt,
     };
 
     await storage.updateQuiz(containerId, quizId, 'completed', result);

@@ -128,6 +128,18 @@ const TOOL_MAP = [
     getResult: (rec, p) => storage.getProjectOverview(p.containerId),
   },
   {
+    name: 'run_question',
+    description: 'Ask a question about a project and get a concise AI answer (AG-025)',
+    agentFile: './agents/questions-agent',
+    fn: 'askQuestion',
+    params: {
+      containerId: z.string().describe('Container ID'),
+      question: z.string().describe('The question to ask'),
+    },
+    paramsToArgs: p => [p.containerId, p.question],
+    getResult: (rec, p) => storage.getQuestion(p.containerId, rec.id),
+  },
+  {
     name: 'run_data_feed',
     description: 'Analyze uploaded CSV data for insights and key metrics (AG-024)',
     agentFile: './agents/data-feed-agent',

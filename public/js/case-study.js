@@ -44,7 +44,7 @@ function renderCaseStudies() {
           ${compName ? `<span style="font-size:12px;font-weight:600;">${esc(compName)}</span>` : ''}
           ${isGenerating ? '<div class="spinner" style="width:14px;height:14px;border-width:2px;"></div><span class="text-dim">Analyzing...</span>' : ''}
           <span style="margin-left:auto;display:flex;gap:6px;align-items:center;">
-            ${isDone ? `<a href="/case-study.html?cid=${containerId}&studyId=${s.id}" class="btn btn-primary btn-sm">View Report</a>` : ''}
+            ${isDone ? `${promptSentLink(s.result)}<a href="/case-study.html?cid=${containerId}&studyId=${s.id}" class="btn btn-primary btn-sm">View Report</a>` : ''}
             ${isFailed ? `<span class="text-dim" style="font-size:12px;color:var(--danger);">${esc(s.result?.error || 'Failed')}</span>` : ''}
             ${!isGenerating ? `<button class="btn btn-ghost btn-sm" onclick="deleteCaseStudy('${s.id}')" style="font-size:11px;padding:2px 8px;color:var(--danger);" title="Delete case study">Delete</button>` : ''}
           </span>

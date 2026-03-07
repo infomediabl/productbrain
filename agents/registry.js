@@ -39,6 +39,7 @@ register(require('./hooks-agent'));
 register(require('./content-validator-agent'));
 register(require('./project-overview-agent'));
 register(require('./data-feed-agent'));
+register(require('./questions-agent'));
 
 /**
  * Get an agent by its AGENT_META.id.

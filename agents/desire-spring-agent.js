@@ -217,6 +217,7 @@ ${claudeMd}`,
       full_text: fullText,
       json_data: jsonData,
       generated_at: new Date().toISOString(),
+      prompt_sent: `Write step-by-step instructions for this feature idea:\n\n${ideaText}`,
     };
 
     updateIdea(ideaId, { status: 'completed', title, result });

@@ -41,12 +41,24 @@ async function showAgentInfo(agentId) {
     html += row('Category', agent.category || '—');
     html += row('Model', agent.model || '—');
 
+    // Inputs
+    if (agent.inputs && agent.inputs.length > 0) {
+      const inputsList = agent.inputs.map(inp => {
+        let s = '<code style="font-size:12px;background:var(--surface2);padding:1px 5px;border-radius:3px;">' + (inp.name || '?') + '</code>';
+        if (inp.type) s += ' <span class="text-dim">(' + inp.type + ')</span>';
+        if (inp.required) s += ' <span style="color:var(--danger);font-size:11px;">required</span>';
+        return s;
+      }).join(', ');
+      html += row('Inputs', inputsList);
+    }
+
     if (agent.consumes && agent.consumes.length > 0) {
       const consumesList = agent.consumes.map(c => {
         const parts = [];
         if (c.agent) parts.push(c.agent);
-        if (c.key) parts.push(c.key);
-        return parts.join('.') || JSON.stringify(c);
+        if (c.dataKey) parts.push(c.dataKey);
+        else if (c.key) parts.push(c.key);
+        return parts.join(' → ') || JSON.stringify(c);
       }).join(', ');
       html += row('Consumes', consumesList);
     } else {
@@ -88,4 +100,63 @@ function row(label, value) {
 function closeAgentInfoModal() {
   const modal = document.getElementById('agent-info-modal');
   if (modal) modal.style.display = 'none';
+}
+
+/**
+ * Show the actual prompt sent to AI for a specific run.
+ * Call with the prompt text string.
+ */
+function showPromptSent(promptText) {
+  const modal = document.getElementById('prompt-sent-modal');
+  const body = document.getElementById('prompt-sent-body');
+  if (!modal || !body) return;
+  body.textContent = promptText || 'No prompt data available.';
+  modal.style.display = 'flex';
+}
+
+function closePromptSentModal() {
+  const modal = document.getElementById('prompt-sent-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+/**
+ * Returns HTML for a small "View Prompt" link if result has prompt_sent.
+ * Stores prompts in a global cache and references by index.
+ * Usage in render functions: html += promptSentLink(result);
+ */
+const _promptSentCache = [];
+
+function promptSentLink(result) {
+  if (!result) return '';
+  const prompt = result.prompt_sent || result.prompt_log || (result._meta && result._meta.prompt_sent);
+  if (!prompt) return '';
+  const idx = _promptSentCache.length;
+  _promptSentCache.push(prompt);
+  return ` <a href="#" onclick="_showCachedPrompt(${idx});return false" style="font-size:11px;color:var(--primary);opacity:0.7;text-decoration:none;" title="View the exact prompt sent to AI">View Prompt</a>`;
+}
+
+function _showCachedPrompt(idx) {
+  showPromptSent(_promptSentCache[idx]);
+}
+
+/**
+ * Show the prompt template for an agent directly (P icon click).
+ * Fetches agent info if not cached, then displays prompt_template in the prompt-sent modal.
+ */
+async function showPromptTemplate(agentId) {
+  try {
+    if (!_agentInfoCache) {
+      const res = await fetch('/api/agent-info');
+      if (!res.ok) throw new Error('Failed to fetch agent info');
+      _agentInfoCache = await res.json();
+    }
+    const agent = _agentInfoCache.find(a => a.id === agentId);
+    if (!agent || !agent.prompt_template) {
+      showPromptSent('No prompt template available for this agent.');
+      return;
+    }
+    showPromptSent(agent.prompt_template);
+  } catch (err) {
+    showPromptSent('Error loading prompt template: ' + err.message);
+  }
 }

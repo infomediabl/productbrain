@@ -33,7 +33,7 @@ function renderImageAds() {
           <span>${new Date(a.created_at).toLocaleString()}</span>
           <span class="text-dim">${a.status}</span>
           ${isGenerating ? '<div class="spinner" style="width:14px;height:14px;border-width:2px;"></div><span class="text-dim">Generating...</span>' : ''}
-          ${isDone ? `<a href="/image-ads.html?cid=${containerId}&adId=${a.id}" class="btn btn-primary btn-sm" style="margin-left:auto;">View Report</a>` : ''}
+          ${isDone ? `${promptSentLink(a.result)}<a href="/image-ads.html?cid=${containerId}&adId=${a.id}" class="btn btn-primary btn-sm" style="margin-left:auto;">View Report</a>` : ''}
           ${isDone && adCount > 0 ? `<span class="text-dim" style="font-size:12px;">${adCount} concepts</span>` : ''}
           ${a.status === 'failed' ? `<span class="text-dim" style="font-size:12px;color:var(--danger);">${esc(a.result?.error || 'Failed')}</span>` : ''}
         </div>

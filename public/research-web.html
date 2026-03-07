@@ -287,8 +287,9 @@
         <a href="/guide.html">Guide</a>
         <a href="/chat.html">Chat</a>
         <a href="/research-web.html">Research</a>
-        <a href="/changelog.html">Changelog</a>
         <a href="/desire-spring.html">DesireSpring</a>
+
+        <a href="/changelog.html">Changelog</a>
         <a href="/add-container.html">New Container</a>
       </nav>
     </div>
@@ -313,7 +314,11 @@
 
           <!-- Search Form -->
           <div class="rw-search-form">
-            <h2>Web Research <span class="badge badge-sm" style="font-size:10px;">AG-017</span></h2>
+            <h2 style="display:flex;align-items:center;gap:8px;">Web Research <span class="badge badge-sm" style="font-size:10px;">AG-017</span>
+              <span style="cursor:pointer;font-size:14px;color:#10b981;font-weight:bold;" onclick="showAgentInfo('research-web')" title="Agent Info">i</span>
+        <span style="cursor:pointer;font-size:13px;color:#8b5cf6;font-weight:bold;" onclick="showPromptTemplate('research-web')" title="Prompt Template">P</span>
+              <span class="agent-help" style="font-size:12px;">?<span class="agent-help-bubble">Search any topic on the web, curate relevant sources, generate AI summaries, and push findings to container context for downstream agents.</span></span>
+            </h2>
             <p style="font-size:13px;color:var(--text-dim);margin-bottom:12px;">Search any topic, curate sources, summarize key findings, and push insights to any container's context.</p>
             <div class="rw-search-row">
               <input type="text" id="rw-topic" placeholder="Enter a research topic (e.g. &quot;Meta Ads best practices 2025&quot;)">
@@ -355,6 +360,9 @@
             <div id="rw-summary-list"></div>
           </div>
 
+          <!-- Prompt link -->
+          <div id="rw-prompt-link" style="margin-top:12px;text-align:right;"></div>
+
           <!-- Delete -->
           <div id="rw-delete-area" class="rw-delete-area" style="display:none;">
             <button class="btn btn-sm" style="color:var(--error);" onclick="deleteResearch()">Delete this research</button>
@@ -364,6 +372,30 @@
       </div>
     </div>
   </main>
+  <script src="/js/agent-info.js"></script>
   <script src="/js/research-web-page.js"></script>
+
+  <!-- Agent Info Modal -->
+  <div id="agent-info-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-content card" style="max-width:480px;">
+      <h3 style="margin-bottom:16px;">Agent Info</h3>
+      <div id="agent-info-body"></div>
+      <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end;">
+        <button class="btn btn-ghost btn-sm" onclick="closeAgentInfoModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Prompt Sent Modal -->
+  <div id="prompt-sent-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-content card" style="max-width:680px;">
+      <h3 style="margin-bottom:16px;">Prompt Sent to AI</h3>
+      <pre id="prompt-sent-body" style="white-space:pre-wrap;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:12px;font-size:12px;max-height:500px;overflow-y:auto;line-height:1.5;"></pre>
+      <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end;">
+        <button class="btn btn-ghost btn-sm" onclick="navigator.clipboard.writeText(document.getElementById('prompt-sent-body').textContent)">Copy</button>
+        <button class="btn btn-ghost btn-sm" onclick="closePromptSentModal()">Close</button>
+      </div>
+    </div>
+  </div>
 </body>
 </html>

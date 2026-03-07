@@ -175,6 +175,7 @@ ${config.CONCISENESS_INSTRUCTION}`,
       full_text: fullText,
       json_data: jsonResult,
       generated_at: new Date().toISOString(),
+      prompt_sent: prompt,
     };
 
     await storage.updateSpinoffIdea(containerId, ideaId, 'completed', result);

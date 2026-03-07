@@ -87,7 +87,7 @@ async function sendChatMessage() {
       appendChatMessage('assistant', `Error: ${err.error || 'Failed to get response'}`);
     } else {
       const data = await res.json();
-      appendChatMessage('assistant', data.response);
+      appendChatMessage('assistant', data.response, data.prompt_sent);
       chatHistory.push({ role: 'assistant', content: data.response });
     }
   } catch (e) {
@@ -101,15 +101,18 @@ async function sendChatMessage() {
   }
 }
 
-function appendChatMessage(role, content) {
+function appendChatMessage(role, content, promptSent) {
   const messagesDiv = document.getElementById('chat-messages');
   const isUser = role === 'user';
 
   const bubble = document.createElement('div');
   bubble.style.cssText = `display:flex;justify-content:${isUser ? 'flex-end' : 'flex-start'};margin-bottom:10px;`;
 
+  const wrapper = document.createElement('div');
+  wrapper.style.cssText = 'max-width:80%;';
+
   const inner = document.createElement('div');
-  inner.style.cssText = `max-width:80%;padding:10px 14px;border-radius:12px;font-size:14px;line-height:1.6;${
+  inner.style.cssText = `padding:10px 14px;border-radius:12px;font-size:14px;line-height:1.6;${
     isUser
       ? 'background:var(--primary);color:white;border-bottom-right-radius:4px;'
       : 'background:var(--surface2);color:var(--text);border:1px solid var(--border);border-bottom-left-radius:4px;'
@@ -121,7 +124,23 @@ function appendChatMessage(role, content) {
     inner.textContent = content;
   }
 
-  bubble.appendChild(inner);
+  wrapper.appendChild(inner);
+
+  // Add "View Prompt" link for assistant messages with prompt data
+  if (!isUser && promptSent && typeof showPromptSent === 'function') {
+    const linkDiv = document.createElement('div');
+    linkDiv.style.cssText = 'margin-top:4px;padding-left:4px;';
+    const link = document.createElement('a');
+    link.href = '#';
+    link.style.cssText = 'font-size:11px;color:var(--primary);opacity:0.7;text-decoration:none;';
+    link.title = 'View the system prompt sent to AI';
+    link.textContent = 'View Prompt';
+    link.onclick = (e) => { e.preventDefault(); showPromptSent(promptSent); };
+    linkDiv.appendChild(link);
+    wrapper.appendChild(linkDiv);
+  }
+
+  bubble.appendChild(wrapper);
   messagesDiv.appendChild(bubble);
   messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }

@@ -178,7 +178,7 @@ ${config.CONCISENESS_INSTRUCTION}`,
 
     const result = {
       full_text: fullText,
-      prompt_log: prompt,
+      prompt_sent: prompt,
       user_context: userContext || '',
       user_prompt: userPrompt || '',
     };

@@ -146,6 +146,7 @@ ${config.CONCISENESS_INSTRUCTION}`,
       classification,
       generated_at: new Date().toISOString(),
       options_used: options,
+      prompt_sent: prompt,
     };
 
     await storage.updateTestPlan(containerId, planId, 'completed', result);

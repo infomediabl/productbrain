@@ -46,11 +46,16 @@ function renderProjectOverview() {
   // Completed
   const text = overview.result?.text || 'No overview text.';
   const date = new Date(overview.created_at).toLocaleString();
+  // Split into sentences for better readability
+  const sentences = text.split(/(?<=[.!?])\s+/).filter(s => s.trim());
+  const formatted = sentences.length > 1
+    ? sentences.map(s => `<span style="display:inline;">${esc(s)}</span>`).join(' ')
+    : esc(text);
   content.innerHTML = `
-    <div style="font-size:14px;line-height:1.6;color:var(--text);margin-bottom:8px;">${esc(text)}</div>
-    <div style="display:flex;align-items:center;justify-content:space-between;">
-      <span class="text-dim" style="font-size:11px;">Generated: ${date}</span>
-      <button class="btn btn-ghost btn-sm" onclick="generateOverview()">Refresh</button>
+    <div style="font-size:15px;line-height:1.75;color:var(--text);letter-spacing:-0.01em;margin-bottom:12px;font-weight:400;">${formatted}</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border);padding-top:10px;margin-top:4px;">
+      <span class="text-dim" style="font-size:11px;">Generated: ${date}${promptSentLink(overview.result)}</span>
+      <button class="btn btn-ghost btn-sm" onclick="generateOverview()">&#x21bb; Refresh</button>
     </div>`;
 }
 

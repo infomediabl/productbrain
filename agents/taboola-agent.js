@@ -157,9 +157,11 @@ async function executePreview(containerId, campaignId, container, options) {
   // --- Step B: Generate Taboola-optimized copy via Claude ---
   log.info(SRC, 'Generating Taboola-optimized copy', { adCount: sourceAds.length });
 
-  let taboolaCopy;
+  let taboolaCopy, taboolaPromptSent;
   try {
-    taboolaCopy = await generateTaboolaCopy(sourceAds, productName, contextText);
+    const copyResult = await generateTaboolaCopy(sourceAds, productName, contextText);
+    taboolaCopy = copyResult.items;
+    taboolaPromptSent = copyResult.prompt_sent;
     log.info(SRC, 'Preview copy generated', { itemCount: taboolaCopy.length });
   } catch (err) {
     log.error(SRC, 'Copy generation failed', { err: err.message });
@@ -177,6 +179,7 @@ async function executePreview(containerId, campaignId, container, options) {
     source_ads: sourceAds,
     taboola_copy: taboolaCopy,
     settings: { campaign_name: finalCampaignName, daily_cap, cpc_bid, country_targeting, platform_targeting },
+    prompt_sent: taboolaPromptSent,
   });
 
   log.info(SRC, 'Preview ready', { campaignId, itemCount: taboolaCopy.length });
@@ -453,7 +456,7 @@ Rules:
     throw new Error('AI response was not a valid JSON array');
   }
 
-  return taboolaCopy;
+  return { items: taboolaCopy, prompt_sent: prompt };
 }
 
 async function uploadScreenshot(screenshotPath, accountId, token) {

@@ -184,6 +184,7 @@ Be specific and reference actual column names and values. Provide 4-8 insights a
       const parsed = parseJsonFromResponse(raw);
 
       if (parsed && parsed.summary) {
+        parsed.prompt_sent = prompt;
         await storage.updateDataFeed(containerId, record.id, 'completed', parsed);
         log.info(SRC, 'Data feed analysis completed', { containerId, feedId: record.id, rows: rows.length });
       } else {

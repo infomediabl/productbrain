@@ -161,6 +161,7 @@ Find 8-15 diverse, high-quality sources. Prefer recent content. Include a mix of
       summaries: [],
       combined_brief: null,
       summarized_at: null,
+      prompt_sent: `Research this topic thoroughly: ${topic}`,
     };
 
     await storage.updateResearchWeb(recordId, 'completed', result);

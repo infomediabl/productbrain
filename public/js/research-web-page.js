@@ -250,6 +250,13 @@ function renderRecord(record) {
   }
 
   document.getElementById('rw-delete-area').style.display = 'block';
+
+  // Show prompt link if available
+  const promptArea = document.getElementById('rw-prompt-link');
+  if (promptArea && record.result?.prompt_sent && typeof showPromptSent === 'function') {
+    promptArea.innerHTML = `<a href="#" onclick="showPromptSent(window._rwPromptSent);return false" style="font-size:12px;color:var(--primary);opacity:0.7;text-decoration:none;" title="View the prompt sent to AI">View Prompt Sent</a>`;
+    window._rwPromptSent = record.result.prompt_sent;
+  }
 }
 
 function renderSources(sources, searchSummary) {

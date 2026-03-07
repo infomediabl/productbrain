@@ -130,6 +130,7 @@ CRITICAL RULES:
       page_type: options.page_type || 'general',
       target_keyword: options.target_keyword || null,
       generated_at: new Date().toISOString(),
+      prompt_sent: prompt,
     };
 
     await storage.updateLandingPage(containerId, pageId, 'completed', result);

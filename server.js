@@ -73,6 +73,7 @@ const hooksRouter = require('./routes/hooks');                                 /
 const contentValidatorRouter = require('./routes/content-validator');           // Content Validator (AG-022)
 const projectOverviewRouter = require('./routes/project-overview');             // Project Overview (AG-023)
 const dataFeedRouter = require('./routes/data-feed');                           // User Data Feed (AG-024)
+const questionsRouter = require('./routes/questions');                           // Quick Questions (AG-025)
 
 app.use('/api/containers', containersRouter);
 app.use('/api/containers/:id/metadata', metadataRouter);
@@ -164,6 +165,9 @@ app.use('/api/containers/:id/project-overview', projectOverviewRouter);
 // User Data Feed (AG-024)
 app.use('/api/containers/:id/data-feed', dataFeedRouter);
 app.use('/api/containers/:id/data-feeds', dataFeedRouter);  // alias
+
+// Quick Questions (AG-025)
+app.use('/api/containers/:id/questions', questionsRouter);
 
 // Clone Ad (OpenRouter)
 app.use('/api/containers/:id/clone-ad', cloneAdRouter);
@@ -283,6 +287,7 @@ if (!process.env.VERCEL) app.listen(PORT, () => {
   console.log(`  Content Validator (AG-022)— POST /api/containers/:id/content-validator`);
   console.log(`  Project Overview (AG-023) — POST /api/containers/:id/project-overview`);
   console.log(`  User Data Feed (AG-024)  — POST /api/containers/:id/data-feed`);
+  console.log(`  Quick Questions (AG-025) — POST /api/containers/:id/questions`);
   console.log(`  Auto-Scrape            — every 6h for enabled containers`);
 });
 

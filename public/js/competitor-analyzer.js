@@ -36,7 +36,7 @@ function renderCompetitorAnalyses() {
           ${isGenerating ? '<div class="spinner" style="width:14px;height:14px;border-width:2px;"></div><span class="text-dim" style="font-size:12px;">Analyzing...</span>' : ''}
           <div style="margin-left:auto;display:flex;gap:6px;">
             ${!isGenerating ? `<button class="btn btn-primary btn-sm" onclick="analyzeCompetitor('${comp.id}', '${esc(comp.name).replace(/'/g, "\\'")}')">Analyze</button>` : ''}
-            ${latest ? `<a href="/competitor-analysis.html?cid=${containerId}&compId=${comp.id}&aId=${latest.id}" class="btn btn-ghost btn-sm">View Analysis</a>` : ''}
+            ${latest ? `${promptSentLink(latest.result)}<a href="/competitor-analysis.html?cid=${containerId}&compId=${comp.id}&aId=${latest.id}" class="btn btn-ghost btn-sm">View Analysis</a>` : ''}
           </div>
         </div>
         ${!hasData ? '<div class="text-dim" style="font-size:12px;padding:4px 0;">Tip: Scrape ads first for deeper analysis</div>' : ''}

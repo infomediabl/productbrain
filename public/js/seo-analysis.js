@@ -41,7 +41,7 @@ function renderOwnProductSeo() {
         ${isGenerating ? '<div class="spinner" style="width:14px;height:14px;border-width:2px;"></div><span class="text-dim" style="font-size:12px;">Running SEO audit...</span>' : ''}
         <div style="margin-left:auto;display:flex;gap:6px;">
           ${!isGenerating ? `<button class="btn btn-primary btn-sm" onclick="openSeoOwnModal()">SEO Audit</button>` : ''}
-          ${latest ? `<button class="btn btn-ghost btn-sm" onclick="viewSeoReport('_own_product', '${latest.id}')">View Report</button>` : ''}
+          ${latest ? `${promptSentLink(latest.result)}<button class="btn btn-ghost btn-sm" onclick="viewSeoReport('_own_product', '${latest.id}')">View Report</button>` : ''}
         </div>
       </div>
       <div id="seo-own-status" style="display:none;"></div>
@@ -121,7 +121,7 @@ function renderSeoAnalyses() {
           ${isGenerating ? '<div class="spinner" style="width:14px;height:14px;border-width:2px;"></div><span class="text-dim" style="font-size:12px;">Analyzing SEO...</span>' : ''}
           <div style="margin-left:auto;display:flex;gap:6px;">
             ${hasWebsite && !isGenerating ? `<button class="btn btn-primary btn-sm" onclick="openSeoModal('${comp.id}', '${esc(comp.name).replace(/'/g, "\\'")}', '${esc(comp.website).replace(/'/g, "\\'")}')">SEO Analysis</button>` : ''}
-            ${latest ? `<button class="btn btn-ghost btn-sm" onclick="viewSeoReport('${comp.id}', '${latest.id}')">View Report</button>` : ''}
+            ${latest ? `${promptSentLink(latest.result)}<button class="btn btn-ghost btn-sm" onclick="viewSeoReport('${comp.id}', '${latest.id}')">View Report</button>` : ''}
           </div>
         </div>
         ${!hasWebsite ? '<div class="text-dim" style="font-size:12px;padding:4px 0;">Add a website URL to this competitor to run SEO analysis</div>' : ''}

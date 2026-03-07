@@ -152,6 +152,7 @@ CRITICAL RULES:
       source_name: options.source_name,
       extracted_text_length: extractedText.length,
       analyzed_at: new Date().toISOString(),
+      prompt_sent: prompt,
     };
 
     await storage.updateCaseStudy(containerId, studyId, 'completed', result);

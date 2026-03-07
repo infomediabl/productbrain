@@ -129,10 +129,10 @@ Return JSON: { "text": "..." }`;
       const parsed = parseJsonFromResponse(raw);
 
       if (parsed && parsed.text) {
-        await storage.updateProjectOverview(containerId, record.id, 'completed', { text: parsed.text });
+        await storage.updateProjectOverview(containerId, record.id, 'completed', { text: parsed.text, prompt_sent: prompt });
         log.info(SRC, 'Overview generated', { containerId });
       } else {
-        await storage.updateProjectOverview(containerId, record.id, 'completed', { text: raw.slice(0, 2000) });
+        await storage.updateProjectOverview(containerId, record.id, 'completed', { text: raw.slice(0, 2000), prompt_sent: prompt });
       }
     } catch (err) {
       log.error(SRC, 'Overview generation failed', { containerId, err: err.message });

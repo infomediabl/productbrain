@@ -54,7 +54,7 @@ function renderIdeatorSection() {
       if (json.market_analysis) {
         const ma = json.market_analysis;
         html += `<div class="ideator-market-summary" style="margin-bottom:16px;">
-          <div style="font-size:13px;color:var(--text-dim);margin-bottom:4px;"><strong>Market:</strong> ${esc(ma.market_type || '')}</div>
+          <div style="font-size:13px;color:var(--text-dim);margin-bottom:4px;"><strong>Market:</strong> ${esc(ma.market_type || '')}${promptSentLink(idea.result)}</div>
           ${ma.underserved_segments ? `<div style="font-size:12px;color:var(--text-dim);">Underserved: ${ma.underserved_segments.map(s => esc(s)).join(', ')}</div>` : ''}
         </div>`;
       }

@@ -19,7 +19,7 @@ jest.mock('../../storage', () => {
     'getQuiz', 'getGadsAnalysis', 'getKeywordIdeas', 'getCaseStudy', 'getContainerContext',
     'getResearchWeb', 'getTaboolaCampaign', 'getSpinoffIdea', 'getHooksResult',
     'getKnownAdIds', 'listAutoScrapeContainers', 'listResearchWeb', 'getScrapeValidation',
-    'getAnalysis', 'getValidation', 'getProjectOverview', 'getDataFeed',
+    'getAnalysis', 'getValidation', 'getProjectOverview', 'getDataFeed', 'getQuestion',
   ];
   const asyncFns = [
     'updateContainer', 'addMetadata', 'updateMetadata', 'deleteMetadata',
@@ -44,6 +44,7 @@ jest.mock('../../storage', () => {
     'addValidation', 'updateValidation', 'deleteValidation',
     'setProjectOverview', 'updateProjectOverview',
     'addDataFeed', 'updateDataFeed', 'deleteDataFeed',
+    'addQuestion', 'updateQuestion',
   ];
   for (const fn of syncFns) fns[fn] = jest.fn().mockReturnValue(null);
   for (const fn of asyncFns) fns[fn] = jest.fn().mockResolvedValue(null);
@@ -82,7 +83,7 @@ const EXPECTED_IDS = [
   'image-ads', 'quiz', 'landing-page', 'test-planner', 'case-study',
   'container-chat', 'desire-spring', 'research-web', 'taboola',
   'spinoff-ideas', 'folder-scraper', 'hooks', 'content-validator',
-  'project-overview', 'data-feed',
+  'project-overview', 'data-feed', 'questions',
 ];
 
 // Multi-operation agents (they expose operations instead of a single run)
@@ -95,7 +96,7 @@ describe('agents/registry', () => {
   describe('listAgents()', () => {
     it('returns exactly 22 agents', () => {
       const agents = listAgents();
-      expect(agents).toHaveLength(24);
+      expect(agents).toHaveLength(25);
     });
 
     it('every agent has a unique id', () => {
@@ -121,7 +122,7 @@ describe('agents/registry', () => {
       const agents = listAgents();
       const codes = agents.map((a) => a.code).sort();
       expect(codes[0]).toBe('ag0001');
-      expect(codes[codes.length - 1]).toBe('ag0024');
+      expect(codes[codes.length - 1]).toBe('ag0025');
     });
 
     it('contains all expected agent IDs', () => {

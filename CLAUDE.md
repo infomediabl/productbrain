@@ -108,6 +108,7 @@ server.js
 | `routes/content-validator.js` | `/api/containers/:id/content-validator` | AG-022 | content-validator-agent.validateContent() |
 | `routes/project-overview.js` | `/api/containers/:id/project-overview` | AG-023 | project-overview-agent.generateOverview() |
 | `routes/data-feed.js` | `/api/containers/:id/data-feed` | AG-024 | data-feed-agent.analyzeDataFeed() |
+| `routes/questions.js` | `/api/containers/:id/questions` | AG-025 | questions-agent.askQuestion() |
 
 ### Agent Dependencies
 All agents require: `config.js`, `logger.js`, `storage.js`, `utils/parse-json.js`
@@ -135,6 +136,7 @@ Additional dependencies per agent:
 | AG-022 | content-validator-agent | gather-data.gatherContainerContext |
 | AG-023 | project-overview-agent | gather-data.gatherContainerContext |
 | AG-024 | data-feed-agent | gather-data.gatherContainerContext |
+| AG-025 | questions-agent | gather-data.gatherContainerContext |
 | | clone-ad (route only) | config.OPENROUTER_API_KEY |
 
 ### Utils
@@ -155,7 +157,8 @@ Additional dependencies per agent:
 ### container.html Script Load Order (order matters — later scripts use earlier globals)
 1. `container.js` — Defines: `containerId`, `container`, `loadContainer()`, `renderHeader()`, `esc()`
 2. `project-overview.js` — Uses `container`, `containerId`, `esc()`
-3. `entries.js` — Defines: `renderEntries()`, `getEntryAdStats()`, uses `container`, `esc()`
+3. `questions.js` — Uses `container`, `containerId`, `esc()`
+4. `entries.js` — Defines: `renderEntries()`, `getEntryAdStats()`, uses `container`, `esc()`
 3. `container-context.js` — Defines: `loadContainerContext()`, `toggleContextPanel()`, uses `containerId`, `esc()`
 4. `metadata.js` — Uses `container`, `containerId`, `esc()`
 5. `scraper.js` — Uses `container`, `containerId`, `esc()`
@@ -231,6 +234,7 @@ All data stored in `data/<container-id>.json`. Key fields:
 - `validations[]` — Content validation results {id, created_at, status, meta: {validate_type, comment}, result: {verdict, score, summary, strengths[], weaknesses[], recommendations[], user_perspective_notes}}
 - `project_overview` — Single object: `{ id, created_at, status, result: { text } }`
 - `data_feeds[]` — Data feed results: `{ id, created_at, status, filename, row_count, columns[], preview_rows[], result: { summary, insights[], key_metrics[] } }`
+- `questions[]` — Quick question answers: `{ id, created_at, status, question, result: { answer, confidence, sources_used[], prompt_sent } }`
 - `container_context[]` — Curated insights (content + text_brief)
 - `settings{}` — FB Pixel, GA4, custom code, user context, `auto_scrape_enabled` (bool), `taboola` ({client_id, client_secret, account_id})
 
@@ -290,6 +294,7 @@ When adding a new agent, assign the next sequential code.
 | ag0022 | content-validator | Content Validator | validation |
 | ag0023 | project-overview | Project Overview | generation |
 | ag0024 | data-feed | User Data Feed | analysis |
+| ag0025 | questions | Quick Questions | chat |
 
 ---
 
@@ -590,7 +595,7 @@ See `mcp-config.example.json` for a template.
 - `GOOGLE_ADS_*` — Required for Google Ads tools (AG-009)
 - `TABOOLA_*` — Required for Taboola tools (AG-018)
 
-### Tool List (31 tools)
+### Tool List (32 tools)
 
 #### Utility Tools (3)
 
@@ -600,7 +605,7 @@ See `mcp-config.example.json` for a template.
 | `get_container` | Get full container data by ID |
 | `get_result` | Get a specific result by container ID, storage key, and result ID |
 
-#### Agent Tools (22)
+#### Agent Tools (25)
 
 | Tool | Agent | Key Params |
 |------|-------|------------|
@@ -628,6 +633,7 @@ See `mcp-config.example.json` for a template.
 | `run_content_validator` | AG-022 Content Validator | containerId, validate_type, content, comment? |
 | `run_project_overview` | AG-023 Project Overview | containerId |
 | `run_data_feed` | AG-024 User Data Feed | containerId, csv_text, filename? |
+| `run_question` | AG-025 Quick Questions | containerId, question |
 
 #### Google Ads Tools (4)
 

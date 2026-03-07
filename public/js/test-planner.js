@@ -34,7 +34,7 @@ function renderTestPlans() {
           <span>${new Date(p.created_at).toLocaleString()}</span>
           <span class="text-dim">${p.status}</span>
           ${isGenerating ? '<div class="spinner" style="width:14px;height:14px;border-width:2px;"></div><span class="text-dim">Generating...</span>' : ''}
-          ${isDone ? `<a href="/test-plan.html?cid=${containerId}&planId=${p.id}" class="btn btn-primary btn-sm" style="margin-left:auto;">View Plan</a>` : ''}
+          ${isDone ? `${promptSentLink(p.result)}<a href="/test-plan.html?cid=${containerId}&planId=${p.id}" class="btn btn-primary btn-sm" style="margin-left:auto;">View Plan</a>` : ''}
           ${isDone && testCount > 0 ? `<span class="text-dim" style="font-size:12px;">${testCount} tests</span>` : ''}
           ${p.status === 'failed' ? `<span class="text-dim" style="font-size:12px;color:var(--danger);">${esc(p.result?.error || 'Failed')}</span>` : ''}
         </div>

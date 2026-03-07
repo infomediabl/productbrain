@@ -379,7 +379,7 @@ ${config.CONCISENESS_INSTRUCTION}`,
   jsonData = parseJsonFromResponse(fullText);
 
   log.info(SRC, 'Campaign analysis completed', { hasParsedData: !!jsonData });
-  return { full_text: fullText, json_data: jsonData, analyzed_at: new Date().toISOString() };
+  return { full_text: fullText, json_data: jsonData, analyzed_at: new Date().toISOString(), prompt_sent: prompt };
 }
 
 module.exports = {

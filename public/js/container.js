@@ -28,6 +28,7 @@ async function loadContainer() {
   document.title = `${container.name} - ProductBrain`;
   renderHeader();
   renderProjectOverview();
+  renderQuestions();
   renderEntries();
   renderIdeatorSection();
   renderCaseStudies();

@@ -175,7 +175,7 @@ function renderGadsAnalysisHistory() {
       <span>${new Date(a.created_at).toLocaleString()}</span>
       <span class="text-dim">${a.status}</span>
       ${campaignLabel}
-      ${a.status === 'completed' && a.result?.json_data ? `<button class="btn btn-ghost btn-sm" style="font-size:11px;padding:2px 6px;" onclick="renderGadsAnalysis(container.gads_analyses.find(x=>x.id==='${a.id}')?.result, container.gads_analyses.find(x=>x.id==='${a.id}')?.meta)">View</button>` : ''}
+      ${a.status === 'completed' && a.result?.json_data ? `${promptSentLink(a.result)}<button class="btn btn-ghost btn-sm" style="font-size:11px;padding:2px 6px;" onclick="renderGadsAnalysis(container.gads_analyses.find(x=>x.id==='${a.id}')?.result, container.gads_analyses.find(x=>x.id==='${a.id}')?.meta)">View</button>` : ''}
     </div>`;
   }).join('');
 }

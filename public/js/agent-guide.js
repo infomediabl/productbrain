@@ -16,7 +16,7 @@
     'prompt-generator', 'product-ideator', 'keyword-ideator', 'google-ads',
     'image-ads', 'quiz', 'landing-page', 'test-planner', 'case-study',
     'container-chat', 'desire-spring', 'research-web',
-    'project-overview', 'data-feed'
+    'project-overview', 'data-feed', 'questions'
   ];
 
   // ── Category styling ──
@@ -760,6 +760,33 @@
         'CSV should have a header row — the AI uses column names to understand the data',
         'Push the summary and key metrics to Context before generating proposals for data-informed strategies',
         'You can upload multiple CSV files — each gets its own analysis'
+      ]
+    },
+
+    'questions': {
+      code: 'AG-025', name: 'Quick Questions', category: 'chat',
+      overview: '<p>Ask quick questions about your project and get concise AI answers. Uses your product info, competitors, notes, and curated context to provide informed responses.</p>',
+      howItWorks: [
+        'User types a question in the textarea on the dashboard',
+        'Agent gathers all container context: product info, competitors, notes, curated insights',
+        'Sends the question with full context to Claude (fast model)',
+        'Returns a concise answer (3-4 sentences max) with confidence level and source attribution'
+      ],
+      prerequisites: ['A container with product info and/or some context data'],
+      outputs: '<p>Creates a <strong>questions</strong> record containing:</p>' +
+        '<ul><li><strong>answer</strong> — concise AI response</li>' +
+        '<li><strong>confidence</strong> — high, medium, or low</li>' +
+        '<li><strong>sources_used</strong> — which context informed the answer</li></ul>',
+      downstream: [],
+      uiGuide: '<p>The Questions box appears at the top of the dashboard, below Project Overview:</p>' +
+        '<ul><li>Type your question in the textarea</li>' +
+        '<li>Click <strong>Answer</strong> to submit</li>' +
+        '<li>Answers appear below with confidence indicators</li>' +
+        '<li>Click <strong>View Prompt</strong> to see the exact prompt sent to AI</li></ul>',
+      tips: [
+        'Ask specific questions referencing your competitors or product for better answers',
+        'Add more notes and context items to improve answer quality',
+        'Use this for quick queries instead of the full Chat page'
       ]
     }
   };

@@ -38,6 +38,7 @@ function renderQuizzes() {
           ${topic ? `<span class="text-dim" style="font-size:12px;">${esc(topic)}</span>` : ''}
           ${isGenerating ? `<div class="spinner" style="width:14px;height:14px;border-width:2px;"></div><span class="text-dim">${q.status === 'quality_check' ? 'Checking quality...' : 'Generating...'}</span>` : ''}
           ${isDone ? `
+            ${promptSentLink(q.result)}
             <button class="btn btn-primary btn-sm" onclick="viewQuizData('${q.id}')" style="margin-left:auto;">View</button>
             <button class="btn btn-ghost btn-sm" onclick="previewQuiz('${q.id}')">Preview HTML</button>
           ` : ''}

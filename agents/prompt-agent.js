@@ -163,6 +163,7 @@ CRITICAL RULES:
       json_data: jsonResult,
       brief_count: jsonData.creative_briefs.length,
       generated_at: new Date().toISOString(),
+      prompt_sent: prompt,
     };
 
     await storage.updateGeneratedPrompt(containerId, promptRecordId, 'completed', result);

@@ -157,6 +157,7 @@ ${config.CONCISENESS_INSTRUCTION}`,
       json_data: jsonData,
       ad_count: { facebook: compAds.facebook.length, google: compAds.google.length },
       analyzed_at: new Date().toISOString(),
+      prompt_sent: prompt,
     };
 
     await storage.updateCompetitorAnalysis(containerId, competitorId, analysisId, 'completed', result);

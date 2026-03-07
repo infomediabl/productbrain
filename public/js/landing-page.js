@@ -36,6 +36,7 @@ function renderLandingPages() {
           ${pageType ? `<span class="badge" style="background:#06b6d415;color:#0891b2;">${esc(pageType)}</span>` : ''}
           ${isGenerating ? '<div class="spinner" style="width:14px;height:14px;border-width:2px;"></div><span class="text-dim">Generating...</span>' : ''}
           ${isDone ? `
+            ${promptSentLink(p.result)}
             <button class="btn btn-primary btn-sm" onclick="viewLandingPage('${p.id}')" style="margin-left:auto;">View</button>
             <button class="btn btn-ghost btn-sm" onclick="previewLandingPage('${p.id}')">Preview HTML</button>
           ` : ''}

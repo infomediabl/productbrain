@@ -33,6 +33,7 @@ function renderProposals() {
         <span>${new Date(p.created_at).toLocaleString()}</span>
         <span class="text-dim">${p.status}</span>
         ${p.status === 'completed' ? `
+          ${promptSentLink(p.result)}
           <a href="/proposal.html?cid=${containerId}&pid=${p.id}" class="btn btn-primary btn-sm" style="margin-left:auto;">View</a>
           <button class="btn btn-ghost btn-sm" onclick="generatePromptsFromProposal('${p.id}')">Generate Prompts</button>
         ` : ''}

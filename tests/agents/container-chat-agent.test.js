@@ -78,7 +78,8 @@ describe('Container Chat Agent (AG-015)', () => {
       history: [],
     });
 
-    expect(result).toBe('This is the AI response.');
+    expect(result.response).toBe('This is the AI response.');
+    expect(result.prompt_sent).toBeDefined();
     expect(mockCreate).toHaveBeenCalledTimes(1);
   });
 

@@ -33,7 +33,7 @@ function renderDataFeeds() {
         </div>
         <div style="display:flex;gap:6px;align-items:center;">
           <span style="font-size:12px;${statusClass};">${f.status}</span>
-          ${f.status === 'completed' ? `<a href="/data-feed.html?cid=${containerId}&feedId=${f.id}" class="btn btn-ghost btn-sm">View</a>` : ''}
+          ${f.status === 'completed' ? `${promptSentLink(f.result)}<a href="/data-feed.html?cid=${containerId}&feedId=${f.id}" class="btn btn-ghost btn-sm">View</a>` : ''}
         </div>
       </div>`;
   }).join('');

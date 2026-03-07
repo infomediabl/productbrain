@@ -160,6 +160,7 @@ function ensureFields(container) {
   if (!container.hooks_results) container.hooks_results = [];
   if (!container.validations) container.validations = [];
   if (!container.data_feeds) container.data_feeds = [];
+  if (!container.questions) container.questions = [];
   // project_overview is a single object, not array — don't default it
   // my_product can be null (no existing product) — don't default it
   return container;
@@ -1660,6 +1661,41 @@ function deleteDataFeed(containerId, feedId) {
   });
 }
 
+// ========== Questions CRUD ==========
+function addQuestion(containerId, question) {
+  return enqueueWrite(containerId, () => {
+    const container = readContainerFile(containerId);
+    if (!container) return null;
+    ensureFields(container);
+    const item = { id: uuidv4(), created_at: new Date().toISOString(), status: 'generating', question, result: null };
+    container.questions.push(item);
+    writeContainerFile(container);
+    return item;
+  });
+}
+
+function updateQuestion(containerId, questionId, status, result) {
+  return enqueueWrite(containerId, () => {
+    const container = readContainerFile(containerId);
+    if (!container) return null;
+    ensureFields(container);
+    const item = container.questions.find(q => q.id === questionId);
+    if (!item) return null;
+    item.status = status;
+    item.result = result;
+    container.updated_at = new Date().toISOString();
+    writeContainerFile(container);
+    return item;
+  });
+}
+
+function getQuestion(containerId, questionId) {
+  const container = readContainerFile(containerId);
+  if (!container) return null;
+  ensureFields(container);
+  return container.questions.find(q => q.id === questionId) || null;
+}
+
 module.exports = {
   // Container
   listContainers, readContainer, createContainer, updateContainer, deleteContainer,
@@ -1717,6 +1753,8 @@ module.exports = {
   setProjectOverview, updateProjectOverview, getProjectOverview,
   // User Data Feed
   addDataFeed, updateDataFeed, getDataFeed, deleteDataFeed,
+  // Questions
+  addQuestion, updateQuestion, getQuestion,
   // Postgres sync
   hydrateFromDb, waitForDbSyncs, syncGlobalToDb,
 };

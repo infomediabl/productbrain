@@ -231,7 +231,10 @@ function renderDetail(idea) {
     </div>
     <textarea class="ds-editor" id="ds-editor" ${savedAs ? 'readonly' : ''}>${esc(instructions)}</textarea>
     <div id="ds-save-msg"></div>
+    ${idea.result?.prompt_sent ? `<div style="margin-top:8px;text-align:right;"><a href="#" onclick="showPromptSent(window._dsPromptSent);return false" style="font-size:11px;color:var(--primary);opacity:0.7;text-decoration:none;">View Prompt</a></div>` : ''}
   </div>`;
+
+  if (idea.result?.prompt_sent) window._dsPromptSent = idea.result.prompt_sent;
 }
 
 // ========== Save & Delete ==========

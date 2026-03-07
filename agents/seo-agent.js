@@ -189,6 +189,7 @@ CRITICAL RULES:
       analysis_type: 'competitor',
       focus_instructions: options.focus_instructions || null,
       analyzed_at: new Date().toISOString(),
+      prompt_sent: prompt,
     };
 
     await storage.updateSeoAnalysis(containerId, competitorId, analysisId, 'completed', result);
@@ -397,6 +398,7 @@ CRITICAL RULES:
       analysis_type: 'own_product',
       focus_instructions: options.focus_instructions || null,
       analyzed_at: new Date().toISOString(),
+      prompt_sent: prompt,
     };
 
     await storage.updateSeoAnalysis(containerId, '_own_product', analysisId, 'completed', result);

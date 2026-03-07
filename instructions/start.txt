@@ -1,0 +1,76 @@
+List of of to do tasks, use this to read tasks, and mark X if task is done
+do not delete or edit anything except mark as done. There are brackets [ ]
+so if done put X inside. 
+
+Use already explained workflow system: 
+- first make plan, including ask questions if have
+- based on request put in small tasks, make tasklist and execute by that list
+- after finishing all task, check is documentation update, session saved etc 
+- if possible run unit test for that task.
+
+If under task is creator node: this use only that creator of application 
+can recall why this was asked. 
+
+Never delete this file.
+
+List of tasks make in file tasks.md. 
+
+
+[X] 1. Improve display of product overview, with nicer typography
+
+[X] 2. For each subagent and all top menu tools, check is there
+[X] 2.1 Info modal - and it display correct what is input / ouptut
+[X] 2.2 Option to see exact prompt used for this tool
+[X] 2.3 On each run of tool to see what was exact prompt, with data sent to tool 
+Creator note: We need to know what was input, what was base prompt, what was sent. 
+
+[X] 3. On product dashboard, add Questions box
+
+There is an option to add question? Textarea field
+When questions is added, there should be button Answer
+
+Answer will use context container and give short concise answer. 
+Make this proper as other subagents, with all info, modal update guide etc 
+
+Add this question in BustRadar container and test
+If we find ad from FB ads library CheaterBuster, do we validate that ad with our landing page ?
+
+
+
+[X] 4. http://localhost:3100/chat.html
+I don't have here modal, info, prompt used, prompt log anything ?
+
+[X] 5. Top menu pages
+[X] 5.1
+[X] 5.2 Research http://localhost:3100/research-web.html put in main manu Other tools
+[X] 5.3 Research http://localhost:3100/research-web.html where is modal, info, input, output, prompt, prompt log.
+[X] 5.4 DesireSpring http://localhost:3100/desire-spring.html put in main manu Other tools
+
+
+[X] 6. ReCheck all subagents, and all dashboard elements and all top menu elements each need to have
+[X] 6.1 icon ? - short explanation - funcionality of this
+[X] 6.2 icon i - make it green letter i icon - which need to have
+
+Code	
+Name	
+Category	
+Model	
+Inputs
+Consumes	
+Outputs	storage: 
+Prompt Summary	
+
+for example
+
+Code	AG-0014
+Name	Case Study Analyzer
+Category	analysis
+Model	AI_MODEL
+Inputs	containerId (string) required, options (object) required
+Consumes	None
+Outputs	storage: case_studies, type: json
+Prompt Summary	Extracts structured insights from case studies (PDF, text, image, URL): metrics, strategies, channels, strengths, weaknesses, lessons, and quotes.
+
+
+[X] 6.3. Next to i icon, make P icon, and it should be Prompt - which is used
+[X] Each subagent and top menu, etc all need to have prompt log, so when some action is performed what was exact prompt which was sent.

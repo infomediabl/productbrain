@@ -19,8 +19,8 @@ router.post('/', async (req, res) => {
   if (!message) return res.status(400).json({ error: 'message is required' });
 
   try {
-    const response = await chat(req.params.id, { message, history: history || [] });
-    res.json({ response });
+    const result = await chat(req.params.id, { message, history: history || [] });
+    res.json({ response: result.response, prompt_sent: result.prompt_sent });
   } catch (err) {
     log.error(SRC, 'Chat failed', { err: err.message });
     res.status(500).json({ error: err.message });

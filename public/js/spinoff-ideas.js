@@ -66,7 +66,7 @@ function renderSpinoffIdeas() {
             }).join('')}
           </div>
         </div>
-        <a href="${reportUrl}" class="btn btn-primary btn-sm" style="white-space:nowrap;">View Report</a>
+        ${promptSentLink(idea.result)}<a href="${reportUrl}" class="btn btn-primary btn-sm" style="white-space:nowrap;">View Report</a>
       </div>`;
     }
   }

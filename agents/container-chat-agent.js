@@ -69,7 +69,7 @@ async function chat(containerId, { message, history = [] }) {
 
   const text = response.content.map(c => c.text || '').join('\n');
   log.info(SRC, 'Chat response', { containerId, responseLength: text.length });
-  return text;
+  return { response: text, prompt_sent: systemPrompt };
 }
 
 function buildSystemPrompt(container) {

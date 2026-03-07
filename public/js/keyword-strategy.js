@@ -34,7 +34,7 @@ function renderKeywordStrategies() {
           <span>${new Date(s.created_at).toLocaleString()}</span>
           <span class="text-dim">${s.status}</span>
           ${isGenerating ? '<div class="spinner" style="width:14px;height:14px;border-width:2px;"></div><span class="text-dim">Generating...</span>' : ''}
-          ${isDone ? `<button class="btn btn-primary btn-sm" onclick="viewKeywordStrategy('${s.id}')" style="margin-left:auto;">View Strategy</button>` : ''}
+          ${isDone ? `${promptSentLink(s.result)}<button class="btn btn-primary btn-sm" onclick="viewKeywordStrategy('${s.id}')" style="margin-left:auto;">View Strategy</button>` : ''}
           ${isDone && clusters.length > 0 ? `<span class="text-dim" style="font-size:12px;">${clusters.length} clusters</span>` : ''}
           ${s.status === 'failed' ? `<span class="text-dim" style="font-size:12px;color:var(--danger);">${esc(s.result?.error || 'Failed')}</span>` : ''}
         </div>

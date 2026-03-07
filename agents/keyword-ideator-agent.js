@@ -153,6 +153,7 @@ ${config.CONCISENESS_INSTRUCTION}`,
       json_data: jsonData,
       generated_at: new Date().toISOString(),
       options_used: options,
+      prompt_sent: prompt,
     };
 
     await storage.updateKeywordStrategy(containerId, strategyId, 'completed', result);

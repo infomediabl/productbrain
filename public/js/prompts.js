@@ -27,7 +27,7 @@ function renderPrompts() {
         <span class="status-dot ${p.status === 'generating' ? 'running' : p.status}"></span>
         <span>${new Date(p.created_at).toLocaleString()}</span>
         <span class="text-dim">${p.status}</span>
-        ${p.status === 'completed' ? `<a href="/prompts.html?cid=${containerId}&promptId=${p.id}" class="btn btn-primary btn-sm" style="margin-left:auto;">View Prompts</a>` : ''}
+        ${p.status === 'completed' ? `${promptSentLink(p.result)}<a href="/prompts.html?cid=${containerId}&promptId=${p.id}" class="btn btn-primary btn-sm" style="margin-left:auto;">View Prompts</a>` : ''}
         ${p.status === 'generating' ? '<div class="spinner" style="width:14px;height:14px;border-width:2px;"></div><span class="text-dim">Generating...</span>' : ''}
         ${p.status === 'failed' ? `<span class="text-dim" style="font-size:12px;">${esc(p.result?.error || 'Failed')}</span>` : ''}
       </div>
